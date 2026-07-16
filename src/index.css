@@ -1,0 +1,75 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
+
+  --color-beginner: #10B981;
+  --color-intermediate: #0067B8;
+  --color-advanced: #7C3AED;
+  --color-worldclass: #F59E0B;
+
+  --color-dept-sales: #0EA5E9;
+  --color-dept-marketing: #EC4899;
+  --color-dept-operations: #14B8A6;
+  --color-dept-finance: #22C55E;
+  --color-dept-hr: #A855F7;
+  --color-dept-legal: #6366F1;
+  --color-dept-support: #F97316;
+  --color-dept-engineering: #06B6D4;
+  --color-dept-data: #8B5CF6;
+  --color-dept-strategy: #F43F5E;
+  --color-dept-all: #64748B;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom scrollbar for horizontal filter bars */
+.scrollbar-thin::-webkit-scrollbar {
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.5);
+  border-radius: 9999px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Code block styling */
+pre code {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.glass-dark {
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Line clamp utilities */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
