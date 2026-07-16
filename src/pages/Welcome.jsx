@@ -95,7 +95,7 @@ export default function Welcome() {
         {/* Left: pitch */}
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           <div className="flex items-center gap-3 mb-6">
-            <img src="/logo.png" alt="Social Dev Technologies" className="w-12 h-12 object-contain" />
+            <img src="/logo.svg" alt="Social Dev Technologies" className="w-12 h-12 object-contain" />
             <div>
               <p className="font-extrabold text-white text-lg leading-tight">Social Dev</p>
               <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Technologies</p>

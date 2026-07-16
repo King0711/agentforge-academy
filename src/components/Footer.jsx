@@ -7,7 +7,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
         <div>
           <Link to="/" className="flex items-center gap-3 mb-3">
-            <img src="/logo.png" alt="Social Dev Technologies" className="w-10 h-10 object-contain rounded-lg" />
+            <img src="/logo.svg" alt="Social Dev Technologies" className="w-10 h-10 object-contain rounded-lg" />
             <div>
               <p className="font-extrabold text-white text-base leading-tight">Social Dev</p>
               <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Technologies</p>

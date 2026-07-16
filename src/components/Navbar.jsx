@@ -43,7 +43,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0A0A1A]/80 backdrop-blur-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-4">
         <Link to="/" className="flex items-center gap-2 font-extrabold text-white text-lg flex-shrink-0">
-          <img src="/logo.png" alt="Social Dev Technologies" className="w-9 h-9 object-contain rounded-lg" />
+          <img src="/logo.svg" alt="Social Dev Technologies" className="w-9 h-9 object-contain rounded-lg" />
           <span className="hidden sm:inline text-base leading-tight">
             Social Dev<br /><span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Technologies</span>
           </span>
