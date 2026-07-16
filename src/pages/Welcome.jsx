@@ -177,10 +177,10 @@ export default function Welcome() {
               <button
                 onClick={handleGoogleSignIn}
                 disabled={googleLoading || !isConfigured}
-                className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-800 font-bold rounded-lg px-5 py-3 transition-colors mb-5"
+                className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-800 font-bold rounded-lg px-5 py-3 transition-colors mb-5 shadow-sm"
               >
                 {googleLoading ? <Loader2 className="w-5 h-5 animate-spin text-gray-600" /> : <GoogleIcon />}
-                Continue with Google
+                {googleLoading ? 'Redirecting to Google…' : 'Continue with Google'}
               </button>
 
               <div className="flex items-center gap-3 mb-5">

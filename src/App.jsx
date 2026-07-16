@@ -10,6 +10,8 @@ import MyDashboard from './pages/MyDashboard';
 import Welcome from './pages/Welcome';
 import Pricing from './pages/Pricing';
 import Admin from './pages/Admin';
+import NotFound from './pages/NotFound';
+import Legal from './pages/Legal';
 import { useProgress } from './hooks/useProgress';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -30,6 +32,8 @@ function AppShell() {
           <Route path="/welcome" element={<Welcome />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/legal/:page" element={<Legal />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
       <Footer />

@@ -52,8 +52,8 @@ export default function Footer() {
           links={[
             { label: 'Pricing', to: '/pricing' },
             { label: 'Live Classes', to: '/pricing' },
-            { label: 'Community', to: '#' },
-            { label: 'Support', to: '#' },
+            { label: 'Terms of Service', to: '/legal/terms' },
+            { label: 'Privacy Policy', to: '/legal/privacy' },
           ]}
         />
       </div>
