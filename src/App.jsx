@@ -9,6 +9,7 @@ import PathDetail from './pages/PathDetail';
 import MyDashboard from './pages/MyDashboard';
 import Welcome from './pages/Welcome';
 import Pricing from './pages/Pricing';
+import Admin from './pages/Admin';
 import { useProgress } from './hooks/useProgress';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -28,6 +29,7 @@ function AppShell() {
           <Route path="/dashboard" element={<MyDashboard progress={progress} onSelectAgent={setSelectedAgent} />} />
           <Route path="/welcome" element={<Welcome />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/admin" element={<Admin />} />
         </Routes>
       </main>
       <Footer />

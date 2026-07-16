@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Menu, X, LogIn, LogOut, UserCircle2, Zap } from 'lucide-react';
+import { Sparkles, Menu, X, LogIn, LogOut, UserCircle2, Zap, Shield } from 'lucide-react';
 import SearchBar from './SearchBar';
 import { useAuth } from '../context/AuthContext';
 import { usePro } from '../hooks/usePro';
@@ -21,7 +21,7 @@ export default function Navbar() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { user, signOut } = useAuth();
-  const { isPro } = usePro();
+  const { isPro, isAdmin } = usePro();
 
   const handleSignOut = async () => {
     await signOut();
@@ -76,12 +76,29 @@ export default function Navbar() {
               <span className="flex items-center gap-1.5 text-sm text-slate-300 px-2">
                 <UserCircle2 className="w-4 h-4" />
                 {user.user_metadata?.display_name || user.email}
-                {isPro && (
+                {isAdmin && (
+                  <span className="flex items-center gap-0.5 text-[10px] font-bold bg-amber-500 text-[#0A0A1A] px-1.5 py-0.5 rounded-full">
+                    <Shield className="w-2.5 h-2.5" /> ADMIN
+                  </span>
+                )}
+                {isPro && !isAdmin && (
                   <span className="flex items-center gap-0.5 text-[10px] font-bold bg-gradient-to-r from-[#0067B8] to-[#7C3AED] text-white px-1.5 py-0.5 rounded-full">
                     <Zap className="w-2.5 h-2.5" /> PRO
                   </span>
                 )}
               </span>
+              {isAdmin && (
+                <NavLink
+                  to="/admin"
+                  className={({ isActive }) =>
+                    `flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      isActive ? 'bg-amber-400/20 text-amber-300' : 'text-amber-400 hover:bg-amber-400/10'
+                    }`
+                  }
+                >
+                  <Shield className="w-4 h-4" /> Admin
+                </NavLink>
+              )}
               <button
                 onClick={handleSignOut}
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium bg-white/5 border border-white/10 text-slate-300 hover:text-white hover:bg-white/10 transition-colors"

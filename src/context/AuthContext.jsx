@@ -27,10 +27,16 @@ export function AuthProvider({ children }) {
 
   const signUp = useCallback(async (email, password, displayName) => {
     if (!isSupabaseConfigured) return { error: { message: 'Supabase is not configured.' } };
+    const isBYU = email.trim().toLowerCase().endsWith('@byupathway.edu');
     return supabase.auth.signUp({
       email,
       password,
-      options: { data: { display_name: displayName || email.split('@')[0] } },
+      options: {
+        data: {
+          display_name: displayName || email.split('@')[0],
+          is_byu_student: isBYU,
+        },
+      },
     });
   }, []);
 
