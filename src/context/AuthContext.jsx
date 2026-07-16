@@ -39,6 +39,14 @@ export function AuthProvider({ children }) {
     return supabase.auth.signInWithPassword({ email, password });
   }, []);
 
+  const signInWithGoogle = useCallback(async () => {
+    if (!isSupabaseConfigured) return { error: { message: 'Supabase is not configured.' } };
+    return supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/dashboard` },
+    });
+  }, []);
+
   const signOut = useCallback(async () => {
     if (!isSupabaseConfigured) return { error: null };
     return supabase.auth.signOut();
@@ -51,6 +59,7 @@ export function AuthProvider({ children }) {
     isConfigured: isSupabaseConfigured,
     signUp,
     signIn,
+    signInWithGoogle,
     signOut,
   };
 

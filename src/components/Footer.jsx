@@ -1,16 +1,17 @@
 import { Link } from 'react-router-dom';
-import { Sparkles, Code2, AtSign, Globe } from 'lucide-react';
+import { Code2, AtSign, Globe } from 'lucide-react';
 
 export default function Footer() {
   return (
-    <footer className="border-t border-white/10 bg-[#0A0A1A]">
+    <footer className="border-t border-white/10 bg-[#050510]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
         <div>
-          <Link to="/" className="flex items-center gap-2 font-extrabold text-white text-lg mb-3">
-            <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#0067B8] to-[#7C3AED] flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-white" />
-            </span>
-            AgentForge Academy
+          <Link to="/" className="flex items-center gap-3 mb-3">
+            <img src="/logo.png" alt="Social Dev Technologies" className="w-10 h-10 object-contain rounded-lg" />
+            <div>
+              <p className="font-extrabold text-white text-base leading-tight">Social Dev</p>
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Technologies</p>
+            </div>
           </Link>
           <p className="text-sm text-slate-400 leading-relaxed">
             Hands-on, project-based learning for building real-world AI agents — from your first
@@ -49,7 +50,8 @@ export default function Footer() {
         <FooterCol
           title="Resources"
           links={[
-            { label: 'Documentation', to: '#' },
+            { label: 'Pricing', to: '/pricing' },
+            { label: 'Live Classes', to: '/pricing' },
             { label: 'Community', to: '#' },
             { label: 'Support', to: '#' },
           ]}
@@ -57,7 +59,7 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-white/10 py-6 text-center text-xs text-slate-500">
-        © {new Date().getFullYear()} AgentForge Academy. Built for builders.
+        © {new Date().getFullYear()} Social Dev Technologies. Built for builders.
       </div>
     </footer>
   );
