@@ -1,120 +1,88 @@
-import { motion } from 'framer-motion';
-import { Clock, CheckCircle2, Lock, Zap } from 'lucide-react';
+import { CheckCircle2, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { getDifficulty } from '../data/departments';
+import { getDifficulty, hasAccessToDifficulty } from '../data/departments';
 import { getTechColor } from '../data/techStack';
-import XPBadge from './XPBadge';
+import { getBuilderPagePath } from '../data/agents';
 
-const FREE_DIFFICULTY = ['Beginner'];
-
-export default function AgentCard({ agent, completed, onClick, isPro = false }) {
+export default function AgentCard({ agent, completed, onClick, hasBuilder1 = false, hasBuilder2 = false, isAdmin = false }) {
   const difficulty = getDifficulty(agent.difficulty);
-  const locked = !isPro && !FREE_DIFFICULTY.includes(agent.difficulty);
+  const unlocked = hasAccessToDifficulty(agent.difficulty, { hasBuilder1, hasBuilder2, isAdmin });
+  const locked = !unlocked;
+
+  const card = (
+    <div className="relative flex flex-col gap-2 text-left bg-white border-[1.5px] border-border-soft rounded-[18px] p-4.5 h-full transition-all hover:border-brand/40 hover:shadow-[0_10px_28px_-8px_rgba(124,58,237,.18)]">
+      {completed && (
+        <div className="absolute top-3 right-3 z-10 bg-green rounded-full p-1 shadow">
+          <CheckCircle2 className="w-4 h-4 text-white" />
+        </div>
+      )}
+      {locked && !completed && (
+        <div className="absolute top-3 right-3 z-10 bg-white border border-border rounded-full p-1.5 shadow">
+          <Lock className="w-3.5 h-3.5 text-brand" />
+        </div>
+      )}
+
+      <div className="flex items-center justify-between gap-2">
+        <span
+          className="inline-flex items-center gap-1 font-bold text-[11px] px-2.5 py-1 rounded-full"
+          style={{ background: difficulty.tint, color: difficulty.color }}
+        >
+          {difficulty.icon} {difficulty.label}
+        </span>
+        <span className="text-[15px]">{agent.emoji}</span>
+      </div>
+
+      <h3 className="font-display font-bold text-base text-ink leading-snug mt-0.5">{agent.title}</h3>
+      <p className="text-[13px] text-body leading-relaxed line-clamp-2 flex-1">{agent.description}</p>
+
+      <div className="flex flex-wrap gap-1.5">
+        {agent.techStack.slice(0, 3).map((tech) => (
+          <span
+            key={tech}
+            className="text-[11px] font-medium px-2 py-0.5 rounded-full border"
+            style={{ borderColor: `${getTechColor(tech)}55`, color: getTechColor(tech) }}
+          >
+            {tech}
+          </span>
+        ))}
+      </div>
+
+      <div className="flex justify-between text-[12.5px] text-[#7C7398] font-semibold pt-2 border-t border-border-soft">
+        <span>{agent.buildTime}</span>
+        <span>⚡ {agent.xp} XP</span>
+      </div>
+
+      {locked && (
+        <div className="mt-1 text-center text-[12.5px] font-bold text-brand bg-[#F3EBFF] rounded-lg py-2">
+          Upgrade to unlock
+        </div>
+      )}
+    </div>
+  );
+
+  // Builder 1/2 agents have their own dedicated page (better for SEO) —
+  // always link there, locked or not, since the page itself renders the
+  // paywall state instead of bouncing straight to /pricing with no agent context.
+  const builderPagePath = getBuilderPagePath(agent);
+  if (builderPagePath) {
+    return (
+      <Link to={builderPagePath} className="block h-full">
+        {card}
+      </Link>
+    );
+  }
 
   if (locked) {
     return (
-      <Link to="/pricing">
-        <motion.div
-          whileHover={{ y: -4 }}
-          className="group relative flex flex-col text-left rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-sm overflow-hidden transition-colors hover:border-[#0067B8]/40 cursor-pointer"
-        >
-          {/* Blur overlay */}
-          <div className="absolute inset-0 z-10 backdrop-blur-[2px] bg-[#0A0A1A]/60 flex flex-col items-center justify-center gap-2 rounded-2xl">
-            <div className="w-10 h-10 rounded-full bg-[#0067B8]/20 border border-[#0067B8]/40 flex items-center justify-center">
-              <Lock className="w-5 h-5 text-[#3FA9F5]" />
-            </div>
-            <span className="text-xs font-bold text-white">Pro only</span>
-            <span className="flex items-center gap-1 text-[10px] font-semibold text-[#3FA9F5] bg-[#0067B8]/20 border border-[#0067B8]/30 px-2 py-0.5 rounded-full">
-              <Zap className="w-2.5 h-2.5" /> Upgrade to unlock
-            </span>
-          </div>
-
-          {/* Blurred card content (decorative) */}
-          <div className="opacity-40 pointer-events-none">
-            <div
-              className="h-24 flex items-center justify-center text-5xl"
-              style={{ background: `linear-gradient(135deg, ${difficulty.color}33, transparent)` }}
-            >
-              {agent.emoji}
-            </div>
-            <div className="flex flex-col flex-1 p-4 gap-3">
-              <div className="flex items-center justify-between gap-2">
-                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-md"
-                  style={{ backgroundColor: `${difficulty.color}26`, color: difficulty.color }}>
-                  {difficulty.icon} {difficulty.label}
-                </span>
-                <span className="flex items-center gap-1 text-xs text-slate-400">
-                  <Clock className="w-3.5 h-3.5" />{agent.buildTime}
-                </span>
-              </div>
-              <h3 className="text-base font-bold text-white leading-snug">{agent.title}</h3>
-              <p className="text-sm text-slate-400 line-clamp-2">{agent.description}</p>
-            </div>
-          </div>
-        </motion.div>
+      <Link to="/pricing" className="block h-full">
+        {card}
       </Link>
     );
   }
 
   return (
-    <motion.button
-      onClick={onClick}
-      whileHover={{ y: -4 }}
-      whileTap={{ scale: 0.98 }}
-      className="group relative flex flex-col text-left rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-sm overflow-hidden transition-colors hover:border-white/20 hover:bg-white/[0.06]"
-    >
-      {completed && (
-        <div className="absolute top-3 right-3 z-10 bg-emerald-500 rounded-full p-1 shadow-lg">
-          <CheckCircle2 className="w-4 h-4 text-white" />
-        </div>
-      )}
-
-      <div
-        className="h-24 flex items-center justify-center text-5xl"
-        style={{ background: `linear-gradient(135deg, ${difficulty.color}33, transparent)` }}
-      >
-        {agent.emoji}
-      </div>
-
-      <div className="flex flex-col flex-1 p-4 gap-3">
-        <div className="flex items-center justify-between gap-2">
-          <span
-            className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-md"
-            style={{ backgroundColor: `${difficulty.color}26`, color: difficulty.color }}
-          >
-            {difficulty.icon} {difficulty.label}
-          </span>
-          <span className="flex items-center gap-1 text-xs text-slate-400">
-            <Clock className="w-3.5 h-3.5" />
-            {agent.buildTime}
-          </span>
-        </div>
-
-        <h3 className="text-base font-bold text-white leading-snug">{agent.title}</h3>
-        <p className="text-sm text-slate-400 line-clamp-2">{agent.description}</p>
-
-        <div className="flex flex-wrap gap-1.5 mt-auto pt-1">
-          {agent.techStack.slice(0, 3).map((tech) => (
-            <span
-              key={tech}
-              className="text-[11px] font-medium px-2 py-0.5 rounded-full border"
-              style={{ borderColor: `${getTechColor(tech)}55`, color: getTechColor(tech) }}
-            >
-              {tech}
-            </span>
-          ))}
-          {agent.techStack.length > 3 && (
-            <span className="text-[11px] font-medium px-2 py-0.5 rounded-full border border-white/10 text-slate-400">
-              +{agent.techStack.length - 3}
-            </span>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between pt-2 border-t border-white/5">
-          <XPBadge xp={agent.xp} size="sm" />
-          <span className="text-xs text-slate-500">{agent.department[0]}</span>
-        </div>
-      </div>
-    </motion.button>
+    <button onClick={onClick} className="text-left w-full h-full">
+      {card}
+    </button>
   );
 }

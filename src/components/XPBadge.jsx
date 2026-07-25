@@ -9,7 +9,7 @@ export default function XPBadge({ xp, size = 'md', className = '' }) {
 
   return (
     <span
-      className={`inline-flex items-center rounded-md font-semibold bg-amber-400/15 text-amber-400 border border-amber-400/30 ${sizes[size]} ${className}`}
+      className={`inline-flex items-center rounded-md font-semibold bg-[#FEF9E7] text-amber-600 border border-amber/30 ${sizes[size]} ${className}`}
     >
       <Zap className={size === 'lg' ? 'w-4 h-4' : 'w-3.5 h-3.5'} fill="currentColor" />
       {xp.toLocaleString()} XP

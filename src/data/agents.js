@@ -11,6 +11,27 @@ export const agents = [
 ];
 
 export const getAgentById = (id) => agents.find((a) => a.id === Number(id));
+export const getAgentBySlug = (slug) => agents.find((a) => a.slug === slug);
+
+// Ordered list of agents in a given difficulty tier — the sequence used for
+// the dedicated session pages' Previous/Next navigation.
+export const getAgentsByDifficulty = (difficulty) => agents.filter((a) => a.difficulty === difficulty);
+export const getBuilder1Agents = () => getAgentsByDifficulty('Builder 1');
+export const getBuilder2Agents = () => getAgentsByDifficulty('Builder 2');
+
+// Difficulty tiers that have dedicated SEO pages (as opposed to the modal) —
+// maps a tier label to its page's URL base.
+const BUILDER_PAGE_BASE = {
+  'Builder 1': '/builder-1',
+  'Builder 2': '/builder-2',
+};
+
+// Returns the dedicated session page URL for an agent, or null if this tier
+// doesn't have one yet (still opens in the modal).
+export const getBuilderPagePath = (agent) => {
+  const base = BUILDER_PAGE_BASE[agent?.difficulty];
+  return base && agent.slug ? `${base}/${agent.slug}` : null;
+};
 
 // Returns the next agent in the same difficulty tier (by id), or the first
 // agent of the next difficulty tier if this is the last in its tier.
@@ -23,7 +44,7 @@ export const getNextRecommended = (agent) => {
     return sameTier[idx + 1];
   }
 
-  const tiers = ['Beginner', 'Intermediate', 'Advanced', 'World Class'];
+  const tiers = ['Builder 1', 'Builder 2', 'Advanced', 'World Class'];
   const tierIdx = tiers.indexOf(agent.difficulty);
   for (let i = tierIdx + 1; i < tiers.length; i++) {
     const nextTier = agents.filter((a) => a.difficulty === tiers[i]);

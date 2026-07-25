@@ -9,7 +9,7 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
-      setLoading(false);
+      // loading already initialized to false in this case — nothing to sync.
       return;
     }
 
@@ -45,11 +45,30 @@ export function AuthProvider({ children }) {
     return supabase.auth.signInWithPassword({ email, password });
   }, []);
 
+  // Sends a 6-digit login code to an existing account's email — an
+  // alternative to typing a password. shouldCreateUser is false so this
+  // never silently creates a new account; sign-up stays its own explicit step.
+  const sendLoginCode = useCallback(async (email) => {
+    if (!isSupabaseConfigured) return { error: { message: 'Supabase is not configured.' } };
+    return supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
+  }, []);
+
+  const verifyLoginCode = useCallback(async (email, token) => {
+    if (!isSupabaseConfigured) return { error: { message: 'Supabase is not configured.' } };
+    return supabase.auth.verifyOtp({ email, token, type: 'email' });
+  }, []);
+
   const signInWithGoogle = useCallback(async () => {
     if (!isSupabaseConfigured) return { error: { message: 'Supabase is not configured.' } };
     return supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/dashboard` },
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`,
+        // Always show Google's account chooser rather than silently
+        // completing with whichever Google account is already active in
+        // the browser — gives the user a visible, deliberate step.
+        queryParams: { prompt: 'select_account' },
+      },
     });
   }, []);
 
@@ -65,6 +84,8 @@ export function AuthProvider({ children }) {
     isConfigured: isSupabaseConfigured,
     signUp,
     signIn,
+    sendLoginCode,
+    verifyLoginCode,
     signInWithGoogle,
     signOut,
   };

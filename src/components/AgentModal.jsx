@@ -1,20 +1,21 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  X, CheckCircle2, Circle, BookOpen, Target, Wrench, ListChecks,
-  ArrowRight, ExternalLink, Clock, Sparkles, AlertTriangle, FlaskConical, PlayCircle, FileText,
+  X, CheckCircle2, Circle, BookOpen, Wrench, ListChecks,
+  ArrowRight, ExternalLink, Clock, Sparkles, Lock, Loader2, PlayCircle, FileText,
 } from 'lucide-react';
 import { getDifficulty } from '../data/departments';
 import { getTechColor } from '../data/techStack';
-import { getNextRecommended } from '../data/agents';
+import { getNextRecommended, getBuilderPagePath } from '../data/agents';
+import { useCourseContent } from '../hooks/useCourseContent';
 import XPBadge from './XPBadge';
-import StepGuide from './StepGuide';
-import CodeBlock from './CodeBlock';
 import SessionGuide from './SessionGuide';
 
 export default function AgentModal({ agent, completed, onToggleComplete, onClose, onSelectAgent }) {
   const [showXpPop, setShowXpPop] = useState(false);
   const [activeTab, setActiveTab] = useState('guide');
+  const { content, loading, locked } = useCourseContent(agent?.id);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -45,14 +46,14 @@ export default function AgentModal({ agent, completed, onToggleComplete, onClose
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/70 backdrop-blur-sm p-0 sm:p-4"
+        className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-ink/55 backdrop-blur-sm p-0 sm:p-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
       >
         <motion.div
-          className="relative w-full sm:max-w-4xl h-full sm:h-[90vh] sm:rounded-2xl overflow-hidden bg-[#0A0A1A] border border-white/10 flex flex-col"
+          className="relative w-full sm:max-w-4xl h-full sm:h-[90vh] sm:rounded-2xl overflow-hidden bg-white border border-border-soft flex flex-col"
           initial={{ opacity: 0, y: 40, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 40, scale: 0.97 }}
@@ -61,12 +62,12 @@ export default function AgentModal({ agent, completed, onToggleComplete, onClose
         >
           {/* Header */}
           <div
-            className="relative px-6 sm:px-8 pt-8 pb-6 border-b border-white/10"
-            style={{ background: `linear-gradient(135deg, ${difficulty.color}33, #0D1B3E)` }}
+            className="relative px-6 sm:px-8 pt-8 pb-6 border-b border-border-soft"
+            style={{ background: `linear-gradient(135deg, ${difficulty.color}22, #FAF8FF)` }}
           >
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+              className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-lg bg-white hover:bg-[#F3EBFF] text-brand transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -77,30 +78,30 @@ export default function AgentModal({ agent, completed, onToggleComplete, onClose
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span
                     className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-md"
-                    style={{ backgroundColor: `${difficulty.color}33`, color: difficulty.color }}
+                    style={{ backgroundColor: difficulty.tint, color: difficulty.color }}
                   >
                     {difficulty.icon} {difficulty.label}
                   </span>
-                  <span className="flex items-center gap-1 text-xs text-slate-300">
+                  <span className="flex items-center gap-1 text-xs text-body">
                     <Clock className="w-3.5 h-3.5" /> {agent.buildTime}
                   </span>
                   <XPBadge xp={agent.xp} size="sm" />
                 </div>
-                <h2 className="text-xl sm:text-3xl font-extrabold text-white leading-tight">{agent.title}</h2>
-                <p className="text-slate-300 text-sm mt-2 max-w-2xl">{agent.description}</p>
+                <h2 className="font-display text-xl sm:text-3xl font-extrabold text-ink leading-tight">{agent.title}</h2>
+                <p className="text-body text-sm mt-2 max-w-2xl">{agent.description}</p>
               </div>
             </div>
           </div>
 
           {/* Tab bar — only shown when a video exists */}
           {agent.videoId && (
-            <div className="flex border-b border-white/10 px-6 sm:px-8 bg-white/[0.02]">
+            <div className="flex border-b border-border-soft px-6 sm:px-8 bg-[#FAF8FF]">
               <button
                 onClick={() => setActiveTab('guide')}
                 className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${
                   activeTab === 'guide'
-                    ? 'border-[#0067B8] text-white'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                    ? 'border-brand text-ink'
+                    : 'border-transparent text-gray-400 hover:text-ink'
                 }`}
               >
                 <FileText className="w-4 h-4" />
@@ -110,8 +111,8 @@ export default function AgentModal({ agent, completed, onToggleComplete, onClose
                 onClick={() => setActiveTab('video')}
                 className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${
                   activeTab === 'video'
-                    ? 'border-[#0067B8] text-white'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                    ? 'border-brand text-ink'
+                    : 'border-transparent text-gray-400 hover:text-ink'
                 }`}
               >
                 <PlayCircle className="w-4 h-4" />
@@ -135,133 +136,138 @@ export default function AgentModal({ agent, completed, onToggleComplete, onClose
                     allowFullScreen
                   />
                 </div>
-                <p className="text-sm text-slate-400 text-center">
+                <p className="text-sm text-body text-center">
                   Watch the full build, then follow the Session Guide tab to build it yourself.
                 </p>
               </div>
             )}
 
-            {/* Guide tab (or default when no video) */}
-            {(!agent.videoId || activeTab === 'guide') && agent.session && (
-              <SessionGuide session={agent.session} />
-            )}
-            {(!agent.videoId || activeTab === 'guide') && !agent.session && (
+            {/* Guide tab (or default when no video) — gated content, fetched server-side */}
+            {(!agent.videoId || activeTab === 'guide') && (
               <>
-                <section>
-                  <SectionTitle icon={Target} title="What You'll Build" />
-                  <p className="text-slate-300 text-sm leading-relaxed">{agent.whatYouBuild}</p>
-                </section>
-                <section>
-                  <SectionTitle icon={BookOpen} title="What You'll Learn" />
-                  <ul className="grid sm:grid-cols-2 gap-2">
-                    {agent.whatYouLearn.map((item) => (
-                      <li key={item} className="flex items-start gap-2 text-sm text-slate-300">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-                <section className="grid sm:grid-cols-2 gap-6">
-                  <div>
-                    <SectionTitle icon={Wrench} title="Tech Stack" />
-                    <div className="flex flex-wrap gap-2">
-                      {agent.techStack.map((tech) => (
-                        <span
-                          key={tech}
-                          className="text-xs font-medium px-2.5 py-1 rounded-full border"
-                          style={{ borderColor: `${getTechColor(tech)}55`, color: getTechColor(tech) }}
-                        >
-                          {tech}
-                        </span>
-                      ))}
-                    </div>
+                {loading && (
+                  <div className="flex items-center justify-center py-16 text-body gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Loading session guide…
                   </div>
-                  <div>
-                    <SectionTitle icon={ListChecks} title="Prerequisites" />
-                    <ul className="space-y-1.5">
-                      {agent.prerequisites.map((p) => (
-                        <li key={p} className="flex items-start gap-2 text-sm text-slate-300">
-                          <Circle className="w-2 h-2 mt-1.5 fill-slate-500 text-slate-500 flex-shrink-0" />
-                          {p}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </section>
-                <section>
-                  <SectionTitle icon={ListChecks} title="Step-by-Step Build Guide" />
-                  <StepGuide steps={agent.steps} />
-                </section>
-                <section>
-                  <SectionTitle icon={Sparkles} title="Starter Code" />
-                  <CodeBlock code={agent.starterCode} title={`starter — ${agent.title}`} />
-                </section>
-                {agent.testItOut && (
-                  <section>
-                    <SectionTitle icon={FlaskConical} title="Test It Out" />
-                    <div className="text-sm text-slate-300 leading-relaxed bg-white/5 border border-white/10 rounded-xl p-4">
-                      {agent.testItOut}
-                    </div>
-                  </section>
                 )}
-                {agent.troubleshooting && agent.troubleshooting.length > 0 && (
+
+                {!loading && locked && (
+                  <div className="flex flex-col items-center text-center gap-3 py-16 border-2 border-dashed border-border rounded-2xl">
+                    <Lock className="w-8 h-8 text-brand" />
+                    <p className="font-bold text-ink">This session's guide is Pro content</p>
+                    <p className="text-sm text-body max-w-sm">
+                      Upgrade to Pro or Live Class to unlock the full step-by-step build, prompts, and resources.
+                    </p>
+                    <a
+                      href="/pricing"
+                      className="mt-2 inline-flex items-center gap-2 bg-brand hover:bg-brand-deep text-white font-bold px-5 py-2.5 rounded-xl transition-colors"
+                    >
+                      See plans
+                    </a>
+                  </div>
+                )}
+
+                {!loading && !locked && content?.session && (
+                  <SessionGuide session={content.session} troubleshooting={content.troubleshooting} />
+                )}
+
+                {!loading && !locked && !content?.session && content?.whatYouBuild && (
                   <section>
-                    <SectionTitle icon={AlertTriangle} title="Troubleshooting & Common Pitfalls" />
-                    <div className="space-y-2">
-                      {agent.troubleshooting.map((item) => (
-                        <div key={item.issue} className="bg-red-400/5 border border-red-400/20 rounded-lg px-3.5 py-2.5">
-                          <p className="text-sm font-bold text-red-300">{item.issue}</p>
-                          <p className="text-sm text-slate-300 mt-1">{item.fix}</p>
-                        </div>
-                      ))}
-                    </div>
+                    <SectionTitle icon={FileText} title="What You'll Build" />
+                    <p className="text-body text-sm leading-relaxed">{content.whatYouBuild}</p>
                   </section>
                 )}
               </>
             )}
 
-            {/* Resources */}
-            <section>
-              <SectionTitle icon={BookOpen} title="Resources" />
-              <div className="flex flex-col gap-2">
-                {agent.resources.map((r) => (
-                  <a
-                    key={r.url}
-                    href={r.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-between text-sm text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-3.5 py-2.5 transition-colors"
-                  >
-                    {r.title}
-                    <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
-                  </a>
-                ))}
+            {/* Tech stack + prerequisites — public metadata, always shown */}
+            <section className="grid sm:grid-cols-2 gap-6">
+              <div>
+                <SectionTitle icon={Wrench} title="Tech Stack" />
+                <div className="flex flex-wrap gap-2">
+                  {agent.techStack.map((tech) => (
+                    <span
+                      key={tech}
+                      className="text-xs font-medium px-2.5 py-1 rounded-full border"
+                      style={{ borderColor: `${getTechColor(tech)}55`, color: getTechColor(tech) }}
+                    >
+                      {tech}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <SectionTitle icon={ListChecks} title="Prerequisites" />
+                <ul className="space-y-1.5">
+                  {agent.prerequisites.map((p) => (
+                    <li key={p} className="flex items-start gap-2 text-sm text-body">
+                      <Circle className="w-2 h-2 mt-1.5 fill-gray-400 text-gray-400 flex-shrink-0" />
+                      {p}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </section>
+
+            {/* Resources — gated, from fetched content */}
+            {!loading && !locked && content?.resources?.length > 0 && (
+              <section>
+                <SectionTitle icon={BookOpen} title="Resources" />
+                <div className="flex flex-col gap-2">
+                  {content.resources.map((r) => (
+                    <a
+                      key={r.url}
+                      href={r.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between text-sm text-body-strong hover:text-ink bg-[#FAF8FF] hover:bg-[#F3EBFF] border border-border-soft rounded-lg px-3.5 py-2.5 transition-colors"
+                    >
+                      {r.title}
+                      <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
+                    </a>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* Next recommended */}
             {next && (
               <section>
                 <SectionTitle icon={ArrowRight} title="Next Recommended Agent" />
-                <button
-                  onClick={() => onSelectAgent(next)}
-                  className="w-full flex items-center gap-4 text-left bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-4 transition-colors"
-                >
-                  <div className="text-3xl">{next.emoji}</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-white">{next.title}</p>
-                    <p className="text-xs text-slate-400 line-clamp-1">{next.description}</p>
-                  </div>
-                  <XPBadge xp={next.xp} size="sm" />
-                  <ArrowRight className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                </button>
+                {getBuilderPagePath(next) ? (
+                  <Link
+                    to={getBuilderPagePath(next)}
+                    className="w-full flex items-center gap-4 text-left bg-[#FAF8FF] hover:bg-[#F3EBFF] border border-border-soft rounded-xl p-4 transition-colors"
+                  >
+                    <div className="text-3xl">{next.emoji}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-ink">{next.title}</p>
+                      <p className="text-xs text-body line-clamp-1">{next.description}</p>
+                    </div>
+                    <XPBadge xp={next.xp} size="sm" />
+                    <ArrowRight className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                  </Link>
+                ) : (
+                  <button
+                    onClick={() => onSelectAgent(next)}
+                    className="w-full flex items-center gap-4 text-left bg-[#FAF8FF] hover:bg-[#F3EBFF] border border-border-soft rounded-xl p-4 transition-colors"
+                  >
+                    <div className="text-3xl">{next.emoji}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-ink">{next.title}</p>
+                      <p className="text-xs text-body line-clamp-1">{next.description}</p>
+                    </div>
+                    <XPBadge xp={next.xp} size="sm" />
+                    <ArrowRight className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                  </button>
+                )}
               </section>
             )}
           </div>
 
           {/* Footer / mark complete */}
-          <div className="relative border-t border-white/10 px-6 sm:px-8 py-4 bg-white/[0.03] flex items-center justify-between gap-4">
+          <div className="relative border-t border-border-soft px-6 sm:px-8 py-4 bg-[#FAF8FF] flex items-center justify-between gap-4">
             <AnimatePresence>
               {showXpPop && (
                 <motion.div
@@ -269,22 +275,22 @@ export default function AgentModal({ agent, completed, onToggleComplete, onClose
                   animate={{ opacity: 1, y: -40, scale: 1.1 }}
                   exit={{ opacity: 0, y: -60 }}
                   transition={{ duration: 1.2 }}
-                  className="absolute left-6 sm:left-8 -top-2 text-amber-400 font-extrabold text-lg pointer-events-none flex items-center gap-1"
+                  className="absolute left-6 sm:left-8 -top-2 text-amber-600 font-extrabold text-lg pointer-events-none flex items-center gap-1"
                 >
                   <Sparkles className="w-5 h-5" /> +{agent.xp} XP!
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <p className="text-sm text-slate-400 hidden sm:block">
+            <p className="text-sm text-body hidden sm:block">
               {completed ? 'Marked as completed — great work!' : 'Mark this agent complete to earn XP.'}
             </p>
             <button
               onClick={handleComplete}
               className={`flex items-center gap-2 font-bold rounded-lg px-5 py-3 transition-all w-full sm:w-auto justify-center ${
                 completed
-                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/25'
-                  : 'bg-[#10B981] text-white hover:bg-emerald-400 shadow-lg shadow-emerald-500/20'
+                  ? 'bg-[#EAFAF1] text-green border border-green/30 hover:bg-green/10'
+                  : 'bg-green text-white hover:brightness-95 shadow-lg shadow-green/20'
               }`}
             >
               <CheckCircle2 className="w-5 h-5" />
@@ -300,8 +306,8 @@ export default function AgentModal({ agent, completed, onToggleComplete, onClose
 function SectionTitle({ icon: Icon, title }) {
   return (
     <div className="flex items-center gap-2 mb-3">
-      <Icon className="w-4 h-4 text-[#0067B8]" />
-      <h3 className="font-bold text-white text-sm uppercase tracking-wide">{title}</h3>
+      <Icon className="w-4 h-4 text-brand" />
+      <h3 className="font-bold text-ink text-sm uppercase tracking-wide">{title}</h3>
     </div>
   );
 }

@@ -1,13 +1,27 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque", "Plus Jakarta Sans", sans-serif;
 
-  --color-beginner: #10B981;
-  --color-intermediate: #0067B8;
-  --color-advanced: #7C3AED;
-  --color-worldclass: #F59E0B;
+  --color-ink: #1A1333;
+  --color-brand: #7C3AED;
+  --color-brand-deep: #5B21B6;
+  --color-body: #5A5473;
+  --color-body-strong: #3A3358;
+  --color-yellow: #F5D90A;
+  --color-green: #16A34A;
+  --color-amber: #F59E0B;
+  --color-rose: #E11D48;
+  --color-border-soft: #EEE6FB;
+  --color-border: #E6DDFA;
+  --color-bg: #FDFCFF;
+
+  --color-beginner: #16A34A;
+  --color-intermediate: #7C3AED;
+  --color-advanced: #F59E0B;
+  --color-worldclass: #E11D48;
 
   --color-dept-sales: #0EA5E9;
   --color-dept-marketing: #EC4899;
@@ -32,8 +46,44 @@ html {
 
 body {
   margin: 0;
+  background: #FDFCFF;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-9px); }
+}
+@keyframes floaty2 {
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(-12px) rotate(-4deg); }
+}
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-floaty { animation: floaty 6s ease-in-out infinite; }
+.animate-floaty2 { animation: floaty2 5.5s ease-in-out infinite; }
+.animate-marquee { animation: marquee 22s linear infinite; }
+.animate-toast-in { animation: toastIn .25s ease-out; }
+
+/* Decorative photo-placeholder style used where real photography belongs */
+.ph {
+  background-image: repeating-linear-gradient(45deg, #ede9fe, #ede9fe 9px, #f6f3ff 9px, #f6f3ff 18px);
+  border: 1.5px dashed #c4b5fd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7C3AED;
+  font: 600 12px ui-monospace, Menlo, monospace;
+  text-align: center;
+  padding: 8px;
 }
 
 /* Custom scrollbar for horizontal filter bars */
@@ -41,7 +91,7 @@ body {
   height: 6px;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background-color: rgba(148, 163, 184, 0.5);
+  background-color: rgba(124, 58, 237, 0.3);
   border-radius: 9999px;
 }
 .scrollbar-thin::-webkit-scrollbar-track {
@@ -53,23 +103,23 @@ pre code {
   font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
 }
 
-/* Glassmorphism utility */
-.glass {
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.glass-dark {
-  background: rgba(15, 23, 42, 0.5);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
 /* Line clamp utilities */
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Print: the sticky Navbar (<header>) and Footer (<footer>) are rendered
+   once in App.jsx around every page, not inside the page component itself
+   — a page's own "no-print" class can only hide its own content, so this
+   has to be global or the header/footer print on every page regardless of
+   what an individual page tries to hide. Without this, the certificate
+   page (and anything else that adds a print button) silently overflows
+   onto a second page because the nav + footer are still taking up space. */
+@media print {
+  header, footer {
+    display: none !important;
+  }
 }

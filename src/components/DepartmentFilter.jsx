@@ -2,23 +2,16 @@ import { departments } from '../data/departments';
 
 export default function DepartmentFilter({ value, onChange }) {
   return (
-    <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-2 -mx-1 px-1">
+    <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-2 -mx-1 px-1 flex-wrap">
       {departments.map((dept) => {
         const active = value === dept.id;
         return (
           <button
             key={dept.id}
             onClick={() => onChange(dept.id)}
-            className={`flex items-center gap-1.5 whitespace-nowrap px-3.5 py-2 rounded-lg text-sm font-medium border transition-all ${
-              active
-                ? 'text-white shadow-lg'
-                : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white'
+            className={`flex-shrink-0 whitespace-nowrap flex items-center gap-1.5 font-bold text-[13px] px-3.5 py-2 rounded-full border-[1.5px] transition-colors ${
+              active ? 'bg-brand border-brand text-white' : 'bg-[#FAF8FF] border-border text-body-strong hover:border-brand/50'
             }`}
-            style={
-              active
-                ? { backgroundColor: `${dept.color}26`, borderColor: dept.color, color: dept.color }
-                : undefined
-            }
           >
             <span>{dept.icon}</span>
             {dept.name}

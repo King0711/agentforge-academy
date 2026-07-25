@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 
-const STORAGE_KEY = 'agentforge_progress_v1';
+const STORAGE_KEY = 'sdt_progress_v1';
 
 const defaultState = {
   completed: [], // array of agent ids

@@ -3,12 +3,17 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Mail, Lock, User, Loader2, CheckCircle2,
-  Trophy, Flame, Rocket, AlertCircle,
+  Trophy, Flame, Rocket, AlertCircle, KeyRound,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { setRememberMe } from '../lib/supabaseClient';
+import { agents } from '../data/agents';
+import { isVisibleToPublic } from '../data/departments';
+
+const publicAgentCount = agents.filter((a) => isVisibleToPublic(a.difficulty)).length;
 
 const highlights = [
-  { icon: Rocket, title: '44 Hands-On AI Agent Sessions', text: 'Real, runnable projects across every department — no placeholder tutorials.' },
+  { icon: Rocket, title: `${publicAgentCount} Hands-On AI Agent Sessions`, text: 'Real, runnable projects across every department — no placeholder tutorials.' },
   { icon: Trophy, title: 'XP, Levels & Streaks', text: 'Earn XP for every build, level up from Apprentice to Master, and track your daily streak.' },
   { icon: CheckCircle2, title: 'Progress Saved to Your Account', text: 'Sign up and your completed builds, XP, and history sync to the cloud — pick up on any device.' },
 ];
@@ -25,13 +30,17 @@ function GoogleIcon() {
 }
 
 export default function Welcome() {
-  const { signUp, signIn, signInWithGoogle, isConfigured, user } = useAuth();
+  const { signUp, signIn, sendLoginCode, verifyLoginCode, signInWithGoogle, isConfigured, user } = useAuth();
   const navigate = useNavigate();
 
   const [mode, setMode] = useState('signup');
+  const [loginMethod, setLoginMethod] = useState('password'); // 'password' | 'code'
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(true);
+  const [code, setCode] = useState('');
+  const [codeSent, setCodeSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
@@ -43,15 +52,69 @@ export default function Welcome() {
 
   if (user) return null;
 
+  const resetAuxState = () => {
+    setError('');
+    setConfirmSent(false);
+    setLoginMethod('password');
+    setCode('');
+    setCodeSent(false);
+  };
+
   const handleGoogleSignIn = async () => {
     setError('');
     setGoogleLoading(true);
     try {
+      // Google sign-in has no "remember me" checkbox of its own — default it
+      // to remembered (localStorage), same as the other methods' default.
+      // Without this, REMEMBER_KEY is never set for Google-only users, so
+      // their session silently lands in sessionStorage only, which can
+      // vanish (tab closed, some mobile browsers) while the UI still thinks
+      // they're logged in — leading to authenticated-looking API calls that
+      // fail with no auth header attached.
+      setRememberMe(true);
       const { error: err } = await signInWithGoogle();
       if (err) throw err;
     } catch (err) {
       setError(err.message || 'Google sign-in failed. Please try again.');
       setGoogleLoading(false);
+    }
+  };
+
+  const handleSendCode = async () => {
+    setError('');
+    if (!email) {
+      setError('Enter your email address first.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error: err } = await sendLoginCode(email);
+      if (err) throw err;
+      setCodeSent(true);
+    } catch (err) {
+      setError(err.message || 'Could not send a login code. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!code) {
+      setError('Enter the code we emailed you.');
+      return;
+    }
+    setLoading(true);
+    try {
+      setRememberMe(remember);
+      const { error: err } = await verifyLoginCode(email, code);
+      if (err) throw err;
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message || 'That code didn\'t work. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -73,6 +136,7 @@ export default function Welcome() {
           setConfirmSent(true);
         }
       } else {
+        setRememberMe(remember);
         const { error: err } = await signIn(email, password);
         if (err) throw err;
         navigate('/dashboard');
@@ -85,30 +149,31 @@ export default function Welcome() {
   };
 
   return (
-    <div className="relative overflow-hidden bg-gradient-to-br from-[#0A0A1A] via-[#0D1B3E] to-[#0A0A1A] min-h-[calc(100vh-4rem)]">
-      <div className="absolute inset-0 opacity-30 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#0067B8]/30 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[#7C3AED]/30 rounded-full blur-3xl" />
-      </div>
+    <div
+      className="relative overflow-hidden min-h-[calc(100vh-4rem)]"
+      style={{ background: 'radial-gradient(120% 100% at 85% 0%, #F3EBFF 0%, #FBFAFF 55%)' }}
+    >
+      <div
+        className="absolute top-10 right-[15%] w-[150px] h-[150px] bg-yellow opacity-40 animate-floaty pointer-events-none hidden sm:block"
+        style={{ borderRadius: '38% 62% 63% 37% / 41% 44% 56% 59%' }}
+      />
 
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 grid lg:grid-cols-2 gap-12 items-center">
         {/* Left: pitch */}
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           <div className="flex items-center gap-3 mb-6">
-            <img src="/logo.svg" alt="Social Dev Technologies" className="w-12 h-12 object-contain" />
+            <img src="/logo.jpeg" alt="Social Dev Technologies" className="w-12 h-12 object-contain rounded-lg" />
             <div>
-              <p className="font-extrabold text-white text-lg leading-tight">Social Dev</p>
-              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Technologies</p>
+              <p className="font-display font-extrabold text-ink text-lg leading-tight">Social Dev</p>
+              <p className="text-[10px] font-semibold text-brand uppercase tracking-widest">Technologies</p>
             </div>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-white leading-tight mb-4">
+          <h1 className="font-display font-extrabold text-4xl sm:text-5xl text-ink leading-tight tracking-[-1px] mb-4">
             Create your account.{' '}
-            <span className="bg-gradient-to-r from-[#0067B8] via-[#7C3AED] to-[#F59E0B] bg-clip-text text-transparent">
-              Never lose your progress.
-            </span>
+            <span className="inline-block bg-yellow px-2.5 rounded-lg -rotate-[1.5deg]">Never lose your progress.</span>
           </h1>
-          <p className="text-slate-300 text-lg mb-10 max-w-xl">
+          <p className="text-body text-lg mb-10 max-w-xl">
             Sign up to save your XP, completed builds, and streaks to your account — synced
             across every device.
           </p>
@@ -116,12 +181,12 @@ export default function Welcome() {
           <div className="space-y-6">
             {highlights.map((h) => (
               <div key={h.title} className="flex items-start gap-4">
-                <div className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0">
-                  <h.icon className="w-5 h-5 text-[#0067B8]" />
+                <div className="w-11 h-11 rounded-xl bg-white border border-border-soft flex items-center justify-center flex-shrink-0">
+                  <h.icon className="w-5 h-5 text-brand" />
                 </div>
                 <div>
-                  <p className="font-bold text-white">{h.title}</p>
-                  <p className="text-sm text-slate-400">{h.text}</p>
+                  <p className="font-bold text-ink">{h.title}</p>
+                  <p className="text-sm text-body">{h.text}</p>
                 </div>
               </div>
             ))}
@@ -132,10 +197,10 @@ export default function Welcome() {
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-sm p-6 sm:p-8"
+          className="rounded-[22px] border-[1.5px] border-border-soft bg-white shadow-[0_20px_44px_-16px_rgba(124,58,237,.18)] p-6 sm:p-8"
         >
           {!isConfigured && (
-            <div className="mb-6 flex items-start gap-2 text-sm text-amber-300 bg-amber-400/10 border border-amber-400/20 rounded-lg px-3 py-2.5">
+            <div className="mb-6 flex items-start gap-2 text-sm text-amber-700 bg-[#FEF9E7] border border-amber/30 rounded-lg px-3 py-2.5">
               <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
               <span>
                 Accounts aren't configured yet. Add <code className="font-mono">VITE_SUPABASE_URL</code> and{' '}
@@ -145,16 +210,16 @@ export default function Welcome() {
           )}
 
           {/* Mode tabs */}
-          <div className="grid grid-cols-2 gap-2 mb-6 p-1 rounded-lg bg-white/5 border border-white/10">
+          <div className="grid grid-cols-2 gap-2 mb-6 p-1 rounded-lg bg-[#FAF8FF] border border-border-soft">
             <button
-              onClick={() => { setMode('signup'); setError(''); setConfirmSent(false); }}
-              className={`py-2.5 rounded-md text-sm font-bold transition-colors ${mode === 'signup' ? 'bg-[#0067B8] text-white' : 'text-slate-300 hover:text-white'}`}
+              onClick={() => { setMode('signup'); resetAuxState(); }}
+              className={`py-2.5 rounded-md text-sm font-bold transition-colors ${mode === 'signup' ? 'bg-brand text-white' : 'text-body-strong hover:text-ink'}`}
             >
               Sign Up
             </button>
             <button
-              onClick={() => { setMode('login'); setError(''); setConfirmSent(false); }}
-              className={`py-2.5 rounded-md text-sm font-bold transition-colors ${mode === 'login' ? 'bg-[#0067B8] text-white' : 'text-slate-300 hover:text-white'}`}
+              onClick={() => { setMode('login'); resetAuxState(); }}
+              className={`py-2.5 rounded-md text-sm font-bold transition-colors ${mode === 'login' ? 'bg-brand text-white' : 'text-body-strong hover:text-ink'}`}
             >
               Log In
             </button>
@@ -162,12 +227,12 @@ export default function Welcome() {
 
           {confirmSent ? (
             <div className="text-center py-8">
-              <div className="w-14 h-14 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mx-auto mb-4">
-                <Mail className="w-6 h-6 text-emerald-400" />
+              <div className="w-14 h-14 rounded-full bg-[#EAFAF1] border border-green/30 flex items-center justify-center mx-auto mb-4">
+                <Mail className="w-6 h-6 text-green" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Check your inbox</h3>
-              <p className="text-sm text-slate-400 max-w-sm mx-auto">
-                We sent a confirmation link to <span className="text-white font-medium">{email}</span>.
+              <h3 className="font-display text-xl font-bold text-ink mb-2">Check your inbox</h3>
+              <p className="text-sm text-body max-w-sm mx-auto">
+                We sent a confirmation link to <span className="text-ink font-medium">{email}</span>.
                 Click it to verify your account, then come back and log in.
               </p>
             </div>
@@ -177,101 +242,195 @@ export default function Welcome() {
               <button
                 onClick={handleGoogleSignIn}
                 disabled={googleLoading || !isConfigured}
-                className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-800 font-bold rounded-lg px-5 py-3 transition-colors mb-5 shadow-sm"
+                className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-body-strong border-[1.5px] border-border font-bold rounded-lg px-5 py-3 transition-colors mb-5"
               >
-                {googleLoading ? <Loader2 className="w-5 h-5 animate-spin text-gray-600" /> : <GoogleIcon />}
+                {googleLoading ? <Loader2 className="w-5 h-5 animate-spin text-gray-500" /> : <GoogleIcon />}
                 {googleLoading ? 'Redirecting to Google…' : 'Continue with Google'}
               </button>
 
               <div className="flex items-center gap-3 mb-5">
-                <div className="flex-1 h-px bg-white/10" />
-                <span className="text-xs text-slate-500">or continue with email</span>
-                <div className="flex-1 h-px bg-white/10" />
+                <div className="flex-1 h-px bg-border-soft" />
+                <span className="text-xs text-gray-400">or continue with email</span>
+                <div className="flex-1 h-px bg-border-soft" />
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {mode === 'signup' && (
+              {/* Log in with emailed code */}
+              {mode === 'login' && loginMethod === 'code' ? (
+                <form onSubmit={handleVerifyCode} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Name</label>
+                    <label className="block text-sm font-medium text-body-strong mb-1.5">Email</label>
                     <div className="relative">
-                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Your name"
-                        className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0067B8] focus:border-transparent"
+                        type="email"
+                        required
+                        disabled={codeSent}
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-border text-sm text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand disabled:bg-[#FAF8FF] disabled:text-body"
                       />
                     </div>
                   </div>
-                )}
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1.5">Email</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0067B8] focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1.5">Password</label>
-                  <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                      type="password"
-                      required
-                      minLength={6}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="At least 6 characters"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0067B8] focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                {error && (
-                  <div className="flex items-start gap-2 text-sm text-red-300 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2.5">
-                    <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                    {error}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={loading || !isConfigured}
-                  className="w-full flex items-center justify-center gap-2 bg-[#0067B8] hover:bg-[#0078D4] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-lg px-5 py-3 transition-colors"
-                >
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : mode === 'signup' ? <Flame className="w-4 h-4" /> : <Rocket className="w-4 h-4" />}
-                  {mode === 'signup' ? 'Create Account' : 'Log In'}
-                </button>
-
-                <p className="text-xs text-slate-500 text-center">
-                  {mode === 'signup' ? (
-                    <>Already have an account?{' '}
-                      <button type="button" onClick={() => setMode('login')} className="text-[#0067B8] font-semibold hover:underline">Log in</button>
-                    </>
+                  {!codeSent ? (
+                    <button
+                      type="button"
+                      onClick={handleSendCode}
+                      disabled={loading || !isConfigured}
+                      className="w-full flex items-center justify-center gap-2 bg-brand hover:bg-brand-deep disabled:opacity-50 text-white font-bold rounded-lg px-5 py-3 shadow-[0_10px_22px_rgba(124,58,237,.35)] transition-colors"
+                    >
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                      Send me a login code
+                    </button>
                   ) : (
-                    <>Don't have an account?{' '}
-                      <button type="button" onClick={() => setMode('signup')} className="text-[#0067B8] font-semibold hover:underline">Sign up</button>
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-body-strong mb-1.5">6-digit code</label>
+                        <div className="relative">
+                          <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            autoFocus
+                            value={code}
+                            onChange={(e) => setCode(e.target.value)}
+                            placeholder="123456"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-border text-sm text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand tracking-widest"
+                          />
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1.5">
+                          Sent to {email}. <button type="button" onClick={handleSendCode} className="text-brand font-semibold hover:underline">Resend code</button>
+                        </p>
+                      </div>
+
+                      <label className="flex items-center gap-2 text-sm text-body-strong cursor-pointer">
+                        <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="accent-brand w-4 h-4" />
+                        Remember me on this device
+                      </label>
+
+                      <button
+                        type="submit"
+                        disabled={loading || !isConfigured}
+                        className="w-full flex items-center justify-center gap-2 bg-brand hover:bg-brand-deep disabled:opacity-50 text-white font-bold rounded-lg px-5 py-3 shadow-[0_10px_22px_rgba(124,58,237,.35)] transition-colors"
+                      >
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
+                        Verify & Log In
+                      </button>
                     </>
                   )}
-                </p>
-              </form>
+
+                  {error && (
+                    <div className="flex items-start gap-2 text-sm text-rose bg-[#FDEEF4] border border-rose/20 rounded-lg px-3 py-2.5">
+                      <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                      {error}
+                    </div>
+                  )}
+
+                  <p className="text-xs text-gray-400 text-center">
+                    <button type="button" onClick={() => { setLoginMethod('password'); setCode(''); setCodeSent(false); setError(''); }} className="text-brand font-bold hover:underline">
+                      Use my password instead
+                    </button>
+                  </p>
+                </form>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {mode === 'signup' && (
+                    <div>
+                      <label className="block text-sm font-medium text-body-strong mb-1.5">Name</label>
+                      <div className="relative">
+                        <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="text"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          placeholder="Your name"
+                          className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-border text-sm text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-body-strong mb-1.5">Email</label>
+                    <div className="relative">
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-border text-sm text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-body-strong mb-1.5">Password</label>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="password"
+                        required
+                        minLength={6}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="At least 6 characters"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-border text-sm text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
+                      />
+                    </div>
+                  </div>
+
+                  {mode === 'login' && (
+                    <label className="flex items-center gap-2 text-sm text-body-strong cursor-pointer">
+                      <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="accent-brand w-4 h-4" />
+                      Remember me on this device
+                    </label>
+                  )}
+
+                  {error && (
+                    <div className="flex items-start gap-2 text-sm text-rose bg-[#FDEEF4] border border-rose/20 rounded-lg px-3 py-2.5">
+                      <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                      {error}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={loading || !isConfigured}
+                    className="w-full flex items-center justify-center gap-2 bg-brand hover:bg-brand-deep disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-lg px-5 py-3 shadow-[0_10px_22px_rgba(124,58,237,.35)] transition-colors"
+                  >
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : mode === 'signup' ? <Flame className="w-4 h-4" /> : <Rocket className="w-4 h-4" />}
+                    {mode === 'signup' ? 'Create Account' : 'Log In'}
+                  </button>
+
+                  <p className="text-xs text-gray-400 text-center">
+                    {mode === 'signup' ? (
+                      <>Already have an account?{' '}
+                        <button type="button" onClick={() => { setMode('login'); resetAuxState(); }} className="text-brand font-bold hover:underline">Log in</button>
+                      </>
+                    ) : (
+                      <>
+                        <button type="button" onClick={() => setLoginMethod('code')} className="text-brand font-bold hover:underline">
+                          Log in with an emailed code instead
+                        </button>
+                        <br className="sm:hidden" />
+                        {' '}·{' '}
+                        Don't have an account?{' '}
+                        <button type="button" onClick={() => { setMode('signup'); resetAuxState(); }} className="text-brand font-bold hover:underline">Sign up</button>
+                      </>
+                    )}
+                  </p>
+                </form>
+              )}
             </>
           )}
         </motion.div>
       </div>
 
-      <div className="text-center pb-12 text-sm text-slate-500">
-        <Link to="/" className="hover:text-white transition-colors">← Back to home</Link>
+      <div className="relative text-center pb-12 text-sm text-body">
+        <Link to="/" className="hover:text-brand transition-colors">← Back to home</Link>
       </div>
     </div>
   );

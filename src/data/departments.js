@@ -22,14 +22,41 @@ export const getDepartment = (name) => {
   );
 };
 
+// Beginner/Intermediate were renamed to Builder 1/Builder 2 when the
+// platform moved to an all-paid tiered model. Advanced/World Class are no
+// longer purchasable by anyone — they're admin-only content now.
 export const difficultyLevels = [
-  { id: 'Beginner', label: 'Beginner', icon: '🌱', color: '#10B981' },
-  { id: 'Intermediate', label: 'Intermediate', icon: '⚡', color: '#0067B8' },
-  { id: 'Advanced', label: 'Advanced', icon: '🚀', color: '#7C3AED' },
-  { id: 'World Class', label: 'World Class', icon: '🏆', color: '#F59E0B' },
+  { id: 'Builder 1', label: 'Builder 1', icon: '🌱', color: '#16A34A', tint: '#EAFAF1', tier: 'builder1' },
+  { id: 'Builder 2', label: 'Builder 2', icon: '⚡', color: '#7C3AED', tint: '#F3EBFF', tier: 'builder2' },
+  { id: 'Advanced', label: 'Advanced', icon: '🚀', color: '#F59E0B', tint: '#FEF9E7', tier: 'admin_only', adminOnly: true },
+  { id: 'World Class', label: 'World Class', icon: '🏆', color: '#E11D48', tint: '#FDEEF4', tier: 'admin_only', adminOnly: true },
 ];
 
+// The two tiers every regular visitor can browse/buy. Advanced/World Class
+// are deliberately excluded — they should never appear in a non-admin's
+// catalog, filters, or progress views.
+export const publicDifficultyLevels = difficultyLevels.filter((d) => !d.adminOnly);
+
 export const getDifficulty = (id) => difficultyLevels.find((d) => d.id === id) || difficultyLevels[0];
+
+// Centralizes the "does this user have access to this difficulty tier"
+// check so Catalog/Home/AgentCard/PathDetail/Dashboard all agree on the
+// same rule. Admins always have access to everything, including the
+// admin-only Advanced/World Class tiers that no purchase can unlock.
+export function hasAccessToDifficulty(difficulty, { hasBuilder1, hasBuilder2, isAdmin } = {}) {
+  if (isAdmin) return true;
+  const level = getDifficulty(difficulty);
+  if (level.adminOnly) return false;
+  if (level.tier === 'builder1') return Boolean(hasBuilder1);
+  if (level.tier === 'builder2') return Boolean(hasBuilder2);
+  return false;
+}
+
+// Whether a non-admin should even see this difficulty tier exist at all
+// (Advanced/World Class are hidden entirely, not just locked).
+export function isVisibleToPublic(difficulty) {
+  return !getDifficulty(difficulty).adminOnly;
+}
 
 export const levels = [
   { name: 'Apprentice', min: 0, max: 999, icon: '🌱' },

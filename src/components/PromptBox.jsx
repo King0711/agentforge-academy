@@ -15,21 +15,21 @@ export default function PromptBox({ text }) {
   };
 
   return (
-    <div className="rounded-lg border border-[#0067B8]/30 bg-[#0067B8]/10 overflow-hidden">
-      <div className="flex items-center justify-between px-3 py-1.5 border-b border-[#0067B8]/20 bg-[#0067B8]/10">
-        <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[#3FA9F5]">
+    <div className="rounded-lg border border-brand/25 bg-[#F3EBFF] overflow-hidden">
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-brand/15 bg-brand/[0.06]">
+        <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-brand">
           <MessageSquareText className="w-3.5 h-3.5" />
           Prompt to use
         </span>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1 text-xs font-semibold text-[#3FA9F5] hover:text-white transition-colors"
+          className="flex items-center gap-1 text-xs font-semibold text-brand hover:text-brand-deep transition-colors"
         >
           {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
           {copied ? 'Copied!' : 'Copy'}
         </button>
       </div>
-      <p className="px-3.5 py-3 text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">{text}</p>
+      <p className="px-3.5 py-3 text-sm text-body-strong leading-relaxed whitespace-pre-wrap">{text}</p>
     </div>
   );
 }

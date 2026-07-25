@@ -58,7 +58,7 @@ const PAGES = {
       },
       {
         heading: '4. Data Storage',
-        body: 'Your data is stored securely using Supabase, which uses industry-standard encryption. Payment processing is handled by Flutterwave and Lemonsqueezy — we do not store card details.',
+        body: 'Your data is stored securely using Supabase, which uses industry-standard encryption. Payment processing is handled by Paystack — we do not store card details.',
       },
       {
         heading: '5. Cookies',
@@ -70,7 +70,7 @@ const PAGES = {
       },
       {
         heading: '7. Third-Party Services',
-        body: 'The Platform uses Supabase (authentication & database), Flutterwave (Nigeria/Africa payments), Lemonsqueezy (international payments), and Resend (transactional email). Each has its own privacy policy.',
+        body: 'The Platform uses Supabase (authentication & database), Paystack (payment processing), and Resend (transactional email). Each has its own privacy policy.',
       },
       {
         heading: '8. Contact',
@@ -86,38 +86,38 @@ export default function Legal() {
 
   if (!content) {
     return (
-      <div className="min-h-screen bg-[#0A0A1A] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-white text-xl font-bold mb-4">Page not found</p>
-          <Link to="/" className="text-[#0067B8] hover:underline">Back to home</Link>
+          <p className="text-ink text-xl font-bold mb-4">Page not found</p>
+          <Link to="/" className="text-brand hover:underline">Back to home</Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A1A]">
+    <div className="min-h-screen">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
           <div className="flex gap-4 mb-8 text-sm">
-            <Link to="/legal/terms" className={`font-semibold transition-colors ${page === 'terms' ? 'text-white border-b-2 border-[#0067B8] pb-1' : 'text-slate-400 hover:text-white'}`}>Terms of Service</Link>
-            <Link to="/legal/privacy" className={`font-semibold transition-colors ${page === 'privacy' ? 'text-white border-b-2 border-[#0067B8] pb-1' : 'text-slate-400 hover:text-white'}`}>Privacy Policy</Link>
+            <Link to="/legal/terms" className={`font-semibold transition-colors ${page === 'terms' ? 'text-ink border-b-2 border-brand pb-1' : 'text-body hover:text-ink'}`}>Terms of Service</Link>
+            <Link to="/legal/privacy" className={`font-semibold transition-colors ${page === 'privacy' ? 'text-ink border-b-2 border-brand pb-1' : 'text-body hover:text-ink'}`}>Privacy Policy</Link>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-2">{content.title}</h1>
-          <p className="text-slate-500 text-sm mb-10">Last updated: {content.updated}</p>
+          <h1 className="font-display text-3xl sm:text-4xl font-extrabold text-ink mb-2">{content.title}</h1>
+          <p className="text-gray-400 text-sm mb-10">Last updated: {content.updated}</p>
 
           <div className="space-y-8">
             {content.sections.map((s) => (
               <div key={s.heading}>
-                <h2 className="text-base font-bold text-white mb-2">{s.heading}</h2>
-                <p className="text-slate-400 text-sm leading-relaxed">{s.body}</p>
+                <h2 className="text-base font-bold text-ink mb-2">{s.heading}</h2>
+                <p className="text-body text-sm leading-relaxed">{s.body}</p>
               </div>
             ))}
           </div>
 
-          <div className="mt-12 pt-8 border-t border-white/10 text-center">
-            <Link to="/" className="text-sm text-[#0067B8] hover:underline">← Back to Social Dev Technologies</Link>
+          <div className="mt-12 pt-8 border-t border-border-soft text-center">
+            <Link to="/" className="text-sm text-brand hover:underline">← Back to Social Dev Technologies</Link>
           </div>
         </motion.div>
       </div>
