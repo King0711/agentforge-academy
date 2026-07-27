@@ -3,18 +3,20 @@ import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft, ChevronRight, Lock, Clock, CheckCircle2, Sparkles,
-  ListChecks, BookOpen, ExternalLink, Loader2, ArrowLeft, Circle, Wrench,
+  ListChecks, BookOpen, ExternalLink, Loader2, ArrowLeft, Circle, Wrench, Info,
 } from 'lucide-react';
 import { getAgentsByDifficulty, getBuilderPagePath } from '../data/agents';
 import { getDifficulty } from '../data/departments';
 import { getTechColor } from '../data/techStack';
 import { useCourseContent } from '../hooks/useCourseContent';
+import { useTheme } from '../context/ThemeContext';
 import XPBadge from '../components/XPBadge';
 import SessionGuide from '../components/SessionGuide';
 import NotFound from './NotFound';
 
 export default function BuilderSession({ progress, tier }) {
   const { slug } = useParams();
+  const { theme } = useTheme();
   const [showXpPop, setShowXpPop] = useState(false);
 
   const tierAgents = getAgentsByDifficulty(tier);
@@ -79,9 +81,13 @@ export default function BuilderSession({ progress, tier }) {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           className="rounded-2xl border-[1.5px] border-border-soft p-6 sm:p-8 mb-8"
-          style={{ background: 'linear-gradient(135deg, #F3EBFF, #FBFAFF)' }}
+          style={{
+            background: theme === 'dark'
+              ? 'linear-gradient(135deg, #181022, #181818)'
+              : 'linear-gradient(135deg, #F3EBFF, #FBFAFF)',
+          }}
         >
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-brand bg-white border border-brand/25 rounded-full px-3 py-1.5 mb-4">
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-brand bg-white dark:bg-[#181818] border border-brand/25 rounded-full px-3 py-1.5 mb-4">
             {difficulty.icon} {tier} · Session {index + 1} of {tierAgents.length}
           </span>
           <div className="flex items-start gap-4">
@@ -99,8 +105,13 @@ export default function BuilderSession({ progress, tier }) {
           </div>
         </motion.div>
 
+        <div className="flex items-start gap-2 text-[13px] text-brand bg-[#F3EBFF] dark:bg-brand/15 rounded-lg px-3.5 py-2.5 mb-8">
+          <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
+          You'll need your own paid Claude account (Claude Pro or higher) to follow along with this build — that's billed separately by Anthropic.
+        </div>
+
         {/* Mark complete */}
-        <div className="relative flex items-center justify-between gap-4 rounded-xl border border-border-soft bg-[#FAF8FF] px-5 py-4 mb-8">
+        <div className="relative flex items-center justify-between gap-4 rounded-xl border border-border-soft bg-[#FAF8FF] dark:bg-white/5 px-5 py-4 mb-8">
           <AnimatePresence>
             {showXpPop && (
               <motion.div
@@ -121,7 +132,7 @@ export default function BuilderSession({ progress, tier }) {
             onClick={handleComplete}
             className={`flex items-center gap-2 font-bold rounded-lg px-5 py-2.5 transition-all flex-shrink-0 ${
               completed
-                ? 'bg-[#EAFAF1] text-green border border-green/30 hover:bg-green/10'
+                ? 'bg-[#EAFAF1] dark:bg-green/10 text-green border border-green/30 hover:bg-green/10'
                 : 'bg-green text-white hover:brightness-95 shadow-lg shadow-green/20'
             }`}
           >
@@ -199,7 +210,7 @@ export default function BuilderSession({ progress, tier }) {
                   href={r.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between text-sm text-body-strong hover:text-ink bg-[#FAF8FF] hover:bg-[#F3EBFF] border border-border-soft rounded-lg px-3.5 py-2.5 transition-colors"
+                  className="flex items-center justify-between text-sm text-body-strong hover:text-ink bg-[#FAF8FF] dark:bg-white/5 hover:bg-[#F3EBFF] dark:hover:bg-brand/10 border border-border-soft rounded-lg px-3.5 py-2.5 transition-colors"
                 >
                   {r.title}
                   <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
@@ -215,7 +226,7 @@ export default function BuilderSession({ progress, tier }) {
             {prevAgent ? (
               <Link
                 to={getBuilderPagePath(prevAgent)}
-                className="flex items-center gap-2 bg-white border-[1.5px] border-border-soft hover:border-brand/40 rounded-xl pl-2.5 pr-4 py-2.5 transition-colors min-w-0"
+                className="flex items-center gap-2 bg-white dark:bg-[#181818] border-[1.5px] border-border-soft hover:border-brand/40 rounded-xl pl-2.5 pr-4 py-2.5 transition-colors min-w-0"
               >
                 <ChevronLeft className="w-4 h-4 text-brand flex-shrink-0" />
                 <span className="min-w-0">

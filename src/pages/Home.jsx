@@ -1,9 +1,13 @@
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Volume2, VolumeX, Play, Pause } from 'lucide-react';
 import AgentCard from '../components/AgentCard';
 import TestimonialsSection from '../components/TestimonialsSection';
 import { agents } from '../data/agents';
 import { departments, isVisibleToPublic } from '../data/departments';
 import { usePro } from '../hooks/usePro';
+import { useTheme } from '../context/ThemeContext';
 
 const TECH_MARQUEE = ['PYTHON', 'CLAUDE API', 'GMAIL API', 'SLACK', 'SUPABASE', 'NOTION'];
 
@@ -13,7 +17,7 @@ const publicAgents = agents.filter((a) => isVisibleToPublic(a.difficulty));
 
 const HOW_IT_WORKS = [
   { num: 1, bg: '#7C3AED', fg: '#fff', title: 'Pick a session', text: `${publicAgents.length} guided builds across Builder 1 and Builder 2. Each has a time estimate and clear outcomes.` },
-  { num: 2, bg: '#F5D90A', fg: '#1A1333', title: 'Paste into Claude', text: 'Every build ships ready-to-use prompts. No blank page — open Claude, paste, iterate.' },
+  { num: 2, bg: '#F5D90A', fg: '#1A1333', title: 'Paste into Claude', text: 'Every build ships ready-to-use prompts. No blank page — open Claude, paste, iterate. You\'ll need a paid Claude account (Claude Pro or higher) to complete the builds.' },
   { num: 3, bg: '#16A34A', fg: '#fff', title: 'Ship to portfolio', text: 'Each session ends with a write-up prompt: LinkedIn post, resume bullets, project blurb.' },
 ];
 
@@ -23,16 +27,44 @@ const realDepartments = departments.filter((d) => d.id !== 'all');
 
 export default function Home({ progress, onSelectAgent }) {
   const { hasBuilder1, hasBuilder2, isAdmin } = usePro();
+  const { theme } = useTheme();
   const navigate = useNavigate();
+  const videoRef = useRef(null);
+  const [isMuted, setIsMuted] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(true);
 
   const popularAgents = [...publicAgents].sort((a, b) => b.xp - a.xp).slice(0, 4);
+
+  // Toggle the actual DOM property via the ref rather than a React `muted`
+  // prop — browsers require the video to start with the `muted` attribute
+  // present for autoplay to be allowed, and re-binding that prop from React
+  // state after mount is unreliable across browsers. The ref is the only
+  // robust way to flip it afterward.
+  const toggleMute = () => {
+    if (!videoRef.current) return;
+    videoRef.current.muted = !videoRef.current.muted;
+    setIsMuted(videoRef.current.muted);
+  };
+
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current.play();
+    } else {
+      videoRef.current.pause();
+    }
+  };
 
   return (
     <div>
       {/* ── Hero ── */}
       <div
         className="relative overflow-hidden pt-14 pb-14 px-4 sm:px-6 lg:px-[5vw]"
-        style={{ background: 'radial-gradient(120% 100% at 85% 0%, #F3EBFF 0%, #FBFAFF 55%)' }}
+        style={{
+          background: theme === 'dark'
+            ? 'radial-gradient(120% 100% at 85% 0%, #181022 0%, #0A090F 55%)'
+            : 'radial-gradient(120% 100% at 85% 0%, #F3EBFF 0%, #FBFAFF 55%)',
+        }}
       >
         <div
           className="absolute top-10 right-[15%] w-[150px] h-[150px] bg-yellow opacity-50 animate-floaty pointer-events-none hidden sm:block"
@@ -45,7 +77,7 @@ export default function Home({ progress, onSelectAgent }) {
 
         <div className="relative max-w-6xl mx-auto grid lg:grid-cols-[1.05fr_.95fr] gap-11 items-center">
           <div>
-            <span className="inline-flex items-center gap-2 bg-white border-[1.5px] border-border text-brand font-bold text-[12.5px] px-4 py-2 rounded-full shadow-[0_3px_10px_rgba(124,58,237,.1)]">
+            <span className="inline-flex items-center gap-2 bg-white dark:bg-[#181818] border-[1.5px] border-border text-brand font-bold text-[12.5px] px-4 py-2 rounded-full shadow-[0_3px_10px_rgba(124,58,237,.1)]">
               🚀 Learn by building real agents
             </span>
             <h1 className="font-display font-extrabold text-[40px] sm:text-[54px] leading-[1.04] text-ink tracking-[-1px] sm:tracking-[-1.5px] mt-5">
@@ -65,7 +97,7 @@ export default function Home({ progress, onSelectAgent }) {
               </Link>
               <Link
                 to="/catalog"
-                className="bg-white border-[1.5px] border-[#E0D6F5] text-body-strong font-bold text-base px-6.5 py-[15px] rounded-2xl hover:bg-[#FAF8FF] transition-colors"
+                className="bg-white dark:bg-[#181818] border-[1.5px] border-[#E0D6F5] dark:border-[#353539] text-body-strong font-bold text-base px-6.5 py-[15px] rounded-2xl hover:bg-[#FAF8FF] dark:hover:bg-white/5 transition-colors"
               >
                 Browse catalog
               </Link>
@@ -73,26 +105,67 @@ export default function Home({ progress, onSelectAgent }) {
           </div>
 
           <div className="relative hidden sm:block">
-            <div className="ph h-[320px] rounded-[22px] shadow-[0_24px_50px_-18px_rgba(80,40,160,.4)]">
-              learner building at laptop<br />(hero photo, 620×700)
-            </div>
-            <div className="absolute -top-4.5 -left-6 bg-white rounded-2xl px-4 py-3 shadow-[0_12px_26px_rgba(80,40,160,.22)] animate-floaty2 flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-[10px] bg-[#ECFDF5] flex items-center justify-center text-lg">✅</div>
-              <div>
-                <div className="font-display font-extrabold text-sm text-ink">Agent shipped!</div>
-                <div className="text-[11.5px] text-green font-bold">+300 XP earned</div>
+            <div className="relative h-[320px] rounded-[22px] overflow-hidden shadow-[0_24px_50px_-18px_rgba(80,40,160,.4)] bg-[#1A1333]">
+              <video
+                ref={videoRef}
+                className="w-full h-full object-cover"
+                src="/hero-video.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="auto"
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+              />
+              <div className="absolute bottom-3 left-3 z-10 flex items-center gap-2">
+                <button
+                  onClick={togglePlay}
+                  aria-label={isPlaying ? 'Pause video' : 'Play video'}
+                  className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/80 transition-colors"
+                >
+                  {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                </button>
+                <button
+                  onClick={toggleMute}
+                  aria-label={isMuted ? 'Unmute video' : 'Mute video'}
+                  className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/80 transition-colors"
+                >
+                  {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                </button>
               </div>
             </div>
-            <div className="absolute -bottom-4 -right-4.5 bg-brand text-white rounded-2xl px-4 py-3 shadow-[0_12px_26px_rgba(124,58,237,.4)] animate-floaty" style={{ animationDelay: '.8s' }}>
-              <div className="text-[11px] opacity-85 font-semibold">Your level</div>
-              <div className="font-display font-extrabold text-base">🔨 Builder</div>
-            </div>
+            <motion.div
+              className="absolute -top-4.5 -left-6"
+              initial={{ opacity: 0, x: -50, y: -20 }}
+              animate={{ opacity: 1, x: 0, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.9, ease: 'easeOut' }}
+            >
+              <div className="bg-white rounded-2xl px-4 py-3 shadow-[0_12px_26px_rgba(80,40,160,.22)] animate-floaty2 flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-[10px] bg-[#ECFDF5] flex items-center justify-center text-lg">✅</div>
+                <div>
+                  <div className="font-display font-extrabold text-sm text-ink">Agent shipped!</div>
+                  <div className="text-[11.5px] text-green font-bold">+300 XP earned</div>
+                </div>
+              </div>
+            </motion.div>
+            <motion.div
+              className="absolute -bottom-4 -right-4.5"
+              initial={{ opacity: 0, x: 50, y: 20 }}
+              animate={{ opacity: 1, x: 0, y: 0 }}
+              transition={{ duration: 0.7, delay: 1.3, ease: 'easeOut' }}
+            >
+              <div className="bg-brand text-white rounded-2xl px-4 py-3 shadow-[0_12px_26px_rgba(124,58,237,.4)] animate-floaty" style={{ animationDelay: '.8s' }}>
+                <div className="text-[11px] opacity-85 font-semibold">Your level</div>
+                <div className="font-display font-extrabold text-base">🔨 Builder</div>
+              </div>
+            </motion.div>
           </div>
         </div>
       </div>
 
       {/* ── Tech marquee ── */}
-      <div className="bg-ink py-4 overflow-hidden whitespace-nowrap">
+      <div className="bg-[#1A1333] py-4 overflow-hidden whitespace-nowrap">
         <div className="inline-flex gap-[52px] animate-marquee font-bold text-sm text-white/55">
           {[...TECH_MARQUEE, ...TECH_MARQUEE].map((t, i) => (
             <span key={i} className="flex gap-[52px]">
@@ -104,19 +177,19 @@ export default function Home({ progress, onSelectAgent }) {
 
       {/* ── Stats row ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 px-4 sm:px-6 lg:px-[5vw] py-10 max-w-6xl mx-auto">
-        <div className="bg-[#F3EBFF] rounded-[18px] px-5 py-5.5 text-center">
+        <div className="bg-[#F3EBFF] dark:bg-[#181818] rounded-[18px] px-5 py-5.5 text-center">
           <div className="font-display font-extrabold text-[34px] text-brand">{publicAgents.length}</div>
           <div className="text-[13px] text-body font-semibold mt-0.5">AI Agents</div>
         </div>
-        <div className="bg-[#FEF9E7] rounded-[18px] px-5 py-5.5 text-center">
+        <div className="bg-[#FEF9E7] dark:bg-[#181818] rounded-[18px] px-5 py-5.5 text-center">
           <div className="font-display font-extrabold text-[34px] text-[#D9A406]">{realDepartments.length}</div>
           <div className="text-[13px] text-body font-semibold mt-0.5">Departments</div>
         </div>
-        <div className="bg-[#EAFAF1] rounded-[18px] px-5 py-5.5 text-center">
+        <div className="bg-[#EAFAF1] dark:bg-[#181818] rounded-[18px] px-5 py-5.5 text-center">
           <div className="font-display font-extrabold text-[34px] text-green">{Math.round(totalXP / 1000)}k+</div>
           <div className="text-[13px] text-body font-semibold mt-0.5">XP Available</div>
         </div>
-        <div className="bg-[#FDEEF4] rounded-[18px] px-5 py-5.5 text-center">
+        <div className="bg-[#FDEEF4] dark:bg-[#181818] rounded-[18px] px-5 py-5.5 text-center">
           <div className="font-display font-extrabold text-[34px] text-rose">{totalHours}+</div>
           <div className="text-[13px] text-body font-semibold mt-0.5">Hours of content</div>
         </div>
@@ -128,7 +201,7 @@ export default function Home({ progress, onSelectAgent }) {
         <p className="text-center text-body mt-2 mb-7">Three steps from zero to portfolio-ready agent</p>
         <div className="grid sm:grid-cols-3 gap-5">
           {HOW_IT_WORKS.map((step) => (
-            <div key={step.num} className="bg-white border-[1.5px] border-border-soft rounded-[20px] p-6.5">
+            <div key={step.num} className="bg-white dark:bg-[#181818] border-[1.5px] border-border-soft rounded-[20px] p-6.5">
               <div
                 className="w-12 h-12 rounded-[14px] font-display font-extrabold text-xl flex items-center justify-center shadow-[0_8px_18px_rgba(124,58,237,.35)]"
                 style={{ background: step.bg, color: step.fg }}

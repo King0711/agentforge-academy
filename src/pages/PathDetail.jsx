@@ -41,7 +41,7 @@ export default function PathDetail({ progress }) {
               <Link
                 key={level.id}
                 to={`/catalog?difficulty=${encodeURIComponent(level.id)}`}
-                className="rounded-2xl border-[1.5px] bg-white hover:bg-[#FAF8FF] transition-colors p-5 flex flex-col gap-4"
+                className="rounded-2xl border-[1.5px] bg-white dark:bg-[#181818] hover:bg-[#FAF8FF] dark:hover:bg-white/5 transition-colors p-5 flex flex-col gap-4"
                 style={{ borderColor: `${level.color}40` }}
               >
                 <div className="flex items-center justify-between">
@@ -76,7 +76,7 @@ export default function PathDetail({ progress }) {
               <Link
                 key={dept.id}
                 to={`/catalog?department=${dept.id}`}
-                className="rounded-2xl border-[1.5px] border-border-soft bg-white hover:bg-[#FAF8FF] transition-colors p-5 flex flex-col gap-3"
+                className="rounded-2xl border-[1.5px] border-border-soft bg-white dark:bg-[#181818] hover:bg-[#FAF8FF] dark:hover:bg-white/5 transition-colors p-5 flex flex-col gap-3"
               >
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-2 font-bold text-ink">

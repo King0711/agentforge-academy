@@ -6,6 +6,7 @@ import {
   Trophy, Flame, Rocket, AlertCircle, KeyRound,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { setRememberMe } from '../lib/supabaseClient';
 import { agents } from '../data/agents';
 import { isVisibleToPublic } from '../data/departments';
@@ -31,6 +32,7 @@ function GoogleIcon() {
 
 export default function Welcome() {
   const { signUp, signIn, sendLoginCode, verifyLoginCode, signInWithGoogle, isConfigured, user } = useAuth();
+  const { theme } = useTheme();
   const navigate = useNavigate();
 
   const [mode, setMode] = useState('signup');
@@ -151,7 +153,11 @@ export default function Welcome() {
   return (
     <div
       className="relative overflow-hidden min-h-[calc(100vh-4rem)]"
-      style={{ background: 'radial-gradient(120% 100% at 85% 0%, #F3EBFF 0%, #FBFAFF 55%)' }}
+      style={{
+        background: theme === 'dark'
+          ? 'radial-gradient(120% 100% at 85% 0%, #181022 0%, #0A090F 55%)'
+          : 'radial-gradient(120% 100% at 85% 0%, #F3EBFF 0%, #FBFAFF 55%)',
+      }}
     >
       <div
         className="absolute top-10 right-[15%] w-[150px] h-[150px] bg-yellow opacity-40 animate-floaty pointer-events-none hidden sm:block"
@@ -181,7 +187,7 @@ export default function Welcome() {
           <div className="space-y-6">
             {highlights.map((h) => (
               <div key={h.title} className="flex items-start gap-4">
-                <div className="w-11 h-11 rounded-xl bg-white border border-border-soft flex items-center justify-center flex-shrink-0">
+                <div className="w-11 h-11 rounded-xl bg-white dark:bg-[#181818] border border-border-soft flex items-center justify-center flex-shrink-0">
                   <h.icon className="w-5 h-5 text-brand" />
                 </div>
                 <div>
@@ -197,10 +203,10 @@ export default function Welcome() {
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="rounded-[22px] border-[1.5px] border-border-soft bg-white shadow-[0_20px_44px_-16px_rgba(124,58,237,.18)] p-6 sm:p-8"
+          className="rounded-[22px] border-[1.5px] border-border-soft bg-white dark:bg-[#181818] shadow-[0_20px_44px_-16px_rgba(124,58,237,.18)] p-6 sm:p-8"
         >
           {!isConfigured && (
-            <div className="mb-6 flex items-start gap-2 text-sm text-amber-700 bg-[#FEF9E7] border border-amber/30 rounded-lg px-3 py-2.5">
+            <div className="mb-6 flex items-start gap-2 text-sm text-amber-700 dark:text-amber-400 bg-[#FEF9E7] dark:bg-amber-500/10 border border-amber/30 rounded-lg px-3 py-2.5">
               <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
               <span>
                 Accounts aren't configured yet. Add <code className="font-mono">VITE_SUPABASE_URL</code> and{' '}
@@ -210,7 +216,7 @@ export default function Welcome() {
           )}
 
           {/* Mode tabs */}
-          <div className="grid grid-cols-2 gap-2 mb-6 p-1 rounded-lg bg-[#FAF8FF] border border-border-soft">
+          <div className="grid grid-cols-2 gap-2 mb-6 p-1 rounded-lg bg-[#FAF8FF] dark:bg-[#0A090F] border border-border-soft">
             <button
               onClick={() => { setMode('signup'); resetAuxState(); }}
               className={`py-2.5 rounded-md text-sm font-bold transition-colors ${mode === 'signup' ? 'bg-brand text-white' : 'text-body-strong hover:text-ink'}`}
@@ -227,7 +233,7 @@ export default function Welcome() {
 
           {confirmSent ? (
             <div className="text-center py-8">
-              <div className="w-14 h-14 rounded-full bg-[#EAFAF1] border border-green/30 flex items-center justify-center mx-auto mb-4">
+              <div className="w-14 h-14 rounded-full bg-[#EAFAF1] dark:bg-green/10 border border-green/30 flex items-center justify-center mx-auto mb-4">
                 <Mail className="w-6 h-6 text-green" />
               </div>
               <h3 className="font-display text-xl font-bold text-ink mb-2">Check your inbox</h3>
@@ -242,7 +248,7 @@ export default function Welcome() {
               <button
                 onClick={handleGoogleSignIn}
                 disabled={googleLoading || !isConfigured}
-                className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-body-strong border-[1.5px] border-border font-bold rounded-lg px-5 py-3 transition-colors mb-5"
+                className="w-full flex items-center justify-center gap-3 bg-white dark:bg-[#181818] hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed text-body-strong border-[1.5px] border-border font-bold rounded-lg px-5 py-3 transition-colors mb-5"
               >
                 {googleLoading ? <Loader2 className="w-5 h-5 animate-spin text-gray-500" /> : <GoogleIcon />}
                 {googleLoading ? 'Redirecting to Google…' : 'Continue with Google'}
@@ -268,7 +274,7 @@ export default function Welcome() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="you@example.com"
-                        className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-border text-sm text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand disabled:bg-[#FAF8FF] disabled:text-body"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white dark:bg-[#0A090F] border border-border dark:border-[#353539] text-sm text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand disabled:bg-[#FAF8FF] dark:disabled:bg-white/5 disabled:text-body"
                       />
                     </div>
                   </div>
@@ -296,7 +302,7 @@ export default function Welcome() {
                             value={code}
                             onChange={(e) => setCode(e.target.value)}
                             placeholder="123456"
-                            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-border text-sm text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand tracking-widest"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white dark:bg-[#0A090F] border border-border dark:border-[#353539] text-sm text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand tracking-widest"
                           />
                         </div>
                         <p className="text-xs text-gray-400 mt-1.5">
@@ -321,7 +327,7 @@ export default function Welcome() {
                   )}
 
                   {error && (
-                    <div className="flex items-start gap-2 text-sm text-rose bg-[#FDEEF4] border border-rose/20 rounded-lg px-3 py-2.5">
+                    <div className="flex items-start gap-2 text-sm text-rose bg-[#FDEEF4] dark:bg-rose/10 border border-rose/20 rounded-lg px-3 py-2.5">
                       <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                       {error}
                     </div>
@@ -345,7 +351,7 @@ export default function Welcome() {
                           value={name}
                           onChange={(e) => setName(e.target.value)}
                           placeholder="Your name"
-                          className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-border text-sm text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
+                          className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white dark:bg-[#0A090F] border border-border dark:border-[#353539] text-sm text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
                         />
                       </div>
                     </div>
@@ -361,7 +367,7 @@ export default function Welcome() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="you@example.com"
-                        className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-border text-sm text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white dark:bg-[#0A090F] border border-border dark:border-[#353539] text-sm text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
                       />
                     </div>
                   </div>
@@ -377,7 +383,7 @@ export default function Welcome() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="At least 6 characters"
-                        className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-border text-sm text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white dark:bg-[#0A090F] border border-border dark:border-[#353539] text-sm text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
                       />
                     </div>
                   </div>
@@ -390,7 +396,7 @@ export default function Welcome() {
                   )}
 
                   {error && (
-                    <div className="flex items-start gap-2 text-sm text-rose bg-[#FDEEF4] border border-rose/20 rounded-lg px-3 py-2.5">
+                    <div className="flex items-start gap-2 text-sm text-rose bg-[#FDEEF4] dark:bg-rose/10 border border-rose/20 rounded-lg px-3 py-2.5">
                       <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                       {error}
                     </div>

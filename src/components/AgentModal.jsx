@@ -46,14 +46,14 @@ export default function AgentModal({ agent, completed, onToggleComplete, onClose
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-ink/55 backdrop-blur-sm p-0 sm:p-4"
+        className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-[#1A1333]/55 backdrop-blur-sm p-0 sm:p-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
       >
         <motion.div
-          className="relative w-full sm:max-w-4xl h-full sm:h-[90vh] sm:rounded-2xl overflow-hidden bg-white border border-border-soft flex flex-col"
+          className="relative w-full sm:max-w-4xl h-full sm:h-[90vh] sm:rounded-2xl overflow-hidden bg-white dark:bg-[#181818] border border-border-soft flex flex-col"
           initial={{ opacity: 0, y: 40, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 40, scale: 0.97 }}
@@ -67,7 +67,7 @@ export default function AgentModal({ agent, completed, onToggleComplete, onClose
           >
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-lg bg-white hover:bg-[#F3EBFF] text-brand transition-colors"
+              className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-lg bg-white dark:bg-[#0A090F] hover:bg-[#F3EBFF] dark:hover:bg-brand/15 text-brand transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -95,7 +95,7 @@ export default function AgentModal({ agent, completed, onToggleComplete, onClose
 
           {/* Tab bar — only shown when a video exists */}
           {agent.videoId && (
-            <div className="flex border-b border-border-soft px-6 sm:px-8 bg-[#FAF8FF]">
+            <div className="flex border-b border-border-soft px-6 sm:px-8 bg-[#FAF8FF] dark:bg-white/5">
               <button
                 onClick={() => setActiveTab('guide')}
                 className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${
@@ -221,7 +221,7 @@ export default function AgentModal({ agent, completed, onToggleComplete, onClose
                       href={r.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-between text-sm text-body-strong hover:text-ink bg-[#FAF8FF] hover:bg-[#F3EBFF] border border-border-soft rounded-lg px-3.5 py-2.5 transition-colors"
+                      className="flex items-center justify-between text-sm text-body-strong hover:text-ink bg-[#FAF8FF] dark:bg-white/5 hover:bg-[#F3EBFF] dark:hover:bg-brand/10 border border-border-soft rounded-lg px-3.5 py-2.5 transition-colors"
                     >
                       {r.title}
                       <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
@@ -238,7 +238,7 @@ export default function AgentModal({ agent, completed, onToggleComplete, onClose
                 {getBuilderPagePath(next) ? (
                   <Link
                     to={getBuilderPagePath(next)}
-                    className="w-full flex items-center gap-4 text-left bg-[#FAF8FF] hover:bg-[#F3EBFF] border border-border-soft rounded-xl p-4 transition-colors"
+                    className="w-full flex items-center gap-4 text-left bg-[#FAF8FF] dark:bg-white/5 hover:bg-[#F3EBFF] dark:hover:bg-brand/10 border border-border-soft rounded-xl p-4 transition-colors"
                   >
                     <div className="text-3xl">{next.emoji}</div>
                     <div className="flex-1 min-w-0">
@@ -251,7 +251,7 @@ export default function AgentModal({ agent, completed, onToggleComplete, onClose
                 ) : (
                   <button
                     onClick={() => onSelectAgent(next)}
-                    className="w-full flex items-center gap-4 text-left bg-[#FAF8FF] hover:bg-[#F3EBFF] border border-border-soft rounded-xl p-4 transition-colors"
+                    className="w-full flex items-center gap-4 text-left bg-[#FAF8FF] dark:bg-white/5 hover:bg-[#F3EBFF] dark:hover:bg-brand/10 border border-border-soft rounded-xl p-4 transition-colors"
                   >
                     <div className="text-3xl">{next.emoji}</div>
                     <div className="flex-1 min-w-0">
@@ -267,7 +267,7 @@ export default function AgentModal({ agent, completed, onToggleComplete, onClose
           </div>
 
           {/* Footer / mark complete */}
-          <div className="relative border-t border-border-soft px-6 sm:px-8 py-4 bg-[#FAF8FF] flex items-center justify-between gap-4">
+          <div className="relative border-t border-border-soft px-6 sm:px-8 py-4 bg-[#FAF8FF] dark:bg-white/5 flex items-center justify-between gap-4">
             <AnimatePresence>
               {showXpPop && (
                 <motion.div
@@ -289,7 +289,7 @@ export default function AgentModal({ agent, completed, onToggleComplete, onClose
               onClick={handleComplete}
               className={`flex items-center gap-2 font-bold rounded-lg px-5 py-3 transition-all w-full sm:w-auto justify-center ${
                 completed
-                  ? 'bg-[#EAFAF1] text-green border border-green/30 hover:bg-green/10'
+                  ? 'bg-[#EAFAF1] dark:bg-green/10 text-green border border-green/30 hover:bg-green/10'
                   : 'bg-green text-white hover:brightness-95 shadow-lg shadow-green/20'
               }`}
             >

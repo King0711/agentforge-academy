@@ -6,14 +6,14 @@ export default function SessionGuide({ session, troubleshooting }) {
   return (
     <div className="space-y-8">
       {/* Session header */}
-      <div className="rounded-xl border border-brand/25 bg-[#F3EBFF] p-4 flex flex-wrap gap-3">
+      <div className="rounded-xl border border-brand/25 bg-[#F3EBFF] dark:bg-brand/10 p-4 flex flex-wrap gap-3">
         <Badge icon={Clock} label={`${session.totalTime} total`} />
         <Badge icon={Layers} label={`${session.buildCount} builds`} />
         <Badge icon={Bot} label={session.model} />
       </div>
 
       {/* By the end of this session — highlighted deliverables box */}
-      <section className="rounded-xl border-[1.5px] border-green/25 bg-[#EAFAF1] p-5">
+      <section className="rounded-xl border-[1.5px] border-green/25 bg-[#EAFAF1] dark:bg-green/10 p-5">
         <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-green mb-3">
           <Sparkles className="w-4 h-4" /> By the end of this session
         </p>
@@ -53,7 +53,7 @@ export default function SessionGuide({ session, troubleshooting }) {
           <SectionTitle icon={Wrench} title="Troubleshooting" />
           <div className="space-y-2.5">
             {troubleshooting.map((t) => (
-              <div key={t.issue} className="flex gap-2.5 items-start text-sm bg-[#FEF9E7] border border-amber/25 rounded-lg px-3.5 py-3">
+              <div key={t.issue} className="flex gap-2.5 items-start text-sm bg-[#FEF9E7] dark:bg-amber-500/10 border border-amber/25 rounded-lg px-3.5 py-3">
                 <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="font-bold text-ink">{t.issue}</p>
@@ -67,7 +67,7 @@ export default function SessionGuide({ session, troubleshooting }) {
 
       {/* Portfolio tie-in */}
       {session.portfolio && (
-        <section id="portfolio" className="rounded-xl border border-amber/25 bg-[#FEF9E7] p-4">
+        <section id="portfolio" className="rounded-xl border border-amber/25 bg-[#FEF9E7] dark:bg-amber-500/10 p-4">
           <SectionTitle icon={Award} title="Add this to your portfolio" />
           <p className="text-sm text-body leading-relaxed">{session.portfolio}</p>
           {session.portfolioPrompt && <PortfolioPromptDropdown prompt={session.portfolioPrompt} />}
@@ -99,8 +99,8 @@ function PortfolioPromptDropdown({ prompt }) {
 
 function BuildCard({ build }) {
   return (
-    <div id={`build-${build.number}`} className="rounded-xl border border-border-soft bg-white overflow-hidden scroll-mt-24">
-      <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b border-border-soft bg-[#FAF8FF]">
+    <div id={`build-${build.number}`} className="rounded-xl border border-border-soft bg-white dark:bg-[#181818] overflow-hidden scroll-mt-24">
+      <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b border-border-soft bg-[#FAF8FF] dark:bg-white/5">
         <h4 className="font-bold text-ink text-sm sm:text-base">
           Build {build.number} · {build.title}
         </h4>
@@ -121,7 +121,7 @@ function BuildCard({ build }) {
             </p>
             {step.prompt && <PromptBox text={step.prompt} />}
             {step.verify && (
-              <div className="flex gap-2 items-start text-sm text-green bg-[#EAFAF1] border border-green/20 rounded-lg px-3 py-2">
+              <div className="flex gap-2 items-start text-sm text-green bg-[#EAFAF1] dark:bg-green/10 border border-green/20 rounded-lg px-3 py-2">
                 <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <span><span className="font-bold">Check your work: </span>{step.verify}</span>
               </div>
@@ -130,7 +130,7 @@ function BuildCard({ build }) {
         ))}
 
         {build.goFurther && (
-          <div className="flex gap-2 items-start text-sm text-brand bg-[#F3EBFF] border border-brand/20 rounded-lg px-3 py-2">
+          <div className="flex gap-2 items-start text-sm text-brand bg-[#F3EBFF] dark:bg-brand/10 border border-brand/20 rounded-lg px-3 py-2">
             <Compass className="w-4 h-4 mt-0.5 flex-shrink-0" />
             <span><span className="font-bold">Go further: </span>{build.goFurther}</span>
           </div>
@@ -142,7 +142,7 @@ function BuildCard({ build }) {
 
 function Badge({ icon: Icon, label }) {
   return (
-    <span className="flex items-center gap-1.5 text-xs font-bold text-brand bg-white border border-brand/25 rounded-full px-3 py-1.5">
+    <span className="flex items-center gap-1.5 text-xs font-bold text-brand bg-white dark:bg-[#181818] border border-brand/25 rounded-full px-3 py-1.5">
       <Icon className="w-3.5 h-3.5" />
       {label}
     </span>

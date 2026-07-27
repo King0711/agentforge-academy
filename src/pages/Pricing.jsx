@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CheckCircle2, AlertCircle, Tag, Loader2, Zap, CalendarDays } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Tag, Loader2, Zap, CalendarDays, Info } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { usePro } from '../hooks/usePro';
 import { useCohortSchedule } from '../hooks/useCohortSchedule';
 import { supabase } from '../lib/supabaseClient';
@@ -53,6 +54,7 @@ function formatCohortDate(dateStr) {
 
 export default function Pricing() {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const { hasBuilder1, hasBuilder2, isPro } = usePro();
   const { builder1: builder1CohortDate, builder2: builder2CohortDate } = useCohortSchedule();
   const navigate = useNavigate();
@@ -115,7 +117,7 @@ export default function Pricing() {
 
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mb-12">
-        <span className="inline-flex items-center gap-2 text-[13px] font-bold px-4 py-1.5 rounded-full bg-[#F3EBFF] text-brand">
+        <span className="inline-flex items-center gap-2 text-[13px] font-bold px-4 py-1.5 rounded-full bg-[#F3EBFF] dark:bg-brand/15 text-brand">
           Simple, one-time pricing
         </span>
         <h1 className="font-display font-extrabold text-[32px] sm:text-[42px] leading-[1.1] text-ink tracking-[-1px] mt-4 mb-2.5">
@@ -124,10 +126,14 @@ export default function Pricing() {
         <p className="text-body text-base max-w-xl mx-auto">
           Pay once, build for 6 months. Start with Builder 1, move on to Builder 2, or get both bundled as Pro.
         </p>
+        <div className="inline-flex items-center gap-2 text-[13px] font-semibold text-brand bg-[#F3EBFF] dark:bg-brand/15 rounded-full px-4 py-2 mt-4">
+          <Info className="w-4 h-4 flex-shrink-0" />
+          You'll need your own paid Claude account (Claude Pro or higher) to complete the builds — that's billed separately by Anthropic.
+        </div>
       </motion.div>
 
       {checkoutError && (
-        <div className="max-w-md mx-auto mb-6 flex items-start gap-2 text-sm text-rose bg-[#FDEEF4] border border-rose/20 rounded-lg px-3 py-2.5 text-left">
+        <div className="max-w-md mx-auto mb-6 flex items-start gap-2 text-sm text-rose bg-[#FDEEF4] dark:bg-rose/10 border border-rose/20 rounded-lg px-3 py-2.5 text-left">
           <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
           {checkoutError}
         </div>
@@ -141,7 +147,7 @@ export default function Pricing() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="rounded-[22px] border-[1.5px] border-border-soft bg-white p-7.5 flex flex-col"
+          className="rounded-[22px] border-[1.5px] border-border-soft bg-white dark:bg-[#181818] p-7.5 flex flex-col"
         >
           <div className="font-extrabold text-ink text-lg">🌱 Builder 1</div>
           <div className="flex items-baseline gap-2.5 mt-2.5 mb-0.5">
@@ -149,11 +155,11 @@ export default function Pricing() {
             <span className="font-display font-extrabold text-[34px] text-ink">₦{BUILDER_PRICE.toLocaleString()}</span>
           </div>
           <div className="flex flex-wrap gap-1.5 mb-3.5">
-            <span className="inline-flex items-center gap-1 bg-[#EAFAF1] text-green font-extrabold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
+            <span className="inline-flex items-center gap-1 bg-[#EAFAF1] dark:bg-green/10 text-green font-extrabold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
               <Tag className="w-3 h-3" /> Save ₦{BUILDER_SAVINGS.toLocaleString()} · 50% off
             </span>
             {builder1Cohort && (
-              <span className="inline-flex items-center gap-1 bg-[#F3EBFF] text-brand font-bold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
+              <span className="inline-flex items-center gap-1 bg-[#F3EBFF] dark:bg-brand/15 text-brand font-bold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
                 <CalendarDays className="w-3 h-3" /> Cohort starts {builder1Cohort}
               </span>
             )}
@@ -168,7 +174,7 @@ export default function Pricing() {
             ))}
           </ul>
           {hasBuilder1 ? (
-            <div className="rounded-xl bg-[#EAFAF1] border border-green/30 px-4 py-3 text-center text-sm font-bold text-green">
+            <div className="rounded-xl bg-[#EAFAF1] dark:bg-green/10 border border-green/30 px-4 py-3 text-center text-sm font-bold text-green">
               You already have Builder 1
             </div>
           ) : (
@@ -191,7 +197,7 @@ export default function Pricing() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="rounded-[22px] border-[1.5px] border-border-soft bg-white p-7.5 flex flex-col"
+          className="rounded-[22px] border-[1.5px] border-border-soft bg-white dark:bg-[#181818] p-7.5 flex flex-col"
         >
           <div className="font-extrabold text-ink text-lg">⚡ Builder 2</div>
           <div className="flex items-baseline gap-2.5 mt-2.5 mb-0.5">
@@ -199,11 +205,11 @@ export default function Pricing() {
             <span className="font-display font-extrabold text-[34px] text-ink">₦{BUILDER_PRICE.toLocaleString()}</span>
           </div>
           <div className="flex flex-wrap gap-1.5 mb-3.5">
-            <span className="inline-flex items-center gap-1 bg-[#EAFAF1] text-green font-extrabold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
+            <span className="inline-flex items-center gap-1 bg-[#EAFAF1] dark:bg-green/10 text-green font-extrabold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
               <Tag className="w-3 h-3" /> Save ₦{BUILDER_SAVINGS.toLocaleString()} · 50% off
             </span>
             {builder2Cohort && (
-              <span className="inline-flex items-center gap-1 bg-[#F3EBFF] text-brand font-bold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
+              <span className="inline-flex items-center gap-1 bg-[#F3EBFF] dark:bg-brand/15 text-brand font-bold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
                 <CalendarDays className="w-3 h-3" /> Cohort starts {builder2Cohort}
               </span>
             )}
@@ -218,7 +224,7 @@ export default function Pricing() {
             ))}
           </ul>
           {hasBuilder2 ? (
-            <div className="rounded-xl bg-[#EAFAF1] border border-green/30 px-4 py-3 text-center text-sm font-bold text-green">
+            <div className="rounded-xl bg-[#EAFAF1] dark:bg-green/10 border border-green/30 px-4 py-3 text-center text-sm font-bold text-green">
               You already have Builder 2
             </div>
           ) : (
@@ -242,7 +248,7 @@ export default function Pricing() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
           className="rounded-[22px] border-[2.5px] border-brand p-7.5 flex flex-col relative"
-          style={{ background: 'linear-gradient(180deg, #FAF7FF, #FFF)' }}
+          style={{ background: theme === 'dark' ? 'linear-gradient(180deg, #181022, #181818)' : 'linear-gradient(180deg, #FAF7FF, #FFF)' }}
         >
           <span className="absolute -top-3.5 right-6 bg-brand text-white text-[11px] font-extrabold px-3.5 py-1.5 rounded-full">
             BEST VALUE
@@ -265,7 +271,7 @@ export default function Pricing() {
             ))}
           </ul>
           {isPro ? (
-            <div className="rounded-xl bg-[#EAFAF1] border border-green/30 px-4 py-3 text-center text-sm font-bold text-green">
+            <div className="rounded-xl bg-[#EAFAF1] dark:bg-green/10 border border-green/30 px-4 py-3 text-center text-sm font-bold text-green">
               You're on Pro — enjoy full access!
             </div>
           ) : (

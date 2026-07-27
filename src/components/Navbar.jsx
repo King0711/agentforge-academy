@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Shield, Zap, Award } from 'lucide-react';
+import { Menu, X, Shield, Zap, Award, Sun, Moon } from 'lucide-react';
 import SearchBar from './SearchBar';
 import { useAuth } from '../context/AuthContext';
 import { usePro } from '../hooks/usePro';
+import { useTheme } from '../context/ThemeContext';
 
 const links = [
   { to: '/', label: 'Home' },
@@ -21,6 +22,7 @@ export default function Navbar() {
   const [searchParams] = useSearchParams();
   const { user, signOut } = useAuth();
   const { isPro, isAdmin } = usePro();
+  const { theme, toggleTheme } = useTheme();
 
   const handleSignOut = async () => {
     await signOut();
@@ -42,7 +44,7 @@ export default function Navbar() {
   const initial = displayName.charAt(0).toUpperCase();
 
   return (
-    <header className="sticky top-0 z-40 bg-[#FFFDFF] border-b border-[#EFE9FB]">
+    <header className="sticky top-0 z-40 bg-[#FFFDFF] dark:bg-[#0A090F] border-b border-[#EFE9FB] dark:border-[#232228]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[70px] flex items-center gap-4">
         <Link to="/" className="flex items-center gap-2.5 flex-shrink-0">
           <img src="/logo.jpeg" alt="Social Dev Technologies" className="w-9 h-9 sm:w-10 sm:h-10 object-contain rounded-lg" />
@@ -51,7 +53,7 @@ export default function Navbar() {
           </span>
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-6 ml-6 font-semibold text-[14.5px] text-[#4A4463] flex-shrink-0">
+        <nav className="hidden lg:flex items-center gap-6 ml-6 font-semibold text-[14.5px] text-[#4A4463] dark:text-[#B7AFC9] flex-shrink-0">
           {links.map((link) => (
             <NavLink
               key={link.to}
@@ -69,17 +71,24 @@ export default function Navbar() {
         </div>
 
         <div className="hidden lg:flex items-center gap-4 ml-auto flex-shrink-0">
+          <button
+            onClick={toggleTheme}
+            aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+            className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#F3EBFF] dark:bg-white/10 text-brand flex-shrink-0 transition-colors"
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
           {user ? (
             <>
               <NavLink
                 to="/dashboard"
-                className={({ isActive }) => `font-semibold text-[14.5px] whitespace-nowrap transition-colors ${isActive ? 'text-brand' : 'text-[#4A4463] hover:text-ink'}`}
+                className={({ isActive }) => `font-semibold text-[14.5px] whitespace-nowrap transition-colors ${isActive ? 'text-brand' : 'text-[#4A4463] dark:text-[#B7AFC9] hover:text-ink'}`}
               >
                 My Dashboard
               </NavLink>
               <NavLink
                 to="/certificates"
-                className={({ isActive }) => `flex items-center gap-1 font-semibold text-[14.5px] whitespace-nowrap transition-colors ${isActive ? 'text-brand' : 'text-[#4A4463] hover:text-ink'}`}
+                className={({ isActive }) => `flex items-center gap-1 font-semibold text-[14.5px] whitespace-nowrap transition-colors ${isActive ? 'text-brand' : 'text-[#4A4463] dark:text-[#B7AFC9] hover:text-ink'}`}
               >
                 <Award className="w-3.5 h-3.5" /> Certificates
               </NavLink>
@@ -99,7 +108,7 @@ export default function Navbar() {
                 </div>
                 <span className="font-bold text-ink text-sm whitespace-nowrap max-w-[140px] truncate">{displayName}</span>
                 {isAdmin ? (
-                  <span className="flex items-center gap-0.5 text-[10px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                  <span className="flex items-center gap-0.5 text-[10px] font-bold bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                     <Shield className="w-2.5 h-2.5" /> ADMIN
                   </span>
                 ) : isPro ? (
@@ -129,7 +138,7 @@ export default function Navbar() {
 
         <button
           onClick={() => setOpen((o) => !o)}
-          className="lg:hidden ml-auto w-9 h-9 flex items-center justify-center rounded-lg bg-[#F3EBFF] text-brand flex-shrink-0"
+          className="lg:hidden ml-auto w-9 h-9 flex items-center justify-center rounded-lg bg-[#F3EBFF] dark:bg-white/10 text-brand flex-shrink-0"
         >
           {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
@@ -141,9 +150,16 @@ export default function Navbar() {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="lg:hidden border-t border-[#EFE9FB] overflow-hidden bg-white"
+            className="lg:hidden border-t border-[#EFE9FB] dark:border-[#232228] overflow-hidden bg-white dark:bg-[#0A090F]"
           >
             <div className="px-4 py-4 flex flex-col gap-1">
+              <button
+                onClick={toggleTheme}
+                className="flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-sm font-semibold text-[#4A4463] dark:text-[#B7AFC9] hover:bg-[#FAF8FF] dark:hover:bg-white/5 mb-1"
+              >
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                {theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+              </button>
               <SearchBar value={value} onChange={handleChange} className="mb-2" />
               {links.map((link) => (
                 <NavLink
@@ -153,7 +169,7 @@ export default function Navbar() {
                   onClick={() => setOpen(false)}
                   className={({ isActive }) =>
                     `px-3.5 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-                      isActive ? 'text-brand bg-[#F3EBFF]' : 'text-[#4A4463] hover:bg-[#FAF8FF]'
+                      isActive ? 'text-brand bg-[#F3EBFF] dark:bg-white/10' : 'text-[#4A4463] dark:text-[#B7AFC9] hover:bg-[#FAF8FF] dark:hover:bg-white/5'
                     }`
                   }
                 >
@@ -161,13 +177,13 @@ export default function Navbar() {
                 </NavLink>
               ))}
 
-              <div className="border-t border-[#EFE9FB] mt-2 pt-3">
+              <div className="border-t border-[#EFE9FB] dark:border-[#232228] mt-2 pt-3">
                 {user ? (
                   <>
                     <NavLink
                       to="/dashboard"
                       onClick={() => setOpen(false)}
-                      className="flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-sm font-semibold text-[#4A4463] hover:bg-[#FAF8FF]"
+                      className="flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-sm font-semibold text-[#4A4463] dark:text-[#B7AFC9] hover:bg-[#FAF8FF] dark:hover:bg-white/5"
                     >
                       <div className="w-7 h-7 rounded-full bg-brand text-white flex items-center justify-center font-extrabold text-xs flex-shrink-0">
                         {initial}
@@ -182,7 +198,7 @@ export default function Navbar() {
                     <NavLink
                       to="/certificates"
                       onClick={() => setOpen(false)}
-                      className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-semibold text-[#4A4463] hover:bg-[#FAF8FF]"
+                      className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-semibold text-[#4A4463] dark:text-[#B7AFC9] hover:bg-[#FAF8FF] dark:hover:bg-white/5"
                     >
                       <Award className="w-4 h-4" /> Certificates
                     </NavLink>
@@ -197,7 +213,7 @@ export default function Navbar() {
                     )}
                     <button
                       onClick={() => { setOpen(false); handleSignOut(); }}
-                      className="w-full text-left px-3.5 py-2.5 rounded-lg text-sm font-semibold text-gray-500 hover:bg-[#FAF8FF]"
+                      className="w-full text-left px-3.5 py-2.5 rounded-lg text-sm font-semibold text-gray-500 hover:bg-[#FAF8FF] dark:hover:bg-white/5"
                     >
                       Log out
                     </button>

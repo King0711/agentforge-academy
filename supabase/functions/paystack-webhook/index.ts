@@ -82,6 +82,19 @@ serve(async (req) => {
     .maybeSingle();
   if (existing) return new Response('Already processed', { status: 200 });
 
+  // A real charge came through for this reference — mark the matching
+  // checkout_attempts row resolved so the abandoned-checkout reminder never
+  // emails someone who actually completed payment. Best-effort: this must
+  // never block granting the entitlement below.
+  try {
+    await supabase
+      .from('checkout_attempts')
+      .update({ resolved_at: new Date().toISOString() })
+      .eq('provider_reference', txId);
+  } catch (_err) {
+    // non-fatal — see comment above
+  }
+
   // Never trust event type or metadata alone — verify the amount matches a
   // real plan price before granting anything.
   const metadataPlan = payload.data?.metadata?.plan;

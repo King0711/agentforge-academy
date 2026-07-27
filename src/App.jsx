@@ -19,6 +19,7 @@ import VerifyCertificate from './pages/VerifyCertificate';
 import { useProgress } from './hooks/useProgress';
 import { useCertificateClaims } from './hooks/useCertificateClaims';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 function AppShell() {
   const { user } = useAuth();
@@ -65,9 +66,11 @@ function AppShell() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <AppShell />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppShell />
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

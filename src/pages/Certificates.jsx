@@ -63,7 +63,7 @@ function CertificateCard({ tier, cert, progress }) {
   const completedCount = tierAgents.filter((a) => progress.isCompleted(a.id)).length;
 
   return (
-    <div className="rounded-2xl border-[1.5px] border-border-soft bg-white p-6 flex flex-col">
+    <div className="rounded-2xl border-[1.5px] border-border-soft bg-white dark:bg-[#181818] p-6 flex flex-col">
       <div className="flex items-center gap-2 mb-4">
         <span className="text-2xl">{tier.icon}</span>
         <h2 className="font-display font-bold text-lg text-ink">{tier.label}</h2>
@@ -79,7 +79,7 @@ function CertificateCard({ tier, cert, progress }) {
           </p>
           <Link
             to={`/catalog?difficulty=${encodeURIComponent(tier.label)}`}
-            className="flex items-center justify-center gap-2 bg-[#FAF8FF] hover:bg-[#F3EBFF] border border-border-soft text-body-strong font-bold px-5 py-2.5 rounded-xl transition-colors"
+            className="flex items-center justify-center gap-2 bg-[#FAF8FF] dark:bg-white/5 hover:bg-[#F3EBFF] dark:hover:bg-brand/10 border border-border-soft text-body-strong font-bold px-5 py-2.5 rounded-xl transition-colors"
           >
             Continue building
           </Link>
@@ -125,7 +125,7 @@ function ProficiencyCard({ tier, cert, progress }) {
 function EarnedBlock({ cert }) {
   return (
     <div className="flex flex-col gap-4 flex-1">
-      <div className="rounded-xl bg-[#EAFAF1] border border-green/25 px-4 py-3">
+      <div className="rounded-xl bg-[#EAFAF1] dark:bg-green/10 border border-green/25 px-4 py-3">
         <p className="text-sm font-bold text-green">Certificate earned</p>
         <p className="text-xs text-body mt-0.5">
           Issued {new Date(cert.issued_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}

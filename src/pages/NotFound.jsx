@@ -17,7 +17,7 @@ export default function NotFound() {
           <Link to="/" className="flex items-center justify-center gap-2 bg-brand hover:bg-brand-deep text-white font-bold px-6 py-3 rounded-xl transition-colors">
             <Home className="w-4 h-4" /> Back to Home
           </Link>
-          <Link to="/catalog" className="flex items-center justify-center gap-2 bg-white hover:bg-[#FAF8FF] border-[1.5px] border-border text-body-strong font-bold px-6 py-3 rounded-xl transition-colors">
+          <Link to="/catalog" className="flex items-center justify-center gap-2 bg-white dark:bg-[#181818] hover:bg-[#FAF8FF] dark:hover:bg-white/5 border-[1.5px] border-border text-body-strong font-bold px-6 py-3 rounded-xl transition-colors">
             <Compass className="w-4 h-4" /> Browse Catalog
           </Link>
         </div>

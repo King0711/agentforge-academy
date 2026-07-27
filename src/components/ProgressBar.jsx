@@ -13,7 +13,7 @@ export default function ProgressBar({ value, max, color = '#7C3AED', label, show
           </span>
         </div>
       )}
-      <div className={`w-full ${height} rounded-full bg-[#F3EBFF] overflow-hidden`}>
+      <div className={`w-full ${height} rounded-full bg-[#F3EBFF] dark:bg-[#181818] overflow-hidden`}>
         <motion.div
           className={`${height} rounded-full`}
           style={{ background: `linear-gradient(90deg, ${color}, ${color}AA)` }}

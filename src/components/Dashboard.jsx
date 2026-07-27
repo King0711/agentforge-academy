@@ -45,7 +45,7 @@ export default function Dashboard({ progress, onSelectAgent }) {
     <div className="space-y-10">
       {/* Top stats */}
       <section className="grid sm:grid-cols-3 gap-4">
-        <div className="rounded-2xl bg-[#F3EBFF] p-5">
+        <div className="rounded-2xl bg-[#F3EBFF] dark:bg-[#181818] p-5">
           <div className="flex items-center gap-2 text-brand mb-2">
             <Sparkles className="w-5 h-5" />
             <span className="text-sm font-bold uppercase tracking-wide">Total XP</span>
@@ -57,7 +57,7 @@ export default function Dashboard({ progress, onSelectAgent }) {
           </p>
         </div>
 
-        <div className="rounded-2xl bg-[#FEF9E7] p-5">
+        <div className="rounded-2xl bg-[#FEF9E7] dark:bg-[#181818] p-5">
           <div className="flex items-center gap-2 text-amber-600 mb-2">
             <Flame className="w-5 h-5" />
             <span className="text-sm font-bold uppercase tracking-wide">Day Streak</span>
@@ -66,7 +66,7 @@ export default function Dashboard({ progress, onSelectAgent }) {
           <p className="text-sm text-body mt-1">Keep building daily to grow your streak</p>
         </div>
 
-        <div className="rounded-2xl bg-[#EAFAF1] p-5">
+        <div className="rounded-2xl bg-[#EAFAF1] dark:bg-[#181818] p-5">
           <div className="flex items-center gap-2 text-green mb-2">
             <Trophy className="w-5 h-5" />
             <span className="text-sm font-bold uppercase tracking-wide">Agents Built</span>
@@ -82,7 +82,7 @@ export default function Dashboard({ progress, onSelectAgent }) {
 
       {/* Level progress */}
       {nextLevel && (
-        <section className="rounded-2xl border-[1.5px] border-border-soft bg-white p-5">
+        <section className="rounded-2xl border-[1.5px] border-border-soft bg-white dark:bg-[#181818] p-5">
           <ProgressBar
             value={levelProgress}
             max={levelTarget}
@@ -124,7 +124,7 @@ export default function Dashboard({ progress, onSelectAgent }) {
             const tierAgents = agents.filter((a) => a.difficulty === level.id);
             const tierCompleted = tierAgents.filter((a) => completed.includes(a.id));
             return (
-              <div key={level.id} className="rounded-2xl border-[1.5px] border-border-soft bg-white p-4">
+              <div key={level.id} className="rounded-2xl border-[1.5px] border-border-soft bg-white dark:bg-[#181818] p-4">
                 <ProgressBar
                   value={tierCompleted.length}
                   max={tierAgents.length}
@@ -182,7 +182,7 @@ export default function Dashboard({ progress, onSelectAgent }) {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {recommendations.map((agent) => {
               const difficulty = getDifficulty(agent.difficulty);
-              const className = "flex items-center gap-3 text-left bg-white hover:bg-[#FAF8FF] border-[1.5px] border-border-soft rounded-xl p-4 transition-colors";
+              const className = "flex items-center gap-3 text-left bg-white dark:bg-[#181818] hover:bg-[#FAF8FF] dark:hover:bg-white/5 border-[1.5px] border-border-soft rounded-xl p-4 transition-colors";
               const inner = (
                 <>
                   <div className="text-3xl">{agent.emoji}</div>
@@ -222,7 +222,7 @@ export default function Dashboard({ progress, onSelectAgent }) {
       {history.length > 0 && (
         <section>
           <h2 className="font-display text-lg font-bold text-ink mb-4">Recent Activity</h2>
-          <div className="rounded-2xl border-[1.5px] border-border-soft bg-white divide-y divide-border-soft">
+          <div className="rounded-2xl border-[1.5px] border-border-soft bg-white dark:bg-[#181818] divide-y divide-border-soft">
             {history.slice(0, 8).map((h) => (
               <div key={`${h.id}-${h.date}`} className="flex items-center justify-between px-4 py-3">
                 <div>

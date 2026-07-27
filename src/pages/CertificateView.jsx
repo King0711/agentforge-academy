@@ -72,7 +72,7 @@ export default function CertificateView() {
       {/* Certificate */}
       <div
         id="certificate"
-        className={`relative rounded-[24px] border-[6px] bg-white px-10 sm:px-16 py-14 text-center overflow-hidden ${isProficiency ? 'border-amber-400' : 'border-brand'}`}
+        className={`relative rounded-[24px] border-[6px] bg-white dark:bg-white px-10 sm:px-16 py-14 text-center overflow-hidden ${isProficiency ? 'border-amber-400' : 'border-brand'}`}
         style={{ background: isProficiency ? 'linear-gradient(160deg, #FFFCF3, #FFFFFF 40%)' : 'linear-gradient(160deg, #FBFAFF, #FFFFFF 40%)' }}
       >
         <div
@@ -80,15 +80,15 @@ export default function CertificateView() {
           style={{ background: isProficiency ? '#D9A406' : '#7C3AED', borderRadius: '38% 62% 63% 37% / 41% 44% 56% 59%' }}
         />
         <p className={`text-xs font-bold uppercase tracking-[0.2em] ${isProficiency ? 'text-amber-600' : 'text-brand'}`}>Social Dev Technologies</p>
-        <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-ink mt-4">
+        <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-ink dark:text-[#1A1333] mt-4">
           {isProficiency ? 'Certificate of Proficiency' : 'Certificate of Completion'}
         </h1>
-        <p className="text-body mt-6 text-sm">This certifies that</p>
+        <p className="text-body dark:text-[#5A5473] mt-6 text-sm">This certifies that</p>
         <p className={`font-display font-extrabold text-2xl sm:text-3xl mt-2 ${isProficiency ? 'text-amber-600' : 'text-brand'}`}>{cert.student_name}</p>
-        <p className="text-body mt-4 max-w-lg mx-auto leading-relaxed">
+        <p className="text-body dark:text-[#5A5473] mt-4 max-w-lg mx-auto leading-relaxed">
           {tier?.body || `has successfully completed the ${cert.tier} track.`}
         </p>
-        <p className="text-sm text-body mt-8">
+        <p className="text-sm text-body dark:text-[#5A5473] mt-8">
           Issued {new Date(cert.issued_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
         </p>
 
@@ -96,10 +96,10 @@ export default function CertificateView() {
           <p className="mt-4 text-sm font-bold text-rose">This certificate has been revoked.</p>
         )}
 
-        <div className="flex items-center justify-between mt-10 pt-6 border-t border-border-soft">
+        <div className="flex items-center justify-between mt-10 pt-6 border-t border-border-soft dark:border-[#EEE6FB]">
           <div className="text-left">
             <p className="text-[11px] text-gray-400">Verify this certificate at</p>
-            <p className="text-xs font-semibold text-body-strong break-all">{verifyUrl}</p>
+            <p className="text-xs font-semibold text-body-strong dark:text-[#3A3358] break-all">{verifyUrl}</p>
           </div>
           {qrDataUrl && <img src={qrDataUrl} alt="Verification QR code" className="w-20 h-20 flex-shrink-0" />}
         </div>

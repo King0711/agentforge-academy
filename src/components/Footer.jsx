@@ -2,7 +2,11 @@ import { Link } from 'react-router-dom';
 
 export default function Footer() {
   return (
-    <footer className="mt-auto bg-ink text-white px-4 sm:px-6 lg:px-8 pt-11 pb-7">
+    // Deliberately a fixed dark color rather than bg-ink — this footer was
+    // already designed as a permanent dark band even in the light theme, and
+    // --color-ink itself flips to near-white under dark mode (it's a text
+    // color there), so reusing it as a background here would invert broken.
+    <footer className="mt-auto bg-[#1A1333] text-white px-4 sm:px-6 lg:px-8 pt-11 pb-7">
       <div className="max-w-6xl mx-auto flex flex-wrap justify-between gap-8">
         <div className="max-w-xs">
           <Link to="/" className="flex items-center gap-2.5 mb-3">

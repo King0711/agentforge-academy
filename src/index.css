@@ -1,9 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
+
+/* Dark mode is toggled by ThemeContext setting data-theme="dark" on <html>
+   — not the OS's prefers-color-scheme and not a plain .dark class — so this
+   custom variant has to key off that same attribute. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @theme {
   --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
   --font-display: "Bricolage Grotesque", "Plus Jakarta Sans", sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, monospace;
 
   --color-ink: #1A1333;
   --color-brand: #7C3AED;
@@ -36,6 +43,30 @@
   --color-dept-all: #64748B;
 }
 
+/* Dark theme — ChainGPT-inspired palette (via the dark-website-ideas-2
+   design skill). Overriding the same custom property names that @theme
+   generated above means every existing bg-ink / text-body / bg-brand /
+   border-border-soft / etc. utility across the whole app repaints
+   automatically — no per-component changes needed for anything already
+   using these semantic tokens. Only one-off bg-[#hex] utilities (arbitrary
+   values) need explicit dark: variants added by hand, since Tailwind bakes
+   those literal hex values in at build time rather than referencing a
+   variable. */
+:root[data-theme="dark"] {
+  --color-ink: #EFEFE5;
+  --color-brand: #7D63FF;
+  --color-brand-deep: #5240B5;
+  --color-body: #B7AFC9;
+  --color-body-strong: #E5E1EE;
+  --color-yellow: #FFD700;
+  --color-green: #00C853;
+  --color-amber: #FF8C00;
+  --color-rose: #FF4D4D;
+  --color-border-soft: #232228;
+  --color-border: #353539;
+  --color-bg: #0A090F;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -46,9 +77,11 @@ html {
 
 body {
   margin: 0;
-  background: #FDFCFF;
+  background: var(--color-bg);
+  color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 @keyframes floaty {
@@ -101,6 +134,27 @@ body {
 /* Code block styling */
 pre code {
   font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+
+/* Signature dark-theme accent (per the dark-website-ideas-2 design skill):
+   a full-spectrum gradient used ONLY as a border/glow on the highest-value
+   CTAs — never as a fill. No-op in light mode. */
+[data-theme="dark"] .rainbow-accent {
+  position: relative;
+  isolation: isolate;
+}
+[data-theme="dark"] .rainbow-accent::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(135deg, #FF3B3B, #FF8C00, #FFD700, #00C853, #1E90FF, #7D63FF);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }
 
 /* Line clamp utilities */

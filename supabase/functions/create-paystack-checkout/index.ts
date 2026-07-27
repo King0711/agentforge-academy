@@ -6,6 +6,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const PAYSTACK_SECRET_KEY = Deno.env.get('PAYSTACK_SECRET_KEY') ?? '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
 // Prices in NGN (major units). Paystack settles in NGN even for
 // international card holders — it handles FX conversion on its end, so
@@ -87,6 +88,22 @@ serve(async (req) => {
   const data = await paystackRes.json();
   if (!paystackRes.ok || !data.status) {
     return jsonResponse({ error: data.message || 'Failed to initialize payment' }, 502);
+  }
+
+  // Log the attempt so the abandoned-checkout reminder can find people who
+  // started paying and never finished. Uses the service role client since
+  // the caller's own JWT has no insert grant on checkout_attempts (by design
+  // — only the service role and admin RPCs touch this table). Best-effort:
+  // a logging failure here must never block the actual checkout redirect.
+  try {
+    const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    await serviceClient.from('checkout_attempts').insert({
+      user_id: user.id,
+      plan,
+      provider_reference: reference,
+    });
+  } catch (_err) {
+    // non-fatal — see comment above
   }
 
   return jsonResponse({ authorization_url: data.data.authorization_url });

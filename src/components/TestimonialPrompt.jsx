@@ -77,7 +77,7 @@ export default function TestimonialPrompt({ completedCount }) {
 
   if (status === 'already_submitted') {
     return (
-      <div className="rounded-xl border border-green/25 bg-[#EAFAF1] px-5 py-4 flex items-center gap-3 mb-8">
+      <div className="rounded-xl border border-green/25 bg-[#EAFAF1] dark:bg-green/10 px-5 py-4 flex items-center gap-3 mb-8">
         <CheckCircle2 className="w-5 h-5 text-green flex-shrink-0" />
         <p className="text-sm text-body-strong">
           Thanks for sharing your testimonial — it's pending a quick review before it goes live.
@@ -87,7 +87,7 @@ export default function TestimonialPrompt({ completedCount }) {
   }
 
   return (
-    <div className="rounded-xl border-[1.5px] border-brand/25 bg-[#F3EBFF] p-5 mb-8">
+    <div className="rounded-xl border-[1.5px] border-brand/25 bg-[#F3EBFF] dark:bg-brand/10 p-5 mb-8">
       {!open ? (
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
