@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /certificates
+Disallow: /certificate/
+
+Sitemap: https://agentforge-academy.vercel.app/sitemap.xml
