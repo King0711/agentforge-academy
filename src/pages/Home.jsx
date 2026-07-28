@@ -163,7 +163,15 @@ export default function Home({ progress, onSelectAgent }) {
 
           <div className="relative hidden sm:block">
             <div className="relative h-[320px] rounded-[22px] overflow-hidden shadow-[0_24px_50px_-18px_rgba(80,40,160,.4)] bg-[#1A1333]">
-              <div ref={playerContainerRef} className="w-full h-full" />
+              {/* pointer-events-none: YouTube's player still toggles play/pause
+                  on a click even with controls:0 — this blocks all direct
+                  interaction with the embed so the custom buttons below are
+                  the only way to control it. YT.Player replaces this inner
+                  div with its own iframe in place, so the wrapper (not the
+                  target itself) is what needs the pointer-events rule. */}
+              <div className="w-full h-full pointer-events-none">
+                <div ref={playerContainerRef} className="w-full h-full" />
+              </div>
               <div className="absolute bottom-3 left-3 z-10 flex items-center gap-2">
                 <button
                   onClick={togglePlay}
