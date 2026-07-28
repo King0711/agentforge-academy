@@ -39,11 +39,7 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          // TEMPORARY: Resend's shared sandbox sender, since no custom domain
-          // is verified yet — this can only deliver to the Resend account's
-          // own signup email (which ADMIN_NOTIFY_EMAIL already is). Switch
-          // back to notifications@socialdevtech.com once a domain is verified.
-          from: 'Social Dev Technologies <onboarding@resend.dev>',
+          from: 'Social Dev Technologies <notifications@socialdevtechnologies.com>',
           to: [ADMIN_EMAIL],
           subject: `New signup: ${name} (${email})`,
           html,

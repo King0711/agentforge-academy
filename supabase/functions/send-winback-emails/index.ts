@@ -33,7 +33,7 @@ function emailShell(innerHtml) {
       ${innerHtml}
       <div style="margin-top:32px;padding-top:16px;border-top:1px solid #EEE6FB;font-size:12px;color:#8A82AD;text-align:center;">
         Social Dev Technologies · You're receiving this because you have an account with us.<br/>
-        Questions? Reply to this email or contact support@socialdevtech.com.
+        Questions? Reply to this email or contact support@socialdevtechnologies.com.
       </div>
     </div>
   `;
@@ -47,11 +47,7 @@ async function sendResendEmail(to, subject, html) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      // TEMPORARY: Resend's shared sandbox sender, since no custom domain is
-      // verified yet — this can only deliver to the Resend account's own
-      // signup email. Switch back to notifications@socialdevtech.com (or
-      // whatever domain gets verified) once that's set up.
-      from: 'Social Dev Technologies <onboarding@resend.dev>',
+      from: 'Social Dev Technologies <notifications@socialdevtechnologies.com>',
       to: [to],
       subject,
       html,
