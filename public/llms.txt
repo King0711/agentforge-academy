@@ -1,0 +1,24 @@
+# Social Dev Technologies
+
+> Social Dev Technologies teaches practical AI-agent building through guided, hands-on sessions using Claude. Students follow step-by-step builds - copy-paste prompts, real integrations (Gmail, Slack, Notion, WhatsApp, and more), and a portfolio write-up at the end of each session - rather than watching passive video lectures.
+
+Social Dev Technologies is not a general AI-literacy or prompt-engineering course. Every session ends with a working, shippable agent and a portfolio artifact. Students need their own paid Claude account (Claude Pro or higher, billed separately by Anthropic) to follow along.
+
+## Program structure
+
+- **Builder 1** - 12 guided sessions covering foundational agent builds (email triage, chat bots, automation basics).
+- **Builder 2** - 13 guided sessions covering more advanced, multi-step agent builds.
+- **Pro** - bundles Builder 1 and Builder 2 together.
+- All plans are one-time payments for 6 months of access. Cohorts run on scheduled start dates shown on the pricing page.
+
+## Key pages
+
+- [Homepage](https://socialdevtechnologies.com/): overview, stats, and how the program works.
+- [Catalog](https://socialdevtechnologies.com/catalog): browse all sessions by department and difficulty.
+- [Learning paths](https://socialdevtechnologies.com/paths): department-organized learning tracks.
+- [Pricing](https://socialdevtechnologies.com/pricing): Builder 1 / Builder 2 / Pro plans, cohort start dates.
+- [Sitemap](https://socialdevtechnologies.com/sitemap.xml): full list of indexable pages, including every individual session guide.
+
+## Outcomes
+
+Completing sessions earns XP and, at defined proficiency thresholds, an auto-issued, publicly verifiable certificate (verification pages live under `/verify-certificate/:id`).

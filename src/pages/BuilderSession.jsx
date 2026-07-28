@@ -50,6 +50,34 @@ export default function BuilderSession({ progress, tier }) {
     };
   }, [agent, tier]);
 
+  // Structured data — Course rich results in Google Search. Injected per
+  // session (not baked into index.html) since name/description/URL differ
+  // per agent; removed on unmount so it doesn't leak onto the next page.
+  useEffect(() => {
+    if (!agent) return;
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Course',
+      name: agent.title,
+      description: agent.description,
+      url: `https://socialdevtechnologies.com${getBuilderPagePath(agent)}`,
+      provider: {
+        '@type': 'Organization',
+        name: 'Social Dev Technologies',
+        sameAs: 'https://socialdevtechnologies.com',
+      },
+      hasCourseInstance: {
+        '@type': 'CourseInstance',
+        courseMode: 'online',
+        courseWorkload: agent.buildTime,
+      },
+    });
+    document.head.appendChild(script);
+    return () => script.remove();
+  }, [agent]);
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [slug]);

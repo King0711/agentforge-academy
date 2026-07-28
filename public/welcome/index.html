@@ -24,6 +24,31 @@
 
     <!-- Theme colour (browser chrome on Android) -->
     <meta name="theme-color" content="#7C3AED">
+
+    <!-- Structured data: organization identity + sitelinks search box -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "EducationalOrganization",
+        "name": "Social Dev Technologies",
+        "url": "https://socialdevtechnologies.com",
+        "logo": "https://socialdevtechnologies.com/logo.jpeg",
+        "description": "Build real AI agents with Claude. 25 guided sessions across Builder 1 and Builder 2, plus portfolio-ready projects. Africa's leading AI skills platform."
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Social Dev Technologies",
+        "url": "https://socialdevtechnologies.com",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://socialdevtechnologies.com/catalog?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    </script>
     <script type="module" crossorigin="" src="/assets/index.js"></script>
     <link rel="stylesheet" crossorigin="" href="/assets/index.css">
   </head>
