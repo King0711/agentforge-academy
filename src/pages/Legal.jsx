@@ -36,7 +36,7 @@ const PAGES = {
       },
       {
         heading: '8. Contact',
-        body: 'For questions about these terms, contact us at support@socialdevtech.com.',
+        body: 'For questions about these terms, contact us at support@socialdevtechnologies.com.',
       },
     ],
   },
@@ -66,7 +66,7 @@ const PAGES = {
       },
       {
         heading: '6. Your Rights',
-        body: 'You may request deletion of your account and data at any time by emailing support@socialdevtech.com. We will process requests within 30 days.',
+        body: 'You may request deletion of your account and data at any time by emailing support@socialdevtechnologies.com. We will process requests within 30 days.',
       },
       {
         heading: '7. Third-Party Services',
@@ -74,7 +74,7 @@ const PAGES = {
       },
       {
         heading: '8. Contact',
-        body: 'For privacy concerns, contact us at support@socialdevtech.com.',
+        body: 'For privacy concerns, contact us at support@socialdevtechnologies.com.',
       },
     ],
   },

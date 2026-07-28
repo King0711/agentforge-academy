@@ -29,8 +29,10 @@ export default function Footer() {
             ]}
           />
           <FooterCol
-            title="Legal"
+            title="Company"
             links={[
+              { label: 'About', to: '/about' },
+              { label: 'FAQ', to: '/faq' },
               { label: 'Terms of Service', to: '/legal/terms' },
               { label: 'Privacy Policy', to: '/legal/privacy' },
             ]}

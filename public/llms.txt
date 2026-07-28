@@ -17,6 +17,8 @@ Social Dev Technologies is not a general AI-literacy or prompt-engineering cours
 - [Catalog](https://socialdevtechnologies.com/catalog): browse all sessions by department and difficulty.
 - [Learning paths](https://socialdevtechnologies.com/paths): department-organized learning tracks.
 - [Pricing](https://socialdevtechnologies.com/pricing): Builder 1 / Builder 2 / Pro plans, cohort start dates.
+- [About](https://socialdevtechnologies.com/about): mission, teaching principles, who the program is for.
+- [FAQ](https://socialdevtechnologies.com/faq): access, refunds, certificates, payment methods, prerequisites.
 - [Sitemap](https://socialdevtechnologies.com/sitemap.xml): full list of indexable pages, including every individual session guide.
 
 ## Outcomes

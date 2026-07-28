@@ -13,6 +13,8 @@ import Pricing from './pages/Pricing';
 import Admin from './pages/Admin';
 import NotFound from './pages/NotFound';
 import Legal from './pages/Legal';
+import About from './pages/About';
+import FAQ from './pages/FAQ';
 import Certificates from './pages/Certificates';
 import CertificateView from './pages/CertificateView';
 import VerifyCertificate from './pages/VerifyCertificate';
@@ -45,6 +47,8 @@ function AppShell() {
           <Route path="/certificate/:id" element={<CertificateView />} />
           <Route path="/verify/:id" element={<VerifyCertificate />} />
           <Route path="/legal/:page" element={<Legal />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/faq" element={<FAQ />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

@@ -303,7 +303,7 @@ export default function Pricing() {
           ))}
         </div>
         <p className="text-xs text-gray-400 mt-6">
-          Every plan is a one-time payment for 6 months of access — no auto-renewal. For billing questions email support@socialdevtech.com
+          Every plan is a one-time payment for 6 months of access — no auto-renewal. For billing questions email support@socialdevtechnologies.com
         </p>
       </motion.div>
     </div>

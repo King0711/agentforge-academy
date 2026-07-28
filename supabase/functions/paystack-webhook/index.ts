@@ -6,6 +6,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const PAYSTACK_SECRET_KEY = Deno.env.get('PAYSTACK_SECRET_KEY') ?? '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 
 // Expected NGN prices — must match Pricing.jsx and create-paystack-checkout
 // exactly. The ₦100,000 shown struck through on the Builder cards is a
@@ -16,6 +17,82 @@ const PRICES = {
   pro: 90000,
 };
 const AMOUNT_TOLERANCE = 1;
+
+const PLAN_LABELS = { builder1: 'Builder 1', builder2: 'Builder 2', pro: 'Pro' };
+
+function emailShell(innerHtml) {
+  return `
+    <div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#FBFAFF;">
+      <div style="text-align:center;margin-bottom:24px;">
+        <span style="font-size:18px;font-weight:800;color:#1A1333;">Social Dev <span style="color:#7C3AED;">Technologies</span></span>
+      </div>
+      ${innerHtml}
+      <div style="margin-top:32px;padding-top:16px;border-top:1px solid #EEE6FB;font-size:12px;color:#8A82AD;text-align:center;">
+        Social Dev Technologies · You're receiving this because you have an account with us.<br/>
+        Questions? Reply to this email or contact support@socialdevtechnologies.com.
+      </div>
+    </div>
+  `;
+}
+
+async function sendResendEmail(to, subject, html) {
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: 'Social Dev Technologies <notifications@socialdevtechnologies.com>',
+      to: [to],
+      subject,
+      html,
+    }),
+  });
+  return res.ok;
+}
+
+// Cohort dates are purely informational (access is instant/self-paced on
+// purchase regardless), but surfacing an upcoming date here still helps a
+// buyer know when live/group activity around their tier kicks off.
+async function buildCohortLines(supabase, plan) {
+  const tiers = plan === 'pro' ? ['builder1', 'builder2'] : [plan];
+  const { data } = await supabase.from('cohort_schedule').select('tier, start_date').in('tier', tiers);
+  const labels = { builder1: 'Builder 1', builder2: 'Builder 2' };
+  const today = new Date(new Date().toDateString());
+  const lines = (data || [])
+    .filter((row) => row.start_date && new Date(`${row.start_date}T00:00:00`) >= today)
+    .map((row) => {
+      const formatted = new Date(`${row.start_date}T00:00:00`).toLocaleDateString('en-GB', {
+        day: 'numeric', month: 'long', year: 'numeric',
+      });
+      return `<li>${labels[row.tier]} cohort starts <strong>${formatted}</strong></li>`;
+    });
+  if (lines.length === 0) return '';
+  return `<ul style="font-size:14px;color:#3A3358;line-height:1.7;padding-left:20px;margin:16px 0;">${lines.join('')}</ul>`;
+}
+
+function welcomeHtml(name, planLabel, cohortLines) {
+  return `
+    <p style="font-size:15px;color:#1A1333;">Hey ${name},</p>
+    <p style="font-size:15px;color:#3A3358;line-height:1.6;">
+      You're in! Your <strong>${planLabel}</strong> access is live right now, for the next 6 months.
+    </p>
+    ${cohortLines}
+    <p style="font-size:15px;color:#3A3358;line-height:1.6;">A few things before you start building:</p>
+    <ul style="font-size:14px;color:#3A3358;line-height:1.7;padding-left:20px;">
+      <li>You'll need your own paid Claude account (Claude Pro or higher) to follow the builds — billed separately by Anthropic.</li>
+      <li>Every session ends with a portfolio write-up prompt — that's what makes this resume-ready, don't skip it.</li>
+      <li>Stuck on a build? Reach us on WhatsApp: <a href="https://wa.me/2349066006963" style="color:#7C3AED;">wa.me/2349066006963</a></li>
+    </ul>
+    <div style="text-align:center;margin:28px 0;">
+      <a href="https://socialdevtechnologies.com/dashboard"
+         style="display:inline-block;background:#7C3AED;color:#fff;padding:12px 28px;border-radius:10px;text-decoration:none;font-weight:700;">
+        Go to my dashboard →
+      </a>
+    </div>
+  `;
+}
 
 async function hmacSha512Hex(secret, message) {
   const enc = new TextEncoder();
@@ -169,6 +246,39 @@ serve(async (req) => {
     plan,
     status: 'granted',
   });
+
+  // Welcome email — best-effort, must never block the entitlement grant
+  // above or this webhook's 200 response back to Paystack. The idempotency
+  // check earlier in this handler already means this only ever fires once
+  // per unique transaction, even across retried webhook deliveries.
+  try {
+    if (RESEND_API_KEY) {
+      const { data: profileRow } = await supabase
+        .from('profiles')
+        .select('display_name, email')
+        .eq('id', userId)
+        .maybeSingle();
+      const recipientEmail = profileRow?.email || email;
+      if (recipientEmail) {
+        const name = profileRow?.display_name || recipientEmail.split('@')[0];
+        const planLabel = PLAN_LABELS[plan] || plan;
+        const cohortLines = await buildCohortLines(supabase, plan);
+        const subject = `Welcome to ${planLabel} — you're in!`;
+        const ok = await sendResendEmail(recipientEmail, subject, emailShell(welcomeHtml(name, planLabel, cohortLines)));
+        if (ok) {
+          await supabase.from('email_log').insert({
+            user_id: userId,
+            email: recipientEmail,
+            email_type: 'welcome',
+            subject,
+            metadata: { plan },
+          });
+        }
+      }
+    }
+  } catch (_err) {
+    // non-fatal — see comment above
+  }
 
   return new Response('OK', { status: 200 });
 });

@@ -42,6 +42,8 @@ export const routes = [
   '/paths',
   '/pricing',
   '/welcome',
+  '/about',
+  '/faq',
   '/legal/terms',
   '/legal/privacy',
   ...builder1Slugs.map((slug) => `/builder-1/${slug}`),
