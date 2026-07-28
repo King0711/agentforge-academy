@@ -25,7 +25,7 @@ serve(async (req) => {
           <tr><td style="padding:8px 0;color:#666;">Email</td><td style="padding:8px 0;font-weight:600;">${email}${isBYU}</td></tr>
           <tr><td style="padding:8px 0;color:#666;">Joined</td><td style="padding:8px 0;">${joined}</td></tr>
         </table>
-        <a href="https://social-dev-technologies.vercel.app/admin" style="display:inline-block;margin-top:16px;background:#7C3AED;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">
+        <a href="https://socialdevtechnologies.com/admin" style="display:inline-block;margin-top:16px;background:#7C3AED;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">
           View in Admin Dashboard →
         </a>
       </div>

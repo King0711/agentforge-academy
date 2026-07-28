@@ -66,7 +66,7 @@ function cohortReminderHtml(name, tierLabel, startDateFormatted) {
       If you haven't started building yet, now's a great time to get ahead of the group.
     </p>
     <div style="text-align:center;margin:28px 0;">
-      <a href="https://social-dev-technologies.vercel.app/dashboard"
+      <a href="https://socialdevtechnologies.com/dashboard"
          style="display:inline-block;background:#7C3AED;color:#fff;padding:12px 28px;border-radius:10px;text-decoration:none;font-weight:700;">
         Go to my dashboard →
       </a>
