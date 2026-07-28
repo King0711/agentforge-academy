@@ -126,19 +126,31 @@ export default function BuilderSession({ progress, tier }) {
             )}
           </AnimatePresence>
           <p className="text-sm text-body">
-            {completed ? 'Marked as completed — great work!' : 'Mark this session complete to earn XP.'}
+            {locked
+              ? 'Unlock this session to mark it complete and earn XP.'
+              : completed ? 'Marked as completed — great work!' : 'Mark this session complete to earn XP.'}
           </p>
-          <button
-            onClick={handleComplete}
-            className={`flex items-center gap-2 font-bold rounded-lg px-5 py-2.5 transition-all flex-shrink-0 ${
-              completed
-                ? 'bg-[#EAFAF1] dark:bg-green/10 text-green border border-green/30 hover:bg-green/10'
-                : 'bg-green text-white hover:brightness-95 shadow-lg shadow-green/20'
-            }`}
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            {completed ? 'Completed' : 'Mark Complete'}
-          </button>
+          {locked ? (
+            <Link
+              to="/pricing"
+              className="flex items-center gap-2 font-bold rounded-lg px-5 py-2.5 flex-shrink-0 bg-white dark:bg-[#181818] border border-border-soft text-body-strong hover:border-brand/40 transition-colors"
+            >
+              <Lock className="w-4 h-4" /> See plans
+            </Link>
+          ) : (
+            <button
+              onClick={handleComplete}
+              disabled={loading}
+              className={`flex items-center gap-2 font-bold rounded-lg px-5 py-2.5 transition-all flex-shrink-0 ${
+                completed
+                  ? 'bg-[#EAFAF1] dark:bg-green/10 text-green border border-green/30 hover:bg-green/10'
+                  : 'bg-green text-white hover:brightness-95 shadow-lg shadow-green/20'
+              } ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              {completed ? 'Completed' : 'Mark Complete'}
+            </button>
+          )}
         </div>
 
         {loading && (
