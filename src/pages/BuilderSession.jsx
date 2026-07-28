@@ -73,6 +73,17 @@ export default function BuilderSession({ progress, tier }) {
         courseMode: 'online',
         courseWorkload: agent.buildTime,
       },
+      // Tells crawlers the step-by-step guide is behind a legitimate paywall
+      // rather than thin/low-quality content — see Google's paywalled-content
+      // structured data guidance. The public teaser (title, description, tech
+      // stack, prerequisites) stays outside this, so it's still what search
+      // snippets draw from.
+      isAccessibleForFree: false,
+      hasPart: {
+        '@type': 'WebPageElement',
+        isAccessibleForFree: false,
+        cssSelector: '#session-guide, #resources',
+      },
     });
     document.head.appendChild(script);
     return () => script.remove();
@@ -205,7 +216,7 @@ export default function BuilderSession({ progress, tier }) {
         )}
 
         {!loading && (!locked) && content?.session && (
-          <div className="mb-8">
+          <div id="session-guide" className="mb-8">
             <SessionGuide session={content.session} troubleshooting={content.troubleshooting} />
           </div>
         )}
