@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Shield, Zap, Award, Sun, Moon } from 'lucide-react';
+import { Menu, X, Shield, Zap, Award, Sun, Moon, ChevronDown, LayoutDashboard, LogOut } from 'lucide-react';
 import SearchBar from './SearchBar';
 import { useAuth } from '../context/AuthContext';
 import { usePro } from '../hooks/usePro';
@@ -16,13 +16,24 @@ const links = [
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [value, setValue] = useState('');
+  const menuRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { user, signOut } = useAuth();
   const { isPro, isAdmin } = usePro();
   const { theme, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -79,34 +90,15 @@ export default function Navbar() {
             {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
           {user ? (
-            <>
-              <NavLink
-                to="/dashboard"
-                className={({ isActive }) => `font-semibold text-[14.5px] whitespace-nowrap transition-colors ${isActive ? 'text-brand' : 'text-[#4A4463] dark:text-[#B7AFC9] hover:text-ink'}`}
+            <div className="relative flex-shrink-0" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen((o) => !o)}
+                className="flex items-center gap-2 pl-2 pr-2.5 py-1.5 rounded-full hover:bg-[#F7F4FF] dark:hover:bg-white/5 transition-colors"
               >
-                My Dashboard
-              </NavLink>
-              <NavLink
-                to="/certificates"
-                className={({ isActive }) => `flex items-center gap-1 font-semibold text-[14.5px] whitespace-nowrap transition-colors ${isActive ? 'text-brand' : 'text-[#4A4463] dark:text-[#B7AFC9] hover:text-ink'}`}
-              >
-                <Award className="w-3.5 h-3.5" /> Certificates
-              </NavLink>
-              {isAdmin && (
-                <NavLink
-                  to="/admin"
-                  className={({ isActive }) =>
-                    `flex items-center gap-1 font-semibold text-[13px] whitespace-nowrap transition-colors ${isActive ? 'text-brand' : 'text-amber-600 hover:text-brand'}`
-                  }
-                >
-                  <Shield className="w-3.5 h-3.5" /> Admin
-                </NavLink>
-              )}
-              <div className="flex items-center gap-2.5 pl-4 border-l border-border-soft flex-shrink-0">
                 <div className="w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center font-extrabold text-[13px] flex-shrink-0">
                   {initial}
                 </div>
-                <span className="font-bold text-ink text-sm whitespace-nowrap max-w-[140px] truncate">{displayName}</span>
+                <span className="font-bold text-ink text-sm whitespace-nowrap max-w-[120px] truncate">{displayName}</span>
                 {isAdmin ? (
                   <span className="flex items-center gap-0.5 text-[10px] font-bold bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                     <Shield className="w-2.5 h-2.5" /> ADMIN
@@ -116,11 +108,58 @@ export default function Navbar() {
                     <Zap className="w-2.5 h-2.5" /> PRO
                   </span>
                 ) : null}
-                <button onClick={handleSignOut} className="text-[13px] text-gray-400 hover:text-ink transition-colors whitespace-nowrap">
-                  Log out
-                </button>
-              </div>
-            </>
+                <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${menuOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              <AnimatePresence>
+                {menuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-[#141319] border border-[#EFE9FB] dark:border-[#232228] rounded-xl shadow-[0_16px_40px_-12px_rgba(30,20,60,.3)] py-1.5 overflow-hidden"
+                  >
+                    <NavLink
+                      to="/dashboard"
+                      onClick={() => setMenuOpen(false)}
+                      className={({ isActive }) =>
+                        `flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold transition-colors ${isActive ? 'text-brand bg-[#F7F4FF] dark:bg-white/5' : 'text-[#4A4463] dark:text-[#B7AFC9] hover:bg-[#FAF8FF] dark:hover:bg-white/5'}`
+                      }
+                    >
+                      <LayoutDashboard className="w-4 h-4" /> My Dashboard
+                    </NavLink>
+                    <NavLink
+                      to="/certificates"
+                      onClick={() => setMenuOpen(false)}
+                      className={({ isActive }) =>
+                        `flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold transition-colors ${isActive ? 'text-brand bg-[#F7F4FF] dark:bg-white/5' : 'text-[#4A4463] dark:text-[#B7AFC9] hover:bg-[#FAF8FF] dark:hover:bg-white/5'}`
+                      }
+                    >
+                      <Award className="w-4 h-4" /> Certificates
+                    </NavLink>
+                    {isAdmin && (
+                      <NavLink
+                        to="/admin"
+                        onClick={() => setMenuOpen(false)}
+                        className={({ isActive }) =>
+                          `flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold transition-colors ${isActive ? 'text-brand bg-[#F7F4FF] dark:bg-white/5' : 'text-amber-600 hover:bg-[#FAF8FF] dark:hover:bg-white/5'}`
+                        }
+                      >
+                        <Shield className="w-4 h-4" /> Admin
+                      </NavLink>
+                    )}
+                    <div className="border-t border-[#EFE9FB] dark:border-[#232228] my-1" />
+                    <button
+                      onClick={() => { setMenuOpen(false); handleSignOut(); }}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-gray-500 hover:bg-[#FAF8FF] dark:hover:bg-white/5 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" /> Log out
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           ) : (
             <>
               <Link to="/welcome" className="font-bold text-brand text-[14.5px] whitespace-nowrap flex-shrink-0">
