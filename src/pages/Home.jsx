@@ -10,6 +10,7 @@ import { usePro } from '../hooks/usePro';
 import { useTheme } from '../context/ThemeContext';
 
 const TECH_MARQUEE = ['PYTHON', 'CLAUDE API', 'GMAIL API', 'SLACK', 'SUPABASE', 'NOTION'];
+const YOUTUBE_VIDEO_ID = 'MYcREKgdAV4';
 
 // Advanced/World Class are admin-only — every public-facing count and grid
 // on this marketing page is based on the public catalog only.
@@ -29,29 +30,85 @@ export default function Home({ progress, onSelectAgent }) {
   const { hasBuilder1, hasBuilder2, isAdmin } = usePro();
   const { theme } = useTheme();
   const navigate = useNavigate();
-  const videoRef = useRef(null);
+  const playerContainerRef = useRef(null);
+  const playerRef = useRef(null);
   const [isMuted, setIsMuted] = useState(true);
   const [isPlaying, setIsPlaying] = useState(true);
 
   const popularAgents = [...publicAgents].sort((a, b) => b.xp - a.xp).slice(0, 4);
 
-  // Toggle the actual DOM property via the ref rather than a React `muted`
-  // prop — browsers require the video to start with the `muted` attribute
-  // present for autoplay to be allowed, and re-binding that prop from React
-  // state after mount is unreliable across browsers. The ref is the only
-  // robust way to flip it afterward.
-  const toggleMute = () => {
-    if (!videoRef.current) return;
-    videoRef.current.muted = !videoRef.current.muted;
-    setIsMuted(videoRef.current.muted);
-  };
+  // A plain <iframe src="youtube.com/embed/..."> can't be controlled after
+  // load — the custom mute/pause buttons need a live player instance, which
+  // means loading YouTube's IFrame API script and creating a real YT.Player
+  // targeting our container (it replaces that element with its own iframe).
+  useEffect(() => {
+    let cancelled = false;
+
+    function createPlayer() {
+      if (cancelled || !playerContainerRef.current) return;
+      playerRef.current = new window.YT.Player(playerContainerRef.current, {
+        width: '100%',
+        height: '100%',
+        videoId: YOUTUBE_VIDEO_ID,
+        playerVars: {
+          autoplay: 1,
+          mute: 1,
+          loop: 1,
+          playlist: YOUTUBE_VIDEO_ID,
+          controls: 0,
+          modestbranding: 1,
+          rel: 0,
+          playsinline: 1,
+          disablekb: 1,
+          fs: 0,
+        },
+        events: {
+          onStateChange: (e) => setIsPlaying(e.data === window.YT.PlayerState.PLAYING),
+        },
+      });
+    }
+
+    if (window.YT?.Player) {
+      createPlayer();
+    } else {
+      if (!document.getElementById('youtube-iframe-api')) {
+        const script = document.createElement('script');
+        script.id = 'youtube-iframe-api';
+        script.src = 'https://www.youtube.com/iframe_api';
+        document.body.appendChild(script);
+      }
+      const prevReady = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => {
+        prevReady?.();
+        createPlayer();
+      };
+    }
+
+    return () => {
+      cancelled = true;
+      playerRef.current?.destroy?.();
+    };
+  }, []);
 
   const togglePlay = () => {
-    if (!videoRef.current) return;
-    if (videoRef.current.paused) {
-      videoRef.current.play();
+    const player = playerRef.current;
+    if (!player?.getPlayerState) return;
+    if (player.getPlayerState() === window.YT.PlayerState.PLAYING) {
+      player.pauseVideo();
     } else {
-      videoRef.current.pause();
+      player.playVideo();
+    }
+  };
+
+  const toggleMute = () => {
+    const player = playerRef.current;
+    if (!player?.isMuted) return;
+    if (player.isMuted()) {
+      player.unMute();
+      setIsMuted(false);
+    } else {
+      player.mute();
+      setIsMuted(true);
     }
   };
 
@@ -106,18 +163,7 @@ export default function Home({ progress, onSelectAgent }) {
 
           <div className="relative hidden sm:block">
             <div className="relative h-[320px] rounded-[22px] overflow-hidden shadow-[0_24px_50px_-18px_rgba(80,40,160,.4)] bg-[#1A1333]">
-              <video
-                ref={videoRef}
-                className="w-full h-full object-cover"
-                src="/hero-video.mp4"
-                autoPlay
-                loop
-                muted
-                playsInline
-                preload="auto"
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
-              />
+              <div ref={playerContainerRef} className="w-full h-full" />
               <div className="absolute bottom-3 left-3 z-10 flex items-center gap-2">
                 <button
                   onClick={togglePlay}

@@ -29,9 +29,3 @@ dist-ssr
 *.sw?
 
 .vercel
-
-# Uncompressed source video — placeholder for local preview only.
-# GitHub rejects files over 100MB outright, and serving this raw size to
-# every homepage visitor would be a real problem on its own even if it did
-# fit. A compressed version needs to replace this before it's committed.
-public/hero-video.mp4
