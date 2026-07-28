@@ -1,7 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Volume2, VolumeX, Play, Pause } from 'lucide-react';
 import AgentCard from '../components/AgentCard';
 import TestimonialsSection from '../components/TestimonialsSection';
 import { agents } from '../data/agents';
@@ -30,87 +28,8 @@ export default function Home({ progress, onSelectAgent }) {
   const { hasBuilder1, hasBuilder2, isAdmin } = usePro();
   const { theme } = useTheme();
   const navigate = useNavigate();
-  const playerContainerRef = useRef(null);
-  const playerRef = useRef(null);
-  const [isMuted, setIsMuted] = useState(true);
-  const [isPlaying, setIsPlaying] = useState(true);
 
   const popularAgents = [...publicAgents].sort((a, b) => b.xp - a.xp).slice(0, 4);
-
-  // A plain <iframe src="youtube.com/embed/..."> can't be controlled after
-  // load — the custom mute/pause buttons need a live player instance, which
-  // means loading YouTube's IFrame API script and creating a real YT.Player
-  // targeting our container (it replaces that element with its own iframe).
-  useEffect(() => {
-    let cancelled = false;
-
-    function createPlayer() {
-      if (cancelled || !playerContainerRef.current) return;
-      playerRef.current = new window.YT.Player(playerContainerRef.current, {
-        width: '100%',
-        height: '100%',
-        videoId: YOUTUBE_VIDEO_ID,
-        playerVars: {
-          autoplay: 1,
-          mute: 1,
-          loop: 1,
-          playlist: YOUTUBE_VIDEO_ID,
-          controls: 0,
-          modestbranding: 1,
-          rel: 0,
-          playsinline: 1,
-          disablekb: 1,
-          fs: 0,
-        },
-        events: {
-          onStateChange: (e) => setIsPlaying(e.data === window.YT.PlayerState.PLAYING),
-        },
-      });
-    }
-
-    if (window.YT?.Player) {
-      createPlayer();
-    } else {
-      if (!document.getElementById('youtube-iframe-api')) {
-        const script = document.createElement('script');
-        script.id = 'youtube-iframe-api';
-        script.src = 'https://www.youtube.com/iframe_api';
-        document.body.appendChild(script);
-      }
-      const prevReady = window.onYouTubeIframeAPIReady;
-      window.onYouTubeIframeAPIReady = () => {
-        prevReady?.();
-        createPlayer();
-      };
-    }
-
-    return () => {
-      cancelled = true;
-      playerRef.current?.destroy?.();
-    };
-  }, []);
-
-  const togglePlay = () => {
-    const player = playerRef.current;
-    if (!player?.getPlayerState) return;
-    if (player.getPlayerState() === window.YT.PlayerState.PLAYING) {
-      player.pauseVideo();
-    } else {
-      player.playVideo();
-    }
-  };
-
-  const toggleMute = () => {
-    const player = playerRef.current;
-    if (!player?.isMuted) return;
-    if (player.isMuted()) {
-      player.unMute();
-      setIsMuted(false);
-    } else {
-      player.mute();
-      setIsMuted(true);
-    }
-  };
 
   return (
     <div>
@@ -161,33 +80,15 @@ export default function Home({ progress, onSelectAgent }) {
             </div>
           </div>
 
-          <div className="relative hidden sm:block">
-            <div className="relative h-[320px] rounded-[22px] overflow-hidden shadow-[0_24px_50px_-18px_rgba(80,40,160,.4)] bg-[#1A1333]">
-              {/* pointer-events-none: YouTube's player still toggles play/pause
-                  on a click even with controls:0 — this blocks all direct
-                  interaction with the embed so the custom buttons below are
-                  the only way to control it. YT.Player replaces this inner
-                  div with its own iframe in place, so the wrapper (not the
-                  target itself) is what needs the pointer-events rule. */}
-              <div className="w-full h-full pointer-events-none">
-                <div ref={playerContainerRef} className="w-full h-full" />
-              </div>
-              <div className="absolute bottom-3 left-3 z-10 flex items-center gap-2">
-                <button
-                  onClick={togglePlay}
-                  aria-label={isPlaying ? 'Pause video' : 'Play video'}
-                  className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/80 transition-colors"
-                >
-                  {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                </button>
-                <button
-                  onClick={toggleMute}
-                  aria-label={isMuted ? 'Unmute video' : 'Mute video'}
-                  className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/80 transition-colors"
-                >
-                  {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                </button>
-              </div>
+          <div className="relative">
+            <div className="relative h-[220px] sm:h-[280px] lg:h-[320px] rounded-[22px] overflow-hidden shadow-[0_24px_50px_-18px_rgba(80,40,160,.4)] bg-[#1A1333]">
+              <iframe
+                className="w-full h-full"
+                src={`https://www.youtube.com/embed/${YOUTUBE_VIDEO_ID}?rel=0&modestbranding=1`}
+                title="Social Dev Technologies preview"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
             </div>
             <motion.div
               className="absolute -top-4.5 -left-6"
