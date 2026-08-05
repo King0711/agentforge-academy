@@ -18,6 +18,17 @@ const PRICES = {
 };
 const AMOUNT_TOLERANCE = 1;
 
+// Paystack can add its own transaction fee on top of the amount we set at
+// checkout, if this account's "customer bears the fee" preference is on
+// (Paystack Dashboard → Settings → Preferences → Transaction fees). When
+// that's on, the amount that actually lands here is price + fee, not price
+// exactly — local cards run ~1.5% + ₦100, international cards ~3.9% + ₦100,
+// both capped, which tops out around 4% at our price points. 6% gives
+// headroom without being loose enough to wave through a genuinely wrong
+// amount. This does NOT relax the floor — amountNaira still can't be below
+// the listed price (minus AMOUNT_TOLERANCE for rounding).
+const FEE_CEILING_MULTIPLIER = 1.06;
+
 const PLAN_LABELS = { builder1: 'Builder 1', builder2: 'Builder 2', pro: 'Pro' };
 
 function emailShell(innerHtml) {
@@ -116,10 +127,14 @@ async function hmacSha512Hex(secret, message) {
 // amount alone can identify unambiguously.
 function resolvePlan(metadataPlan, amountNaira, currency) {
   if (currency !== 'NGN') return null;
-  if (metadataPlan && PRICES[metadataPlan] !== undefined && Math.abs(amountNaira - PRICES[metadataPlan]) <= AMOUNT_TOLERANCE) {
+
+  const withinRange = (price) =>
+    amountNaira >= price - AMOUNT_TOLERANCE && amountNaira <= price * FEE_CEILING_MULTIPLIER;
+
+  if (metadataPlan && PRICES[metadataPlan] !== undefined && withinRange(PRICES[metadataPlan])) {
     return metadataPlan;
   }
-  if (Math.abs(amountNaira - PRICES.pro) <= AMOUNT_TOLERANCE) return 'pro';
+  if (withinRange(PRICES.pro)) return 'pro';
   return null;
 }
 
