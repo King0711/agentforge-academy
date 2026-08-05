@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -12,12 +12,15 @@ import { useCourseContent } from '../hooks/useCourseContent';
 import { useTheme } from '../context/ThemeContext';
 import XPBadge from '../components/XPBadge';
 import SessionGuide from '../components/SessionGuide';
+import CourseSidebar from '../components/CourseSidebar';
 import NotFound from './NotFound';
 
 export default function BuilderSession({ progress, tier }) {
   const { slug } = useParams();
   const { theme } = useTheme();
   const [showXpPop, setShowXpPop] = useState(false);
+  const [reachedEnd, setReachedEnd] = useState(false);
+  const endRef = useRef(null);
 
   const tierAgents = getAgentsByDifficulty(tier);
   const index = tierAgents.findIndex((a) => a.slug === slug);
@@ -93,6 +96,23 @@ export default function BuilderSession({ progress, tier }) {
     window.scrollTo(0, 0);
   }, [slug]);
 
+  // Gate "Mark Complete" behind having actually scrolled through the
+  // session — resets per slug, and re-observes the sentinel at the bottom
+  // of the page content.
+  useEffect(() => {
+    setReachedEnd(false);
+    const node = endRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setReachedEnd(true);
+      },
+      { threshold: 0 }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [slug]);
+
   if (!agent) return <NotFound />;
 
   const completed = progress.isCompleted(agent.id);
@@ -107,7 +127,10 @@ export default function BuilderSession({ progress, tier }) {
 
   return (
     <div>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+        <div className="grid lg:grid-cols-[260px_1fr] gap-8 items-start">
+          <CourseSidebar tier={tier} tierAgents={tierAgents} currentSlug={slug} progress={progress} />
+          <div className="min-w-0">
         <Link
           to={`/catalog?difficulty=${encodeURIComponent(tier)}`}
           className="inline-flex items-center gap-1.5 text-sm font-semibold text-body hover:text-brand transition-colors mb-6"
@@ -167,7 +190,11 @@ export default function BuilderSession({ progress, tier }) {
           <p className="text-sm text-body">
             {locked
               ? 'Unlock this session to mark it complete and earn XP.'
-              : completed ? 'Marked as completed — great work!' : 'Mark this session complete to earn XP.'}
+              : completed
+              ? 'Marked as completed — great work!'
+              : reachedEnd
+              ? 'Mark this session complete to earn XP.'
+              : 'Scroll to the end of the session to mark it complete.'}
           </p>
           {locked ? (
             <Link
@@ -179,12 +206,12 @@ export default function BuilderSession({ progress, tier }) {
           ) : (
             <button
               onClick={handleComplete}
-              disabled={loading}
+              disabled={loading || (!completed && !reachedEnd)}
               className={`flex items-center gap-2 font-bold rounded-lg px-5 py-2.5 transition-all flex-shrink-0 ${
                 completed
                   ? 'bg-[#EAFAF1] dark:bg-green/10 text-green border border-green/30 hover:bg-green/10'
                   : 'bg-green text-white hover:brightness-95 shadow-lg shadow-green/20'
-              } ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
+              } ${loading || (!completed && !reachedEnd) ? 'opacity-60 cursor-not-allowed' : ''}`}
             >
               <CheckCircle2 className="w-4 h-4" />
               {completed ? 'Completed' : 'Mark Complete'}
@@ -300,6 +327,9 @@ export default function BuilderSession({ progress, tier }) {
             )}
           </div>
         )}
+        <div ref={endRef} />
+          </div>
+        </div>
       </div>
     </div>
   );
