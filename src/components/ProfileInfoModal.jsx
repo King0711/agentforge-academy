@@ -1,72 +1,21 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Briefcase, Pencil, X, Loader2 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
+import { Briefcase, X, Loader2 } from 'lucide-react';
+import { supabase } from '../lib/supabaseClient';
 import { industries } from '../data/industries';
+import { useProfileInfo } from '../context/ProfileInfoContext';
 
-export default function ProfileInfoPrompt() {
-  const { user } = useAuth();
-  const [status, setStatus] = useState('loading'); // loading | eligible | dismissed | set | ineligible
-  const [modalOpen, setModalOpen] = useState(false);
-  const [savedIndustry, setSavedIndustry] = useState('');
-  const [name, setName] = useState('');
-  const [selectedIndustry, setSelectedIndustry] = useState('');
-  const [customIndustry, setCustomIndustry] = useState('');
+// Mounted once at the app-shell level (see App.jsx) so the "ask on login"
+// popup can open on whichever page the user lands on first — not just the
+// dashboard. The dashboard's slim summary/reminder row (ProfileInfoSummary)
+// shares this same state via ProfileInfoContext and can reopen this modal.
+export default function ProfileInfoModal() {
+  const {
+    user, modalOpen, closeModal, markSet,
+    name, setName, selectedIndustry, setSelectedIndustry, customIndustry, setCustomIndustry,
+  } = useProfileInfo();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (!user || !isSupabaseConfigured) {
-      setStatus('ineligible');
-      return;
-    }
-
-    const dismissKey = `sdt_profile_prompt_dismissed_${user.id}`;
-
-    let cancelled = false;
-    supabase
-      .from('profiles')
-      .select('display_name, industry')
-      .eq('id', user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (cancelled) return;
-        const fallbackName = user.user_metadata?.display_name || user.email?.split('@')[0] || '';
-        setName(data?.display_name || fallbackName);
-
-        if (data?.industry) {
-          setSavedIndustry(data.industry);
-          setSelectedIndustry(industries.includes(data.industry) ? data.industry : 'Other');
-          setCustomIndustry(industries.includes(data.industry) ? '' : data.industry);
-          setStatus('set');
-        } else if (localStorage.getItem(dismissKey) === 'true') {
-          setStatus('dismissed');
-        } else {
-          // First time this user has ever landed on an authenticated page
-          // with no industry on file — open the modal automatically rather
-          // than waiting for a click, since this is the "ask on login" flow.
-          setStatus('eligible');
-          setModalOpen(true);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user]);
-
-  // Easy to close by design (X, backdrop click, Escape, or the Skip link
-  // all route here) — a user forced into filling this in just to escape a
-  // modal tends to type junk to get past it, which defeats the point.
-  const closeModal = ({ skip } = {}) => {
-    setModalOpen(false);
-    setError('');
-    if (skip && status !== 'set') {
-      if (user) localStorage.setItem(`sdt_profile_prompt_dismissed_${user.id}`, 'true');
-      setStatus('dismissed');
-    }
-  };
 
   useEffect(() => {
     if (!modalOpen) return;
@@ -78,7 +27,11 @@ export default function ProfileInfoPrompt() {
       window.removeEventListener('keydown', onKey);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modalOpen, status]);
+  }, [modalOpen]);
+
+  useEffect(() => {
+    if (modalOpen) setError('');
+  }, [modalOpen]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -111,14 +64,10 @@ export default function ProfileInfoPrompt() {
     await supabase.auth.updateUser({ data: { display_name: name.trim() } });
 
     setSubmitting(false);
-    setSavedIndustry(finalIndustry);
-    setStatus('set');
-    setModalOpen(false);
+    markSet(finalIndustry);
   };
 
-  if (status === 'loading' || status === 'ineligible') return null;
-
-  const modal = (
+  return (
     <AnimatePresence>
       {modalOpen && (
         <motion.div
@@ -213,44 +162,4 @@ export default function ProfileInfoPrompt() {
       )}
     </AnimatePresence>
   );
-
-  if (status === 'set') {
-    return (
-      <>
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-border-soft bg-[#FAF8FF] dark:bg-white/5 px-5 py-3 mb-8">
-          <p className="text-sm text-body">
-            You're in <span className="font-semibold text-ink">{savedIndustry}</span>
-          </p>
-          <button
-            onClick={() => setModalOpen(true)}
-            className="flex items-center gap-1.5 text-sm font-semibold text-brand hover:text-brand-deep"
-          >
-            <Pencil className="w-3.5 h-3.5" /> Edit
-          </button>
-        </div>
-        {modal}
-      </>
-    );
-  }
-
-  if (status === 'dismissed') {
-    // Not gone forever — a low-key, always-visible way back in, since the
-    // user skipped the popup rather than the app deciding for them.
-    return (
-      <>
-        <button
-          onClick={() => setModalOpen(true)}
-          className="flex items-center gap-2 text-sm text-body hover:text-brand mb-8 -mt-2"
-        >
-          <Briefcase className="w-3.5 h-3.5" />
-          Want tailored tips? Tell us your industry
-        </button>
-        {modal}
-      </>
-    );
-  }
-
-  // status === 'eligible' — modal opens itself on mount; nothing rendered
-  // inline until the user has an opinion (set or dismissed).
-  return modal;
 }
