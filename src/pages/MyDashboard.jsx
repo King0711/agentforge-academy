@@ -1,6 +1,7 @@
 import { LayoutDashboard } from 'lucide-react';
 import Dashboard from '../components/Dashboard';
 import TestimonialPrompt from '../components/TestimonialPrompt';
+import ProfileInfoPrompt from '../components/ProfileInfoPrompt';
 
 export default function MyDashboard({ progress, onSelectAgent }) {
   return (
@@ -12,6 +13,7 @@ export default function MyDashboard({ progress, onSelectAgent }) {
         </h1>
         <p className="text-body mt-2">Track your XP, streaks, and progress through the curriculum.</p>
       </div>
+      <ProfileInfoPrompt />
       <TestimonialPrompt completedCount={progress.completed.length} />
       <Dashboard progress={progress} onSelectAgent={onSelectAgent} />
     </div>

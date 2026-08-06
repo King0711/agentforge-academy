@@ -15,6 +15,11 @@ create table if not exists public.profiles (
   email text,
   display_name text,
   is_byu_student boolean not null default false,
+  -- Sector/industry the user works in or wants to move into — collected via
+  -- the ProfileInfoPrompt dashboard card, used to tailor future emails.
+  -- Doubles as the "has this user completed the prompt" signal (null = not
+  -- yet asked/answered), so no separate boolean/timestamp column is needed.
+  industry text,
   created_at timestamptz not null default now()
 );
 
