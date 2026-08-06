@@ -2,16 +2,35 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 const ADMIN_EMAIL = Deno.env.get('ADMIN_NOTIFY_EMAIL') ?? 'king.samueljacob@gmail.com';
+// Same shared secret already used by the pg_cron-triggered email functions
+// (send-winback-emails etc.) — reused here rather than provisioning a new
+// one, since the DB trigger that calls this function has no end-user JWT to
+// present either.
+const CRON_SECRET = Deno.env.get('CRON_SECRET') ?? '';
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 serve(async (req) => {
   try {
+    const cronHeader = req.headers.get('x-cron-secret') ?? '';
+    if (!CRON_SECRET || cronHeader !== CRON_SECRET) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
     const payload = await req.json();
     const record = payload.record;
 
     if (!record) return new Response('No record', { status: 400 });
 
-    const email = record.email ?? 'unknown';
-    const name = record.display_name ?? email;
+    const email = escapeHtml(record.email ?? 'unknown');
+    const name = escapeHtml(record.display_name ?? record.email ?? 'unknown');
     const isBYU = record.is_byu_student ? ' 🎓 BYU Pathway student' : '';
     const joined = new Date(record.created_at).toLocaleString('en-GB', {
       dateStyle: 'medium', timeStyle: 'short',

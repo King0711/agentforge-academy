@@ -6,17 +6,25 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+// Restricted to an allowlist rather than '*' since this endpoint is an
+// admin-only, state-changing action (sends real email to real users) —
+// still needs to allow local dev (localhost) and Vercel preview
+// deployments (*.vercel.app), not just the production domain.
+const ALLOWED_ORIGIN_PATTERNS = [
+  /^https:\/\/socialdevtechnologies\.com$/,
+  /^https:\/\/[a-z0-9-]+\.vercel\.app$/,
+  /^http:\/\/localhost:\d+$/,
+];
 
-function jsonResponse(body, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
+function corsHeadersFor(req) {
+  const origin = req.headers.get('Origin') ?? '';
+  const allowed = ALLOWED_ORIGIN_PATTERNS.some((p) => p.test(origin));
+  return {
+    'Access-Control-Allow-Origin': allowed ? origin : 'https://socialdevtechnologies.com',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    Vary: 'Origin',
+  };
 }
 
 // Shared branded wrapper so every outbound email looks consistent, with a
@@ -59,6 +67,14 @@ function isActive(expiresAt) {
 }
 
 serve(async (req) => {
+  const corsHeaders = corsHeadersFor(req);
+  function jsonResponse(body, status = 200) {
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405);
 
@@ -82,7 +98,10 @@ serve(async (req) => {
     global: { headers: { Authorization: authHeader } },
   });
   const { data: profiles, error: rpcError } = await callerClient.rpc('admin_get_all_profiles');
-  if (rpcError) return jsonResponse({ error: rpcError.message }, 403);
+  if (rpcError) {
+    console.error('admin_get_all_profiles failed:', rpcError.message);
+    return jsonResponse({ error: 'Unauthorized' }, 403);
+  }
 
   const recipients = (profiles || []).filter((p) => {
     if (!p.email) return false;

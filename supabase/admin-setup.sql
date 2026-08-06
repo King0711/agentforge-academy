@@ -126,23 +126,31 @@ grant execute on function public.admin_set_user_pro(uuid, boolean) to authentica
 revoke execute on function public.admin_set_user_admin(uuid, boolean) from anon, public;
 grant execute on function public.admin_set_user_admin(uuid, boolean) to authenticated;
 
--- 5. (Optional) Trigger to call the notify-signup edge function on new profile insert
---    Replace YOUR_PROJECT_REF with your actual Supabase project ref (from the URL)
---    e.g. https://xyzabcdef.supabase.co → ref is xyzabcdef
---
--- create or replace function public.notify_admin_on_signup()
--- returns trigger language plpgsql security definer as $$
--- begin
---   perform net.http_post(
---     url := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/notify-signup',
---     headers := '{"Content-Type":"application/json","Authorization":"Bearer YOUR_ANON_KEY"}'::jsonb,
---     body := json_build_object('record', row_to_json(new))::text
---   );
---   return new;
--- end;
--- $$;
---
--- drop trigger if exists on_profile_created on public.profiles;
--- create trigger on_profile_created
---   after insert on public.profiles
---   for each row execute procedure public.notify_admin_on_signup();
+-- 5. Trigger to call the notify-signup edge function on new profile insert.
+--    Authenticates to the edge function with the same 'cron_secret' Vault
+--    entry already used by the pg_cron-triggered email functions (see
+--    cron.job) rather than a bare anon key — the edge function itself
+--    rejects any request whose x-cron-secret header doesn't match.
+create or replace function public.notify_admin_on_signup()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform net.http_post(
+    url := 'https://qkrfpuckvymjpewcszgs.supabase.co/functions/v1/notify-signup',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'x-cron-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'cron_secret')
+    ),
+    body := jsonb_build_object('record', row_to_json(new))
+  );
+  return new;
+end;
+$$;
+
+drop trigger if exists on_profile_created on public.profiles;
+create trigger on_profile_created
+  after insert on public.profiles
+  for each row execute procedure public.notify_admin_on_signup();

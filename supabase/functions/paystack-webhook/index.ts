@@ -118,6 +118,18 @@ async function hmacSha512Hex(secret, message) {
   return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+// Constant-time comparison — a plain `===`/`!==` on the hex strings would
+// short-circuit on the first differing character, leaking a timing signal
+// an attacker could use to guess the correct signature byte-by-byte.
+function timingSafeEqual(a, b) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
 // Builder 1 and Builder 2 cost the same (₦50,000), so amount alone can't
 // tell them apart — trust the plan embedded in metadata at checkout
 // creation (see create-paystack-checkout), but still verify its price
@@ -131,7 +143,7 @@ function resolvePlan(metadataPlan, amountNaira, currency) {
   const withinRange = (price) =>
     amountNaira >= price - AMOUNT_TOLERANCE && amountNaira <= price * FEE_CEILING_MULTIPLIER;
 
-  if (metadataPlan && PRICES[metadataPlan] !== undefined && withinRange(PRICES[metadataPlan])) {
+  if (metadataPlan && Object.hasOwn(PRICES, metadataPlan) && withinRange(PRICES[metadataPlan])) {
     return metadataPlan;
   }
   if (withinRange(PRICES.pro)) return 'pro';
@@ -146,7 +158,7 @@ serve(async (req) => {
   // creation) hasn't been tampered with.
   const signature = req.headers.get('x-paystack-signature') ?? '';
   const expected = await hmacSha512Hex(PAYSTACK_SECRET_KEY, rawBody);
-  if (signature !== expected) {
+  if (!timingSafeEqual(signature, expected)) {
     return new Response('Unauthorized', { status: 401 });
   }
 

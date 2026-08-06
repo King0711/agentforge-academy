@@ -11,17 +11,25 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '
 // that schedules it).
 const CRON_SECRET = Deno.env.get('CRON_SECRET') ?? '';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+// Restricted to an allowlist rather than '*' — the cron-triggered path never
+// hits CORS at all (server-to-server), this only matters for the
+// admin-manual-run path from the browser. Still needs to allow local dev
+// (localhost) and Vercel preview deployments (*.vercel.app).
+const ALLOWED_ORIGIN_PATTERNS = [
+  /^https:\/\/socialdevtechnologies\.com$/,
+  /^https:\/\/[a-z0-9-]+\.vercel\.app$/,
+  /^http:\/\/localhost:\d+$/,
+];
 
-function jsonResponse(body, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
+function corsHeadersFor(req) {
+  const origin = req.headers.get('Origin') ?? '';
+  const allowed = ALLOWED_ORIGIN_PATTERNS.some((p) => p.test(origin));
+  return {
+    'Access-Control-Allow-Origin': allowed ? origin : 'https://socialdevtechnologies.com',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    Vary: 'Origin',
+  };
 }
 
 function emailShell(innerHtml) {
@@ -83,6 +91,14 @@ function winbackHtml(name) {
 }
 
 serve(async (req) => {
+  const corsHeaders = corsHeadersFor(req);
+  function jsonResponse(body, status = 200) {
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405);
 
@@ -106,7 +122,10 @@ serve(async (req) => {
     .select('winback_inactive_days, winback_automation_enabled')
     .eq('id', 1)
     .single();
-  if (settingsError || !settings) return jsonResponse({ error: 'Could not load email settings' }, 500);
+  if (settingsError || !settings) {
+    if (settingsError) console.error('Failed to load email settings:', settingsError.message);
+    return jsonResponse({ error: 'Could not load email settings' }, 500);
+  }
 
   if (isAutomatedRun) {
     // Scheduled run — respect the admin's automation toggle.
@@ -128,7 +147,10 @@ serve(async (req) => {
   const { data: inactiveUsers, error: queryError } = await serviceClient.rpc('service_get_inactive_users', {
     p_days: settings.winback_inactive_days,
   });
-  if (queryError) return jsonResponse({ error: queryError.message }, 500);
+  if (queryError) {
+    console.error('service_get_inactive_users failed:', queryError.message);
+    return jsonResponse({ error: 'Could not load inactive users' }, 500);
+  }
 
   // Merge in any manually-added preview/extra recipients that aren't
   // already part of the real inactive-user match (avoid double-emailing).
@@ -139,7 +161,7 @@ serve(async (req) => {
   const recipients = [...(inactiveUsers || []), ...previewRecipients];
 
   let sent = 0;
-  let firstError = null;
+  let hadError = false;
   for (const u of recipients) {
     if (!u.email) continue;
     const name = u.display_name || u.email.split('@')[0];
@@ -154,10 +176,11 @@ serve(async (req) => {
         subject,
         metadata: u.days_inactive === null ? { preview: true } : { days_inactive: u.days_inactive },
       });
-    } else if (!firstError) {
-      firstError = { email: u.email, status: result.status, error: result.error };
+    } else if (!hadError) {
+      hadError = true;
+      console.error('sendResendEmail failed:', u.email, result.status, JSON.stringify(result.error));
     }
   }
 
-  return jsonResponse({ ok: true, matched: recipients.length, sent, firstError });
+  return jsonResponse({ ok: true, matched: recipients.length, sent, hadError });
 });

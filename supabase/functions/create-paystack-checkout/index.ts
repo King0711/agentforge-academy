@@ -22,21 +22,38 @@ const PRICES = {
 // supabase.functions.invoke), so it needs CORS headers and to answer the
 // browser's preflight OPTIONS request — without these, the browser blocks
 // the request before it ever reaches this code and supabase-js reports
-// "Failed to send a request to the Edge Function".
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+// "Failed to send a request to the Edge Function". Restricted to an
+// allowlist rather than '*' since this endpoint performs a privileged,
+// state-changing action (initiates a real charge) for an authenticated
+// user — but still needs to allow local dev (localhost) and Vercel preview
+// deployments (*.vercel.app), not just the production domain.
+const ALLOWED_ORIGIN_PATTERNS = [
+  /^https:\/\/socialdevtechnologies\.com$/,
+  /^https:\/\/[a-z0-9-]+\.vercel\.app$/,
+  /^http:\/\/localhost:\d+$/,
+];
 
-function jsonResponse(body, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
+function corsHeadersFor(req) {
+  const origin = req.headers.get('Origin') ?? '';
+  const allowed = ALLOWED_ORIGIN_PATTERNS.some((p) => p.test(origin));
+  return {
+    'Access-Control-Allow-Origin': allowed ? origin : 'https://socialdevtechnologies.com',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    Vary: 'Origin',
+  };
 }
 
 serve(async (req) => {
+  const corsHeaders = corsHeadersFor(req);
+
+  function jsonResponse(body, status = 200) {
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -59,8 +76,10 @@ serve(async (req) => {
   }
 
   const { plan, redirectOrigin } = body;
+  if (typeof plan !== 'string' || !Object.hasOwn(PRICES, plan)) {
+    return jsonResponse({ error: 'Unknown plan' }, 400);
+  }
   const amountNaira = PRICES[plan];
-  if (!amountNaira) return jsonResponse({ error: 'Unknown plan' }, 400);
 
   // Embed the verified user id + plan in Paystack's metadata. Paystack
   // signs the whole webhook payload with our secret key, so when it comes

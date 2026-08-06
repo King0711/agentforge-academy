@@ -7,17 +7,25 @@ const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const CRON_SECRET = Deno.env.get('CRON_SECRET') ?? '';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+// Restricted to an allowlist rather than '*' — the cron-triggered path never
+// hits CORS at all (server-to-server), this only matters for the
+// admin-manual-run path from the browser. Still needs to allow local dev
+// (localhost) and Vercel preview deployments (*.vercel.app).
+const ALLOWED_ORIGIN_PATTERNS = [
+  /^https:\/\/socialdevtechnologies\.com$/,
+  /^https:\/\/[a-z0-9-]+\.vercel\.app$/,
+  /^http:\/\/localhost:\d+$/,
+];
 
-function jsonResponse(body, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
+function corsHeadersFor(req) {
+  const origin = req.headers.get('Origin') ?? '';
+  const allowed = ALLOWED_ORIGIN_PATTERNS.some((p) => p.test(origin));
+  return {
+    'Access-Control-Allow-Origin': allowed ? origin : 'https://socialdevtechnologies.com',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    Vary: 'Origin',
+  };
 }
 
 function emailShell(innerHtml) {
@@ -72,6 +80,14 @@ function abandonedCheckoutHtml(name, planLabel) {
 }
 
 serve(async (req) => {
+  const corsHeaders = corsHeadersFor(req);
+  function jsonResponse(body, status = 200) {
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405);
 
@@ -84,7 +100,10 @@ serve(async (req) => {
     .select('abandoned_checkout_automation_enabled')
     .eq('id', 1)
     .single();
-  if (settingsError || !settings) return jsonResponse({ error: 'Could not load email settings' }, 500);
+  if (settingsError || !settings) {
+    if (settingsError) console.error('Failed to load email settings:', settingsError.message);
+    return jsonResponse({ error: 'Could not load email settings' }, 500);
+  }
 
   if (isAutomatedRun) {
     if (!settings.abandoned_checkout_automation_enabled) {
@@ -104,7 +123,10 @@ serve(async (req) => {
   const { data: candidates, error: queryError } = await serviceClient.rpc('service_get_abandoned_checkouts', {
     p_hours: 2,
   });
-  if (queryError) return jsonResponse({ error: queryError.message }, 500);
+  if (queryError) {
+    console.error('service_get_abandoned_checkouts failed:', queryError.message);
+    return jsonResponse({ error: 'Could not load abandoned checkouts' }, 500);
+  }
 
   let sent = 0;
   for (const c of candidates || []) {
