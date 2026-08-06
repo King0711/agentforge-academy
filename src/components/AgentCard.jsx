@@ -39,15 +39,16 @@ export default function AgentCard({ agent, completed, onClick, hasBuilder1 = fal
         {agent.techStack.slice(0, 3).map((tech) => (
           <span
             key={tech}
-            className="text-[11px] font-medium px-2 py-0.5 rounded-full border"
-            style={{ borderColor: `${getTechColor(tech)}55`, color: getTechColor(tech) }}
+            className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border text-body-strong"
+            style={{ borderColor: `${getTechColor(tech)}55` }}
           >
+            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: getTechColor(tech) }} />
             {tech}
           </span>
         ))}
       </div>
 
-      <div className="flex justify-between text-[12.5px] text-[#7C7398] dark:text-[#9B93B8] font-semibold pt-2 border-t border-border-soft">
+      <div className="flex justify-between text-[12.5px] text-[#6E6389] dark:text-[#9B93B8] font-semibold pt-2 border-t border-border-soft">
         <span>{agent.buildTime}</span>
         <span>⚡ {agent.xp} XP</span>
       </div>

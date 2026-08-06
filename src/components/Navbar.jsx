@@ -177,6 +177,8 @@ export default function Navbar() {
 
         <button
           onClick={() => setOpen((o) => !o)}
+          aria-label={open ? 'Close menu' : 'Open menu'}
+          aria-expanded={open}
           className="lg:hidden ml-auto w-9 h-9 flex items-center justify-center rounded-lg bg-[#F3EBFF] dark:bg-white/10 text-brand flex-shrink-0"
         >
           {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}

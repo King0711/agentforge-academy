@@ -270,7 +270,7 @@ function TestimonialRow({ t, actionLoading, onApprove, onReject, onFeatureToggle
             ))}
           </span>
           {t.source === 'google_business' ? (
-            <span className="text-[11px] font-semibold text-gray-400">Google review</span>
+            <span className="text-[11px] font-semibold text-gray-500">Google review</span>
           ) : (
             <span className="text-[11px] font-semibold text-brand">Student submission</span>
           )}

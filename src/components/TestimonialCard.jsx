@@ -19,7 +19,7 @@ export default function TestimonialCard({ testimonial }) {
       <div className="flex items-center justify-between gap-2 pt-2 border-t border-border-soft">
         <span className="font-bold text-ink text-sm">{display_name}</span>
         {source === 'google_business' ? (
-          <span className="text-[11px] font-semibold text-gray-400">Google review</span>
+          <span className="text-[11px] font-semibold text-gray-500">Google review</span>
         ) : (
           <span className="flex items-center gap-1 text-[11px] font-semibold text-green">
             <CheckCircle2 className="w-3 h-3" /> Verified Builder

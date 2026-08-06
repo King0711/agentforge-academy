@@ -11,6 +11,7 @@ import { getNextRecommended, getBuilderPagePath } from '../data/agents';
 import { useCourseContent } from '../hooks/useCourseContent';
 import XPBadge from './XPBadge';
 import SessionGuide from './SessionGuide';
+import YouTubeFacade from './YouTubeFacade';
 
 export default function AgentModal({ agent, completed, onToggleComplete, onClose, onSelectAgent }) {
   const [showXpPop, setShowXpPop] = useState(false);
@@ -128,12 +129,10 @@ export default function AgentModal({ agent, completed, onToggleComplete, onClose
             {agent.videoId && activeTab === 'video' && (
               <div className="space-y-4">
                 <div className="relative w-full rounded-xl overflow-hidden bg-black" style={{ paddingTop: '56.25%' }}>
-                  <iframe
+                  <YouTubeFacade
                     className="absolute inset-0 w-full h-full"
-                    src={`https://www.youtube.com/embed/${agent.videoId}?rel=0&modestbranding=1`}
+                    videoId={agent.videoId}
                     title={`How to build: ${agent.title}`}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
                   />
                 </div>
                 <p className="text-sm text-body text-center">
@@ -189,9 +188,10 @@ export default function AgentModal({ agent, completed, onToggleComplete, onClose
                   {agent.techStack.map((tech) => (
                     <span
                       key={tech}
-                      className="text-xs font-medium px-2.5 py-1 rounded-full border"
-                      style={{ borderColor: `${getTechColor(tech)}55`, color: getTechColor(tech) }}
+                      className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border text-body-strong"
+                      style={{ borderColor: `${getTechColor(tech)}55` }}
                     >
+                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: getTechColor(tech) }} />
                       {tech}
                     </span>
                   ))}

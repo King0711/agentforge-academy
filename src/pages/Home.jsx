@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import AgentCard from '../components/AgentCard';
+import YouTubeFacade from '../components/YouTubeFacade';
 import TestimonialsSection from '../components/TestimonialsSection';
 import { agents } from '../data/agents';
 import { departments, isVisibleToPublic } from '../data/departments';
@@ -82,12 +83,10 @@ export default function Home({ progress, onSelectAgent }) {
 
           <div className="relative">
             <div className="relative h-[220px] sm:h-[280px] lg:h-[320px] rounded-[22px] overflow-hidden shadow-[0_24px_50px_-18px_rgba(80,40,160,.4)] bg-[#1A1333]">
-              <iframe
+              <YouTubeFacade
                 className="w-full h-full"
-                src={`https://www.youtube.com/embed/${YOUTUBE_VIDEO_ID}?rel=0&modestbranding=1`}
+                videoId={YOUTUBE_VIDEO_ID}
                 title="Social Dev Technologies preview"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
               />
             </div>
             <motion.div
@@ -137,7 +136,7 @@ export default function Home({ progress, onSelectAgent }) {
           <div className="text-[13px] text-body font-semibold mt-0.5">AI Agents</div>
         </div>
         <div className="bg-[#FEF9E7] dark:bg-[#181818] rounded-[18px] px-5 py-5.5 text-center">
-          <div className="font-display font-extrabold text-[34px] text-[#D9A406]">{realDepartments.length}</div>
+          <div className="font-display font-extrabold text-[34px] text-[#B45309]">{realDepartments.length}</div>
           <div className="text-[13px] text-body font-semibold mt-0.5">Departments</div>
         </div>
         <div className="bg-[#EAFAF1] dark:bg-[#181818] rounded-[18px] px-5 py-5.5 text-center">

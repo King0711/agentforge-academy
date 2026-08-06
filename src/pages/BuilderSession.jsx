@@ -256,9 +256,10 @@ export default function BuilderSession({ progress, tier }) {
               {agent.techStack.map((tech) => (
                 <span
                   key={tech}
-                  className="text-xs font-medium px-2.5 py-1 rounded-full border"
-                  style={{ borderColor: `${getTechColor(tech)}55`, color: getTechColor(tech) }}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border text-body-strong"
+                  style={{ borderColor: `${getTechColor(tech)}55` }}
                 >
+                  <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: getTechColor(tech) }} />
                   {tech}
                 </span>
               ))}

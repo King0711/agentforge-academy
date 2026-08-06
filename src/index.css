@@ -1,5 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap');
+/* Bricolage Grotesque, Plus Jakarta Sans, and Roboto Mono are loaded via
+   <link rel="stylesheet"> tags in index.html (not @import here) so the
+   browser can discover and start fetching them from the very first HTML
+   parse instead of waiting for this stylesheet to load first. */
 @import "tailwindcss";
 
 /* Dark mode is toggled by ThemeContext setting data-theme="dark" on <html>
@@ -18,7 +20,7 @@
   --color-body: #5A5473;
   --color-body-strong: #3A3358;
   --color-yellow: #F5D90A;
-  --color-green: #16A34A;
+  --color-green: #15803D;
   --color-amber: #F59E0B;
   --color-rose: #E11D48;
   --color-border-soft: #EEE6FB;
