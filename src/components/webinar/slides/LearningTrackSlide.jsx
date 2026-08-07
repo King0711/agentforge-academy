@@ -33,12 +33,12 @@ const TRACKS = [
 // Bridges "12 projects" to an actual new capability — what changes for the
 // person, not what they clicked through.
 const CAPABILITIES = [
-  'Spot repetitive work worth automating',
-  'Design an AI solution for a real problem',
-  'Build practical agents with Claude',
-  'Connect AI to the tools you already use',
-  'Build a portfolio of real AI projects',
-  'Continue confidently into Builder 2',
+  'Spot work worth automating',
+  'Design an AI solution',
+  'Build agents with Claude',
+  'Connect AI to real tools',
+  'Build a real portfolio',
+  'Move on to Builder 2',
 ];
 
 export default function LearningTrackSlide() {

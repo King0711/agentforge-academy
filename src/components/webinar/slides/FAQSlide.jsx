@@ -5,15 +5,17 @@ import SlideShell from '../SlideShell';
 // Answers grounded in real site facts (Pricing.jsx, About.jsx principles) —
 // no softened or invented claims, since this slide's whole job is to be
 // honest enough that it actually clears objections instead of dodging them.
+// Short enough to read in ~3 seconds each — a live Zoom audience is
+// listening to the spoken answer, not reading a paragraph off the screen.
 const FAQS = [
-  { q: 'Do I need coding experience?', a: "No. Every build starts from a ready-to-use prompt — you're directing Claude, not writing software from scratch." },
-  { q: "What if I've never programmed at all?", a: "That's who Builder 1 is built for. If you can follow steps and copy-paste, you can complete these sessions." },
-  { q: "What if I don't know what to build?", a: 'That\'s why every Builder 1 session is project-based — you\'re never starting from a blank page, you\'re following a real, guided build.' },
-  { q: "What if I'm busy?", a: 'Fully self-paced — 1.5 to 3 hours per session, 6 months of access. No live cohort attendance required.' },
-  { q: 'Why do I need Claude Pro?', a: "You're using a real, production AI tool, not a toy sandbox — the free tier hits limits fast during an actual build." },
-  { q: 'What support do I get?', a: "Direct support — reach us and get an answer. This isn't a forum you're left alone in." },
-  { q: 'What if I get stuck?', a: "You won't be building alone. If you get stuck, you can reach out to our support team and we'll help you move forward." },
-  { q: 'What if AI changes?', a: 'Builder 1 teaches principles, not memorizing tools — how to find a problem, prompt it, and ship it. That doesn\'t expire when a new model ships.' },
+  { q: 'Do I need coding experience?', a: 'No. Every session starts with copy-paste prompts.' },
+  { q: "What if I've never programmed at all?", a: "That's who Builder 1 is for. Follow steps, copy-paste, done." },
+  { q: "What if I don't know what to build?", a: "Every session is project-based. You're never starting blank." },
+  { q: "What if I'm busy?", a: 'Self-paced. 1.5–3 hrs per session. 6 months of access.' },
+  { q: 'Why do I need Claude Pro?', a: 'Real production AI, not a toy — the free tier hits limits fast.' },
+  { q: 'What support do I get?', a: 'Direct support. Reach out, get an answer. Never alone.' },
+  { q: 'What if I get stuck?', a: "Reach out anytime — we'll help you move forward." },
+  { q: 'What if AI changes?', a: "You learn principles, not tools. That doesn't expire." },
 ];
 
 export default function FAQSlide() {

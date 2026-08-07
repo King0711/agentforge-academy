@@ -58,6 +58,9 @@ export default function TheWorldHasChangedSlide() {
         ))}
       </motion.div>
 
+      {/* First scene carries a touch more visual weight than the other two
+          — three equal-weight rows read as flat; this gives the eye a clear
+          entry point without dropping the other two audiences. */}
       <div className="flex flex-col gap-2.5 w-full max-w-xl">
         {SCENES.map((scene, i) => (
           <motion.div
@@ -65,10 +68,14 @@ export default function TheWorldHasChangedSlide() {
             initial={{ opacity: 0, x: -16 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.5 + i * 0.15 }}
-            className="flex items-center gap-3.5 bg-white/[0.06] border border-white/10 rounded-2xl px-5 py-4 text-left"
+            className={`flex items-center gap-3.5 rounded-2xl text-left ${
+              i === 0
+                ? 'bg-white/10 border-[1.5px] border-yellow/30 px-5 py-5'
+                : 'bg-white/[0.06] border border-white/10 px-5 py-3.5'
+            }`}
           >
-            <span className="text-xl flex-shrink-0">{scene.icon}</span>
-            <span className="text-[#E5DEF7] text-[13.5px] leading-relaxed">{scene.text}</span>
+            <span className={i === 0 ? 'text-2xl flex-shrink-0' : 'text-xl flex-shrink-0'}>{scene.icon}</span>
+            <span className={`text-[#E5DEF7] leading-relaxed ${i === 0 ? 'text-[14.5px] font-medium' : 'text-[13px]'}`}>{scene.text}</span>
           </motion.div>
         ))}
       </div>

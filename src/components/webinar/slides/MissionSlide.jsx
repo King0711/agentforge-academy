@@ -25,7 +25,7 @@ export default function MissionSlide() {
         className="text-[13px] font-bold uppercase tracking-[3px] mb-5"
         style={{ color: '#B39DFF' }}
       >
-        Our mission
+        Why Africa needs AI Builders
       </motion.span>
 
       <motion.h2
