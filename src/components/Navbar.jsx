@@ -58,7 +58,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-40 bg-[#FFFDFF] dark:bg-[#0A090F] border-b border-[#EFE9FB] dark:border-[#232228]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[70px] flex items-center gap-4">
         <Link to="/" className="flex items-center gap-2.5 flex-shrink-0">
-          <img src="/logo.jpeg" alt="Social Dev Technologies" className="w-9 h-9 sm:w-10 sm:h-10 object-contain rounded-lg" />
+          <img src="/logo-icon.webp" alt="Social Dev Technologies" className="w-9 h-9 sm:w-10 sm:h-10 object-contain rounded-lg" />
           <span className="font-display font-extrabold text-[15px] sm:text-base text-ink tracking-tight whitespace-nowrap">
             Social Dev<span className="text-brand"> Technologies</span>
           </span>

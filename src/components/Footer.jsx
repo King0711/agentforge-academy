@@ -10,7 +10,7 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto flex flex-wrap justify-between gap-8">
         <div className="max-w-xs">
           <Link to="/" className="flex items-center gap-2.5 mb-3">
-            <img src="/logo.jpeg" alt="Social Dev Technologies" className="w-[34px] h-[34px] object-contain rounded-lg bg-white p-0.5" />
+            <img src="/logo-icon.webp" alt="Social Dev Technologies" className="w-[34px] h-[34px] object-contain rounded-lg bg-white p-0.5" />
             <span className="font-display font-extrabold text-[15px]">Social Dev Technologies</span>
           </Link>
           <p className="text-sm text-[#B8B0D8] leading-relaxed">

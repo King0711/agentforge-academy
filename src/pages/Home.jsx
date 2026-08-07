@@ -87,6 +87,7 @@ export default function Home({ progress, onSelectAgent }) {
                 className="w-full h-full"
                 videoId={YOUTUBE_VIDEO_ID}
                 title="Social Dev Technologies preview"
+                thumbnailSrc="/video-thumbnail.jpg"
               />
             </div>
             <motion.div
