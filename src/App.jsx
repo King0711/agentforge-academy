@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProfileInfoModal from './components/ProfileInfoModal';
@@ -40,17 +40,23 @@ const Admin = lazy(() => import('./pages/Admin'));
 const Certificates = lazy(() => import('./pages/Certificates'));
 const CertificateView = lazy(() => import('./pages/CertificateView'));
 const VerifyCertificate = lazy(() => import('./pages/VerifyCertificate'));
+// Full-screen keynote — deliberately excluded from prerendering (keyboard
+// nav + fullscreen state have no business being static-snapshotted) and
+// renders its own chrome, so AppShell below skips Navbar/Footer for it.
+const Webinar = lazy(() => import('./pages/Webinar'));
 
 function AppShell() {
   const { user } = useAuth();
   const progress = useProgress(user);
   useCertificateClaims(user?.id, progress.completed);
   const [selectedAgent, setSelectedAgent] = useState(null);
+  const location = useLocation();
+  const isWebinar = location.pathname === '/webinar';
 
   return (
     <ProfileInfoProvider>
       <div className="min-h-screen flex flex-col bg-bg">
-        <Navbar />
+        {!isWebinar && <Navbar />}
         <main className="flex-1">
           <Routes>
             <Route path="/" element={<Home progress={progress} onSelectAgent={setSelectedAgent} />} />
@@ -68,6 +74,14 @@ function AppShell() {
             />
             <Route path="/welcome" element={<Welcome />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route
+              path="/webinar"
+              element={
+                <Suspense fallback={null}>
+                  <Webinar />
+                </Suspense>
+              }
+            />
             <Route
               path="/admin"
               element={
@@ -106,7 +120,7 @@ function AppShell() {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
-        <Footer />
+        {!isWebinar && <Footer />}
 
         {selectedAgent && (
           <Suspense fallback={null}>

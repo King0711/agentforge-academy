@@ -1,0 +1,88 @@
+import { motion } from 'framer-motion';
+import { useTheme } from '../../../context/ThemeContext';
+import SlideShell from '../SlideShell';
+
+// Attendees this webinar is actually for — shown as a mirror, not a pitch,
+// so everyone in the Zoom room sees themselves in the first 30 seconds.
+const AUDIENCE = ['Student', 'Graduate', 'Business owner', 'Professional', 'Teacher', 'Customer support', 'Entrepreneur', 'Church leader'];
+
+export default function WelcomeSlide() {
+  const { theme } = useTheme();
+  const bg = theme === 'dark'
+    ? 'radial-gradient(120% 100% at 50% 0%, #181022 0%, #0A090F 60%)'
+    : 'radial-gradient(120% 100% at 50% 0%, #F3EBFF 0%, #FBFAFF 60%)';
+
+  return (
+    <SlideShell background={bg} decorations contentClassName="text-center flex flex-col items-center">
+      <motion.span
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="inline-flex items-center gap-2 bg-white dark:bg-[#181818] border-[1.5px] border-border text-brand font-bold text-[12.5px] px-4 py-2 rounded-full shadow-[0_3px_10px_rgba(124,58,237,.1)] mb-7"
+      >
+        🎥 Live session
+      </motion.span>
+
+      <motion.h1
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.15 }}
+        className="font-display font-extrabold text-[32px] sm:text-[46px] leading-[1.12] text-ink tracking-[-1px] sm:tracking-[-1.5px] max-w-2xl"
+      >
+        Welcome to <span className="text-brand">The AI Builder Workshop.</span>
+      </motion.h1>
+
+      <motion.p
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.3 }}
+        className="text-body-strong text-lg leading-relaxed mt-5 max-w-lg font-medium"
+      >
+        Thank you for investing your time in yourself today.
+      </motion.p>
+
+      <motion.p
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.42 }}
+        className="text-body text-base leading-relaxed mt-4 max-w-lg"
+      >
+        Before we start — tell us who you are in the chat.
+      </motion.p>
+
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.45 }}
+        className="flex flex-wrap justify-center gap-2.5 mt-7 max-w-2xl"
+      >
+        {AUDIENCE.map((a) => (
+          <span
+            key={a}
+            className="text-[13.5px] font-bold text-body-strong bg-white dark:bg-[#181818] border-[1.5px] border-border-soft rounded-full px-4 py-2"
+          >
+            {a}
+          </span>
+        ))}
+      </motion.div>
+
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.7 }}
+        className="text-body text-sm mt-8 max-w-md"
+      >
+        Whoever you are — there's a reason this hour matters for you specifically.
+      </motion.p>
+
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.9 }}
+        className="text-body-strong font-semibold text-sm mt-3 max-w-md"
+      >
+        By the end of today, you'll understand how ordinary people are building AI systems — and you'll know how you can too.
+      </motion.p>
+    </SlideShell>
+  );
+}
