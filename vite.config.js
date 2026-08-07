@@ -6,6 +6,12 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   build: {
+    // Fixes the Lighthouse "Missing source maps for large first-party
+    // JavaScript" finding, and lets real users' (and our own) devtools show
+    // actual file/line stack traces instead of minified positions. Source
+    // maps are only fetched when devtools is open — no cost to normal page
+    // load/TBT for visitors who never open them.
+    sourcemap: true,
     rollupOptions: {
       output: {
         // Fixed (non-hashed) filenames — deliberate. Prerendered pages are
