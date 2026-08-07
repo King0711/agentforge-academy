@@ -10,8 +10,21 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
     <link rel="preconnect" href="https://i.ytimg.com">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&amp;display=swap">
+    <!-- Loaded as non-render-blocking: media="print" makes the browser fetch
+         it at full priority without waiting for it before first paint.
+         src/main.jsx flips data-defer-font links to media="all" once each
+         has loaded (NOT an inline onload= attribute — this site's CSP
+         script-src has no 'unsafe-inline', which would silently block it).
+         Every font is already requested with &display=swap, so text renders
+         immediately in the fallback font and swaps in once these apply —
+         deferring just moves *when* that swap can start. The noscript
+         fallback covers JS-disabled visits. -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" media="all" data-defer-font="">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&amp;display=swap" media="all" data-defer-font="">
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" />
+    </noscript>
 
     <!-- Primary SEO -->
     <title>Social Media Post Generator — Builder 1 Session Guide | Social Dev Technologies</title>
@@ -60,6 +73,7 @@
       }
     </script>
     <script type="module" crossorigin="" src="/assets/index.js"></script>
+    <link rel="modulepreload" crossorigin="" href="/assets/supabaseClient.js">
     <link rel="stylesheet" crossorigin="" href="/assets/index.css">
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"Course","name":"Social Media Post Generator","description":"Input a topic, URL, or article → generate 5 platform-optimized posts for LinkedIn, Twitter/X, Instagram, Facebook, and Threads.","url":"https://socialdevtechnologies.com/builder-1/social-media-post-generator","provider":{"@type":"Organization","name":"Social Dev Technologies","sameAs":"https://socialdevtechnologies.com"},"hasCourseInstance":{"@type":"CourseInstance","courseMode":"online","courseWorkload":"1.5 hrs"},"isAccessibleForFree":false,"hasPart":{"@type":"WebPageElement","isAccessibleForFree":false,"cssSelector":"#session-guide, #resources"}}</script></head>
   <body>
@@ -69,5 +83,9 @@
 
 
 
+
+
+
+<script id="__testimonials_data__" type="application/json">[{"id":"8b0df150-99bb-4e6f-bacd-f15a6fc6cb62","display_name":"Chiamaka M.","body":"When I enrolled in Social Dev Technologies, I had no clue what programming was all about, but now, I can code and my learning experience has been so wonderful... Social Dev Technologies has created a career path for me that will change my life forever.","rating":5,"source":"google_business","featured":true,"created_at":"2026-07-25T17:14:01.067098+00:00"},{"id":"8a019feb-e525-499a-a273-1f1b776c9bb2","display_name":"Thamara P.","body":"Social Dev Technologies was a dream come true for my business. They helped project manage and build out my website. They made it SEO friendly and put my business on the map... Very nice customer service and top notch delivery.","rating":5,"source":"google_business","featured":true,"created_at":"2026-07-25T17:14:01.067098+00:00"},{"id":"0dca2562-9fed-4fc3-bc3e-4719fc51310e","display_name":"Ernest D.","body":"Social Dev Technologies has the best experience for learning, it offers quality service and you get to interact with developers who have the same goal — to achieve great things. Social Dev Technologies is the full package and no one should miss this. You're looking for a Dev company? Social Dev Technologies is it!","rating":5,"source":"google_business","featured":true,"created_at":"2026-07-25T17:14:01.067098+00:00"},{"id":"206e0024-d4f6-4f93-a824-1b576941caf9","display_name":"anietiesam124","body":"It was the best experience that I have ever had","rating":5,"source":"student","featured":false,"created_at":"2026-07-25T18:36:35.101741+00:00"},{"id":"549101a5-8c3e-44a9-a7f1-55e7f68266d3","display_name":"Onyeanuka P.","body":"This is a great place, it has helped me to further learn coding and build my own website. I would highly recommend Social Dev Technologies to potential clients. You don't want to miss their services.","rating":5,"source":"google_business","featured":false,"created_at":"2026-07-25T17:14:01.067098+00:00"},{"id":"9f1c04d0-ebb8-4558-ae83-a63e67181355","display_name":"David O.","body":"Social Dev Tech is definitely a great place for growth and learning. They have dedicated developers constantly producing quality products.","rating":5,"source":"google_business","featured":false,"created_at":"2026-07-25T17:14:01.067098+00:00"},{"id":"f5ad7071-8faf-45db-84eb-08686e9ef307","display_name":"Tade S.","body":"Their service was top notch. Looking forward to working with them again.","rating":5,"source":"google_business","featured":false,"created_at":"2026-07-25T17:14:01.067098+00:00"}]</script>
 
 </body></html>

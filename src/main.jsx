@@ -3,6 +3,17 @@ import { createRoot, hydrateRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 
+// index.html loads the Google Fonts stylesheets with media="print" so they
+// don't block first paint; flip each to media="all" once it's actually
+// loaded. This has to happen here (a same-origin module script) rather than
+// an inline onload= attribute — the site's CSP script-src has no
+// 'unsafe-inline', which blocks inline event-handler attributes outright.
+document.querySelectorAll('link[data-defer-font]').forEach((link) => {
+  const activate = () => { link.media = 'all' }
+  if (link.sheet) activate()
+  else link.addEventListener('load', activate, { once: true })
+})
+
 const rootEl = document.getElementById('root')
 const app = (
   <StrictMode>

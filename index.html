@@ -12,11 +12,31 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://i.ytimg.com" />
+    <!-- Loaded as non-render-blocking: media="print" makes the browser fetch
+         it at full priority without waiting for it before first paint.
+         src/main.jsx flips data-defer-font links to media="all" once each
+         has loaded (NOT an inline onload= attribute — this site's CSP
+         script-src has no 'unsafe-inline', which would silently block it).
+         Every font is already requested with &display=swap, so text renders
+         immediately in the fallback font and swaps in once these apply —
+         deferring just moves *when* that swap can start. The noscript
+         fallback covers JS-disabled visits. -->
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      media="print"
+      data-defer-font
     />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap"
+      media="print"
+      data-defer-font
+    />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" />
+    </noscript>
 
     <!-- Primary SEO -->
     <title>Social Dev Technologies — Learn AI & Digital Skills in Africa</title>
