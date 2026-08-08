@@ -85,7 +85,7 @@ function AppShell() {
               }
             />
             <Route
-              path="/admin"
+              path="/admin/*"
               element={
                 <Suspense fallback={null}>
                   <Admin />
