@@ -44,6 +44,8 @@ export const routes = [
   '/welcome',
   '/about',
   '/faq',
+  '/whatsapp-bot-guide',
+  '/ai-builder',
   '/legal/terms',
   '/legal/privacy',
   ...builder1Slugs.map((slug) => `/builder-1/${slug}`),

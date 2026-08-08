@@ -12,6 +12,8 @@ import Pricing from './pages/Pricing';
 import Legal from './pages/Legal';
 import About from './pages/About';
 import FAQ from './pages/FAQ';
+import WhatsAppBotGuide from './pages/WhatsAppBotGuide';
+import AIBuilder from './pages/AIBuilder';
 import NotFound from './pages/NotFound';
 import { useProgress } from './hooks/useProgress';
 import { useCertificateClaims } from './hooks/useCertificateClaims';
@@ -117,6 +119,8 @@ function AppShell() {
             <Route path="/legal/:page" element={<Legal />} />
             <Route path="/about" element={<About />} />
             <Route path="/faq" element={<FAQ />} />
+            <Route path="/whatsapp-bot-guide" element={<WhatsAppBotGuide />} />
+            <Route path="/ai-builder" element={<AIBuilder />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
