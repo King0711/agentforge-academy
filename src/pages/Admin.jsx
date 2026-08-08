@@ -407,6 +407,8 @@ export default function Admin() {
   const [broadcastSubject, setBroadcastSubject] = useState('');
   const [broadcastBody, setBroadcastBody] = useState('');
   const [broadcastSegment, setBroadcastSegment] = useState('all');
+  const [broadcastUseCustomRecipients, setBroadcastUseCustomRecipients] = useState(false);
+  const [broadcastRecipientsInput, setBroadcastRecipientsInput] = useState('');
   const [sendingType, setSendingType] = useState(null); // 'broadcast' | 'winback' | 'abandoned_checkout' | 'cohort_reminder' | null
 
   const showToast = (msg) => {
@@ -661,16 +663,30 @@ export default function Admin() {
       setError('Subject and message are required for a broadcast.');
       return;
     }
-    const segmentLabel = { all: 'everyone', builder1: 'Builder 1 students', builder2: 'Builder 2 students', pro: 'Pro students' }[broadcastSegment];
-    const ok = await invokeEmailFunction(
-      'send-broadcast-email',
-      { subject: broadcastSubject, html: plainTextToHtml(broadcastBody), segment: broadcastSegment },
-      `Send this broadcast to ${segmentLabel} right now? This cannot be undone.`,
-      'broadcast',
-    );
+
+    let body;
+    let confirmMessage;
+    if (broadcastUseCustomRecipients) {
+      const recipients = [...new Set(
+        broadcastRecipientsInput.split(/[,\n]/).map((e) => e.trim()).filter(Boolean),
+      )];
+      if (recipients.length === 0) {
+        setError('Enter at least one email address.');
+        return;
+      }
+      body = { subject: broadcastSubject, html: plainTextToHtml(broadcastBody), recipients };
+      confirmMessage = `Send this to ${recipients.length} specific address${recipients.length === 1 ? '' : 'es'} right now? This cannot be undone.`;
+    } else {
+      const segmentLabel = { all: 'everyone', builder1: 'Builder 1 students', builder2: 'Builder 2 students', pro: 'Pro students' }[broadcastSegment];
+      body = { subject: broadcastSubject, html: plainTextToHtml(broadcastBody), segment: broadcastSegment };
+      confirmMessage = `Send this broadcast to ${segmentLabel} right now? This cannot be undone.`;
+    }
+
+    const ok = await invokeEmailFunction('send-broadcast-email', body, confirmMessage, 'broadcast');
     if (ok) {
       setBroadcastSubject('');
       setBroadcastBody('');
+      setBroadcastRecipientsInput('');
     }
   };
 
@@ -902,17 +918,39 @@ export default function Admin() {
                 rows={5}
                 className="w-full px-3 py-2 rounded-lg border border-border text-sm text-ink bg-white dark:bg-[#0A090F] focus:outline-none focus:ring-2 focus:ring-brand/40 resize-none"
               />
+              <label className="flex items-center gap-2 text-xs font-semibold text-body-strong cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={broadcastUseCustomRecipients}
+                  onChange={(e) => setBroadcastUseCustomRecipients(e.target.checked)}
+                  className="accent-brand w-3.5 h-3.5"
+                />
+                Send to specific addresses instead of a segment
+              </label>
+
+              {broadcastUseCustomRecipients ? (
+                <textarea
+                  value={broadcastRecipientsInput}
+                  onChange={(e) => setBroadcastRecipientsInput(e.target.value)}
+                  placeholder="Emails separated by commas or new lines — e.g. a test batch before a full segment send"
+                  rows={2}
+                  className="w-full px-3 py-2 rounded-lg border border-border text-sm text-ink bg-white dark:bg-[#0A090F] focus:outline-none focus:ring-2 focus:ring-brand/40 resize-none"
+                />
+              ) : null}
+
               <div className="flex items-center gap-2 flex-wrap">
-                <select
-                  value={broadcastSegment}
-                  onChange={(e) => setBroadcastSegment(e.target.value)}
-                  className="px-3 py-2 rounded-lg border border-border text-sm text-ink bg-white dark:bg-[#0A090F] focus:outline-none focus:ring-2 focus:ring-brand/40"
-                >
-                  <option value="all">Everyone</option>
-                  <option value="builder1">Builder 1 students</option>
-                  <option value="builder2">Builder 2 students</option>
-                  <option value="pro">Pro students</option>
-                </select>
+                {!broadcastUseCustomRecipients && (
+                  <select
+                    value={broadcastSegment}
+                    onChange={(e) => setBroadcastSegment(e.target.value)}
+                    className="px-3 py-2 rounded-lg border border-border text-sm text-ink bg-white dark:bg-[#0A090F] focus:outline-none focus:ring-2 focus:ring-brand/40"
+                  >
+                    <option value="all">Everyone</option>
+                    <option value="builder1">Builder 1 students</option>
+                    <option value="builder2">Builder 2 students</option>
+                    <option value="pro">Pro students</option>
+                  </select>
+                )}
                 <button
                   onClick={sendBroadcastNow}
                   disabled={sendingType === 'broadcast'}
