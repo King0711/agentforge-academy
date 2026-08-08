@@ -22,6 +22,7 @@ export default function Footer() {
           <FooterCol
             title="Platform"
             links={[
+              { label: 'Become an AI Builder', to: '/ai-builder' },
               { label: 'Catalog', to: '/catalog' },
               { label: 'Learning Paths', to: '/paths' },
               { label: 'Pricing', to: '/pricing' },
