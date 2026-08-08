@@ -14,7 +14,7 @@ export default function MeetTheHostSlide() {
       <PresenterBio
         initials="ES"
         name="Emmanuel A. Samuel"
-        title="Founder, AI & Web Engineer, Social Dev Technologies"
+        title="Director, AI & Web Engineer, Social Dev Technologies"
         credentials={CREDENTIALS}
         closingLine="A lifelong focus on education, coaching, and community — which is exactly why this platform exists."
       />
