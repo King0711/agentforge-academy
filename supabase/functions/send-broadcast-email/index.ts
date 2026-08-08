@@ -5,6 +5,9 @@ const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+const CRON_SECRET = Deno.env.get('CRON_SECRET') ?? '';
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Restricted to an allowlist rather than '*' since this endpoint is an
 // admin-only, state-changing action (sends real email to real users) —
@@ -85,32 +88,71 @@ serve(async (req) => {
     return jsonResponse({ error: 'Invalid JSON body' }, 400);
   }
 
-  const { subject, html, segment } = body;
+  const { subject, html, segment, recipients: explicitRecipients } = body;
   if (!subject || !html) return jsonResponse({ error: 'subject and html are required' }, 400);
-  const validSegments = ['all', 'builder1', 'builder2', 'pro'];
-  if (!validSegments.includes(segment)) return jsonResponse({ error: 'Invalid segment' }, 400);
 
-  // Reuse the existing admin_get_all_profiles RPC to both fetch the audience
-  // AND enforce the admin check — it raises 'Unauthorized' internally for a
-  // non-admin caller, so we don't need to duplicate that logic here.
-  const authHeader = req.headers.get('Authorization') ?? '';
-  const callerClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    global: { headers: { Authorization: authHeader } },
-  });
-  const { data: profiles, error: rpcError } = await callerClient.rpc('admin_get_all_profiles');
-  if (rpcError) {
-    console.error('admin_get_all_profiles failed:', rpcError.message);
-    return jsonResponse({ error: 'Unauthorized' }, 403);
+  // Two ways to reach this function:
+  // 1. Admin panel — a real admin's JWT, gated by admin_get_all_profiles
+  //    (same as before). Can target a segment, or an explicit recipients
+  //    list (e.g. a manual test batch before a wider segment send).
+  // 2. Service-triggered — a shared x-cron-secret header (same pattern as
+  //    the other send-*-emails functions), for one-off sends with an
+  //    explicit recipients list and no logged-in admin session available
+  //    (e.g. a scripted follow-up send). Never accepts a segment this way,
+  //    since segment resolution requires the admin-gated profile lookup.
+  const cronHeader = req.headers.get('x-cron-secret') ?? '';
+  const isServiceTriggered = Boolean(CRON_SECRET) && cronHeader === CRON_SECRET;
+
+  const cleanExplicitRecipients = Array.isArray(explicitRecipients)
+    ? [...new Set(explicitRecipients.map((e) => String(e).trim().toLowerCase()).filter((e) => EMAIL_RE.test(e)))]
+    : [];
+
+  let recipients;
+  let resolvedSegment = segment;
+
+  if (isServiceTriggered) {
+    if (cleanExplicitRecipients.length === 0) {
+      return jsonResponse({ error: 'recipients array is required for service-triggered sends' }, 400);
+    }
+    recipients = cleanExplicitRecipients.map((email) => ({ id: null, email }));
+    resolvedSegment = 'custom';
+  } else {
+    // Reuse the existing admin_get_all_profiles RPC to both fetch the
+    // audience AND enforce the admin check — it raises 'Unauthorized'
+    // internally for a non-admin caller, so we don't need to duplicate that
+    // logic here.
+    const authHeader = req.headers.get('Authorization') ?? '';
+    const callerClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: profiles, error: rpcError } = await callerClient.rpc('admin_get_all_profiles');
+    if (rpcError) {
+      console.error('admin_get_all_profiles failed:', rpcError.message);
+      return jsonResponse({ error: 'Unauthorized' }, 403);
+    }
+
+    if (cleanExplicitRecipients.length > 0) {
+      const byEmail = new Map((profiles || []).filter((p) => p.email).map((p) => [p.email.toLowerCase(), p]));
+      recipients = cleanExplicitRecipients.map((email) => {
+        const match = byEmail.get(email);
+        return { id: match?.id ?? null, email: match?.email ?? email };
+      });
+      resolvedSegment = 'custom';
+    } else {
+      const validSegments = ['all', 'builder1', 'builder2', 'pro'];
+      if (!validSegments.includes(segment)) return jsonResponse({ error: 'Invalid segment' }, 400);
+      recipients = (profiles || [])
+        .filter((p) => {
+          if (!p.email) return false;
+          if (segment === 'all') return true;
+          if (segment === 'builder1') return isActive(p.builder1_expires_at);
+          if (segment === 'builder2') return isActive(p.builder2_expires_at);
+          if (segment === 'pro') return isActive(p.builder1_expires_at) && isActive(p.builder2_expires_at);
+          return false;
+        })
+        .map((p) => ({ id: p.id, email: p.email }));
+    }
   }
-
-  const recipients = (profiles || []).filter((p) => {
-    if (!p.email) return false;
-    if (segment === 'all') return true;
-    if (segment === 'builder1') return isActive(p.builder1_expires_at);
-    if (segment === 'builder2') return isActive(p.builder2_expires_at);
-    if (segment === 'pro') return isActive(p.builder1_expires_at) && isActive(p.builder2_expires_at);
-    return false;
-  });
 
   const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   const finalHtml = emailShell(html);
@@ -125,7 +167,7 @@ serve(async (req) => {
         email: recipient.email,
         email_type: 'broadcast',
         subject,
-        metadata: { segment },
+        metadata: { segment: resolvedSegment },
       });
     }
   }
