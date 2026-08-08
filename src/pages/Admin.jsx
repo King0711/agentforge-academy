@@ -355,11 +355,23 @@ function CohortDateRow({ label, value, onChange, onSave, saving }) {
 }
 
 // Broadcast composer takes plain text — turn it into minimal safe HTML
-// (paragraph breaks only) rather than asking admins to hand-write HTML.
+// (paragraph breaks, plus one special case) rather than asking admins to
+// hand-write HTML. A paragraph containing only `[Button label](https://url)`
+// renders as the same purple CTA button style used elsewhere in the app's
+// transactional emails, instead of becoming a plain paragraph with a link.
+const BUTTON_LINE_RE = /^\[(.+?)\]\((https?:\/\/[^\s)]+)\)$/;
+
 function plainTextToHtml(text) {
   return text
     .split(/\n{2,}/)
-    .map((para) => `<p style="font-size:15px;color:#3A3358;line-height:1.6;margin:0 0 16px;">${para.replace(/\n/g, '<br/>')}</p>`)
+    .map((para) => {
+      const match = para.trim().match(BUTTON_LINE_RE);
+      if (match) {
+        const [, label, url] = match;
+        return `<div style="text-align:center;margin:24px 0;"><a href="${url}" style="display:inline-block;background:#7C3AED;color:#ffffff;font-weight:700;font-size:15px;padding:14px 28px;border-radius:10px;text-decoration:none;">${label}</a></div>`;
+      }
+      return `<p style="font-size:15px;color:#3A3358;line-height:1.6;margin:0 0 16px;">${para.replace(/\n/g, '<br/>')}</p>`;
+    })
     .join('');
 }
 
@@ -918,6 +930,9 @@ export default function Admin() {
                 rows={5}
                 className="w-full px-3 py-2 rounded-lg border border-border text-sm text-ink bg-white dark:bg-[#0A090F] focus:outline-none focus:ring-2 focus:ring-brand/40 resize-none"
               />
+              <p className="text-xs text-gray-400 -mt-1.5">
+                Tip: put <code className="font-mono">[Button label](https://url)</code> on its own line to render a purple CTA button there.
+              </p>
               <label className="flex items-center gap-2 text-xs font-semibold text-body-strong cursor-pointer">
                 <input
                   type="checkbox"
