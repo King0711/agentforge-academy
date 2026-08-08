@@ -7,6 +7,7 @@ import SlideNav from './SlideNav';
 import PresenterNotes from './PresenterNotes';
 import WelcomeSlide from './slides/WelcomeSlide';
 import TheWorldHasChangedSlide from './slides/TheWorldHasChangedSlide';
+import TheHonestCheckSlide from './slides/TheHonestCheckSlide';
 import MissionSlide from './slides/MissionSlide';
 import AIUsersVsBuildersSlide from './slides/AIUsersVsBuildersSlide';
 import HowBuildersThinkSlide from './slides/HowBuildersThinkSlide';
@@ -14,8 +15,9 @@ import LiveDemoSlide from './slides/LiveDemoSlide';
 import WhatYouCanBuildSlide from './slides/WhatYouCanBuildSlide';
 import LearningTrackSlide from './slides/LearningTrackSlide';
 import IdentityLadderSlide from './slides/IdentityLadderSlide';
-import SocialProofSlide from './slides/SocialProofSlide';
+import MakeMoneyFromThisSlide from './slides/MakeMoneyFromThisSlide';
 import FAQSlide from './slides/FAQSlide';
+import WhoThisIsForSlide from './slides/WhoThisIsForSlide';
 import TheOfferSlide from './slides/TheOfferSlide';
 import FinalCtaSlide from './slides/FinalCtaSlide';
 import QASlide from './slides/QASlide';
@@ -25,6 +27,7 @@ import QASlide from './slides/QASlide';
 const SLIDE_COMPONENTS = [
   WelcomeSlide,
   TheWorldHasChangedSlide,
+  TheHonestCheckSlide,
   MissionSlide,
   AIUsersVsBuildersSlide,
   HowBuildersThinkSlide,
@@ -32,8 +35,9 @@ const SLIDE_COMPONENTS = [
   WhatYouCanBuildSlide,
   LearningTrackSlide,
   IdentityLadderSlide,
-  SocialProofSlide,
+  MakeMoneyFromThisSlide,
   FAQSlide,
+  WhoThisIsForSlide,
   TheOfferSlide,
   FinalCtaSlide,
   QASlide,
