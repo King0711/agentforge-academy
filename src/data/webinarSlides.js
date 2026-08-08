@@ -55,7 +55,22 @@ export const webinarSlides = [
       ],
       story: 'Optional — if it feels natural, say in one sentence who you were before you started building with AI. Save the full version of your story for later, around the live demo.',
       interactionPrompt: 'Chat: "Type who you are — student, business owner, teacher, whatever fits — so I know who\'s actually in the room."',
-      transition: "Now that I know who's here — let's talk about what's actually changed.",
+      transition: "Before we dive in — a quick introduction. I'm the one walking you through today.",
+    },
+  },
+  {
+    id: 'meet-host',
+    label: 'Meet your host',
+    notes: {
+      objective: "Establish who's actually talking to the room and why they should listen — brief and confident, not a resume recitation.",
+      talkingPoints: [
+        'Keep this under a minute — name, role, and 2-3 credentials, not a full CV',
+        'The Swish Sports and Ed-Tech credentials establish real technical and education credibility fast',
+        "Land the personal closing line about education, coaching, and community briefly — it's the \"why\" behind building this platform in one sentence",
+      ],
+      story: "If there's a short, specific moment that explains why you built this platform, this is the place for it — one sentence, not the full origin story.",
+      interactionPrompt: "None — keep this moving, it's a fast credibility beat, not a discussion.",
+      transition: "Now that you know who I am — let's talk about what's actually changed.",
     },
   },
   {
@@ -102,7 +117,21 @@ export const webinarSlides = [
       ],
       story: 'If your own reason for building this platform is short and genuine, this is the natural place for it.',
       interactionPrompt: 'None — let this slide sit quietly for a moment rather than immediately prompting for chat.',
-      transition: "So what's the actual skill that turns that mission into something real for you?",
+      transition: "So what does that mission actually look like in practice?",
+    },
+  },
+  {
+    id: 'about-social-dev',
+    label: 'About Social Dev Technologies',
+    notes: {
+      objective: 'Give a fast, concrete answer to "what does this company actually do" without turning it into the focus of the talk.',
+      talkingPoints: [
+        "Don't dwell — this is a beat, not a section. Point at each card for a few seconds and move on",
+        'The "Custom AI Solutions" card is what produced John\'s story later in the deck — you can foreshadow that briefly if it flows naturally',
+      ],
+      story: 'None needed.',
+      interactionPrompt: 'None.',
+      transition: "So what's the actual skill that turns all of that into something real for you?",
     },
   },
   {
@@ -142,6 +171,21 @@ export const webinarSlides = [
       ],
       story: 'None needed — this is a framework slide, keep it brisk.',
       interactionPrompt: 'None — move straight into the live demo while the pattern is fresh.',
+      transition: "Before we watch that loop happen live, let me introduce the person about to prove it.",
+    },
+  },
+  {
+    id: 'meet-samuel-king',
+    label: 'Meet Samuel King',
+    notes: {
+      objective: "Build credibility for the co-presenter right before he demonstrates live — the audience should trust the build because they trust the builder.",
+      talkingPoints: [
+        'Keep this fast too — a few credentials, then straight into the demo',
+        'The "80% less manual data entry" and TEDx coordination land as concrete, verifiable-sounding proof, not vague hype',
+        'Certifications (Claude, Microsoft AI) reassure a skeptical audience that he\'s credentialed on the actual tools being taught',
+      ],
+      story: 'None needed — save the story for after the demo, per the existing note there.',
+      interactionPrompt: 'None.',
       transition: "Let's watch that loop happen live. Samuel, take it away.",
     },
   },

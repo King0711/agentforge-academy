@@ -6,11 +6,14 @@ import { webinarSlides } from '../../data/webinarSlides';
 import SlideNav from './SlideNav';
 import PresenterNotes from './PresenterNotes';
 import WelcomeSlide from './slides/WelcomeSlide';
+import MeetTheHostSlide from './slides/MeetTheHostSlide';
 import TheWorldHasChangedSlide from './slides/TheWorldHasChangedSlide';
 import TheHonestCheckSlide from './slides/TheHonestCheckSlide';
 import MissionSlide from './slides/MissionSlide';
+import AboutSocialDevSlide from './slides/AboutSocialDevSlide';
 import AIUsersVsBuildersSlide from './slides/AIUsersVsBuildersSlide';
 import HowBuildersThinkSlide from './slides/HowBuildersThinkSlide';
+import MeetSamuelKingSlide from './slides/MeetSamuelKingSlide';
 import LiveDemoSlide from './slides/LiveDemoSlide';
 import WhatYouCanBuildSlide from './slides/WhatYouCanBuildSlide';
 import LearningTrackSlide from './slides/LearningTrackSlide';
@@ -26,11 +29,14 @@ import QASlide from './slides/QASlide';
 // component renders slide metadata i's presenter notes.
 const SLIDE_COMPONENTS = [
   WelcomeSlide,
+  MeetTheHostSlide,
   TheWorldHasChangedSlide,
   TheHonestCheckSlide,
   MissionSlide,
+  AboutSocialDevSlide,
   AIUsersVsBuildersSlide,
   HowBuildersThinkSlide,
+  MeetSamuelKingSlide,
   LiveDemoSlide,
   WhatYouCanBuildSlide,
   LearningTrackSlide,
