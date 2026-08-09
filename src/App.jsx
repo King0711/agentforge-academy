@@ -42,6 +42,7 @@ const Admin = lazy(() => import('./pages/Admin'));
 const Certificates = lazy(() => import('./pages/Certificates'));
 const CertificateView = lazy(() => import('./pages/CertificateView'));
 const VerifyCertificate = lazy(() => import('./pages/VerifyCertificate'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 // Full-screen keynote — deliberately excluded from prerendering (keyboard
 // nav + fullscreen state have no business being static-snapshotted) and
 // renders its own chrome, so AppShell below skips Navbar/Footer for it.
@@ -75,6 +76,14 @@ function AppShell() {
               }
             />
             <Route path="/welcome" element={<Welcome />} />
+            <Route
+              path="/reset-password"
+              element={
+                <Suspense fallback={null}>
+                  <ResetPassword />
+                </Suspense>
+              }
+            />
             <Route path="/pricing" element={<Pricing />} />
             <Route
               path="/webinar"

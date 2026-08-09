@@ -64,6 +64,25 @@ export function AuthProvider({ children }) {
     return supabase.auth.verifyOtp({ email, token, type: 'email' });
   }, []);
 
+  // Sends a password-reset link to an existing account's email. Supabase
+  // redirects the click to redirectTo with a recovery session already
+  // attached (its client-side detectSessionInUrl handles that automatically)
+  // — ResetPassword.jsx picks that session up and lets them set a new one.
+  const resetPassword = useCallback(async (email) => {
+    if (!isSupabaseConfigured) return { error: { message: 'Supabase is not configured.' } };
+    return supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+  }, []);
+
+  // Only valid within an active recovery session (i.e. right after landing
+  // on /reset-password from the emailed link) — updateUser reuses whatever
+  // session is currently active, there's no separate "recovery token" param.
+  const updatePassword = useCallback(async (newPassword) => {
+    if (!isSupabaseConfigured) return { error: { message: 'Supabase is not configured.' } };
+    return supabase.auth.updateUser({ password: newPassword });
+  }, []);
+
   const signInWithGoogle = useCallback(async () => {
     if (!isSupabaseConfigured) return { error: { message: 'Supabase is not configured.' } };
     return supabase.auth.signInWithOAuth({
@@ -92,6 +111,8 @@ export function AuthProvider({ children }) {
     signIn,
     sendLoginCode,
     verifyLoginCode,
+    resetPassword,
+    updatePassword,
     signInWithGoogle,
     signOut,
   };
