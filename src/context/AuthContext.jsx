@@ -25,19 +25,30 @@ export function AuthProvider({ children }) {
     return () => listener.subscription.unsubscribe();
   }, []);
 
+  // Goes through the create-account Edge Function (admin API, email
+  // pre-confirmed) rather than supabase.auth.signUp() directly — Auth's own
+  // signup-confirmation email currently can't be delivered (the Resend
+  // account behind Auth's SMTP settings is sandboxed to one verified
+  // address), which was silently failing every real signup. See CLAUDE.md.
   const signUp = useCallback(async (email, password, displayName) => {
     if (!isSupabaseConfigured) return { error: { message: 'Supabase is not configured.' } };
-    const isBYU = email.trim().toLowerCase().endsWith('@byupathway.edu');
-    return supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          display_name: displayName || email.split('@')[0],
-          is_byu_student: isBYU,
-        },
-      },
+    const { error: err, response } = await supabase.functions.invoke('create-account', {
+      body: { email, password, displayName },
     });
+    if (err) {
+      let message = 'Something went wrong creating your account.';
+      try {
+        const body = await response?.json();
+        if (body?.error) message = body.error;
+      } catch {
+        // response body wasn't JSON (e.g. a network-level failure) — fall
+        // back to the generic message above.
+      }
+      return { error: { message } };
+    }
+    // Account already exists and is confirmed — sign in immediately to
+    // establish a real session, same as the password-login path.
+    return supabase.auth.signInWithPassword({ email, password });
   }, []);
 
   const signIn = useCallback(async (email, password) => {
