@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Folder, MessageSquareText, Save, Settings, Terminal, Smartphone, PartyPopper,
-  AlertTriangle, Lightbulb, CheckCircle2, Zap, UserCircle2, GraduationCap,
+  AlertTriangle, Lightbulb, CheckCircle2, Zap, UserCircle2, GraduationCap, Lock,
 } from 'lucide-react';
 import PromptBox from '../components/PromptBox';
+import { useAuth } from '../context/AuthContext';
 
 const CLAUDE_PROMPT = `I want to build a free AI WhatsApp auto-reply bot using Node.js, whatsapp-web.js, and Groq's free API (no credit card needed). Please create exactly 3 files for me — do not tell me how to install anything yet, just give me the files:
 
@@ -116,7 +117,46 @@ function Section({ id, icon: Icon, badge, time, title, desc, children }) {
   );
 }
 
+// Shown in place of the actual step-by-step guide for signed-out visitors —
+// the hero above stays visible either way (it's the marketing pitch, and
+// keeping it renderable without an account is what makes this page still
+// worth indexing/linking to for organic + ad traffic), but the real
+// instructions are the "free resource," so creating an account is the ask
+// in exchange for it — same locked-card pattern AgentModal already uses for
+// Pro-gated session content, just gated on having any account rather than a
+// paid one.
+function SignUpToUnlock() {
+  return (
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+      <div className="flex flex-col items-center text-center gap-3 py-16 px-6 border-2 border-dashed border-border rounded-2xl">
+        <Lock className="w-8 h-8 text-brand" />
+        <p className="font-display font-bold text-xl text-ink">Create a free account to unlock this guide</p>
+        <p className="text-sm text-body max-w-sm">
+          The full step-by-step instructions and the copy-paste Claude prompt are free once you're signed in —
+          just takes a minute, no card needed.
+        </p>
+        <Link
+          to="/welcome"
+          className="mt-2 inline-flex items-center gap-2 bg-brand hover:bg-brand-deep text-white font-bold px-6 py-3 rounded-xl transition-colors"
+        >
+          Sign up free →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export default function WhatsAppBotGuide() {
+  // Gated on `user` alone, not the AuthContext `loading` flag — this page is
+  // prerendered, and by prerender/snapshot time `loading` has already
+  // resolved to false with no session, so the snapshot always shows the
+  // signed-out (locked) branch. `user` starts null on both the snapshot AND
+  // the client's very first hydration render (before getSession() resolves),
+  // so hydrating on `user` matches; branching on `loading` instead would
+  // flash a spinner on first paint that the static snapshot never had,
+  // which is exactly the hydration-mismatch class documented in App.jsx.
+  const { user } = useAuth();
+
   useEffect(() => {
     const prevTitle = document.title;
     const metaDesc = document.querySelector('meta[name="description"]');
@@ -189,18 +229,22 @@ export default function WhatsAppBotGuide() {
         </div>
       </div>
 
-      {/* Sticky in-page nav */}
-      <div className="sticky top-[70px] z-30 bg-[#FFFDFF]/95 dark:bg-[#0A090F]/95 backdrop-blur border-b border-[#EFE9FB] dark:border-[#232228]">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-2.5 flex gap-4 overflow-x-auto">
-          {NAV_SECTIONS.map((s) => (
-            <a key={s.id} href={`#${s.id}`} className="text-[12.5px] font-semibold text-body hover:text-brand whitespace-nowrap transition-colors">
-              {s.label}
-            </a>
-          ))}
-        </div>
-      </div>
+      {!user ? (
+        <SignUpToUnlock />
+      ) : (
+        <>
+          {/* Sticky in-page nav */}
+          <div className="sticky top-[70px] z-30 bg-[#FFFDFF]/95 dark:bg-[#0A090F]/95 backdrop-blur border-b border-[#EFE9FB] dark:border-[#232228]">
+            <div className="max-w-3xl mx-auto px-4 sm:px-6 py-2.5 flex gap-4 overflow-x-auto">
+              {NAV_SECTIONS.map((s) => (
+                <a key={s.id} href={`#${s.id}`} className="text-[12.5px] font-semibold text-body hover:text-brand whitespace-nowrap transition-colors">
+                  {s.label}
+                </a>
+              ))}
+            </div>
+          </div>
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Intro banner */}
         <div className="flex items-start gap-3.5 bg-white dark:bg-[#181818] border-[1.5px] border-brand/30 rounded-2xl p-5 my-8">
           <span className="text-2xl flex-shrink-0">📁</span>
@@ -438,7 +482,9 @@ export default function WhatsAppBotGuide() {
             ))}
           </div>
         </div>
-      </div>
+          </div>
+        </>
+      )}
 
       {/* Advanced upsell */}
       <div className="px-4 sm:px-6 lg:px-[5vw] py-14 max-w-6xl mx-auto">
