@@ -37,7 +37,7 @@ import { ProfileInfoProvider } from './context/ProfileInfoContext';
 // CertificateView.jsx as an inline fallback UI, so lazy-loading it here
 // wouldn't shrink the bundle, just add a pointless Suspense boundary.)
 const AgentModal = lazy(() => import('./components/AgentModal'));
-const MyDashboard = lazy(() => import('./pages/MyDashboard'));
+const StudentDashboard = lazy(() => import('./pages/StudentDashboard'));
 const Admin = lazy(() => import('./pages/Admin'));
 const Certificates = lazy(() => import('./pages/Certificates'));
 const CertificateView = lazy(() => import('./pages/CertificateView'));
@@ -55,11 +55,16 @@ function AppShell() {
   const [selectedAgent, setSelectedAgent] = useState(null);
   const location = useLocation();
   const isWebinar = location.pathname === '/webinar';
+  // The student dashboard renders its own sidebar/top-bar chrome (see
+  // StudentDashboard.jsx) instead of the site Navbar/Footer — same
+  // suppression pattern as the webinar keynote.
+  const isDashboard = location.pathname.startsWith('/dashboard');
+  const hideChrome = isWebinar || isDashboard;
 
   return (
     <ProfileInfoProvider>
       <div className="min-h-screen flex flex-col bg-bg">
-        {!isWebinar && <Navbar />}
+        {!hideChrome && <Navbar />}
         <main className="flex-1">
           <Routes>
             <Route path="/" element={<Home progress={progress} onSelectAgent={setSelectedAgent} />} />
@@ -68,10 +73,10 @@ function AppShell() {
             <Route path="/builder-1/:slug" element={<BuilderSession progress={progress} tier="Builder 1" />} />
             <Route path="/builder-2/:slug" element={<BuilderSession progress={progress} tier="Builder 2" />} />
             <Route
-              path="/dashboard"
+              path="/dashboard/*"
               element={
                 <Suspense fallback={null}>
-                  <MyDashboard progress={progress} onSelectAgent={setSelectedAgent} />
+                  <StudentDashboard progress={progress} onSelectAgent={setSelectedAgent} />
                 </Suspense>
               }
             />
@@ -133,7 +138,7 @@ function AppShell() {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
-        {!isWebinar && <Footer />}
+        {!hideChrome && <Footer />}
 
         {selectedAgent && (
           <Suspense fallback={null}>

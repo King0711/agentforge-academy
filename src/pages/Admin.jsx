@@ -7,6 +7,7 @@ import { usePro } from '../hooks/usePro';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import AdminUsers from './admin/AdminUsers';
 import AdminCohorts from './admin/AdminCohorts';
+import AdminLiveSessions from './admin/AdminLiveSessions';
 import AdminTestimonials from './admin/AdminTestimonials';
 import AdminEmails from './admin/AdminEmails';
 
@@ -58,6 +59,7 @@ export default function Admin() {
               <Route element={<ToastOutlet showToast={showToast} />}>
                 <Route index element={<AdminUsers />} />
                 <Route path="cohorts" element={<AdminCohorts />} />
+                <Route path="live-sessions" element={<AdminLiveSessions />} />
                 <Route path="testimonials" element={<AdminTestimonials />} />
                 <Route path="emails" element={<AdminEmails />} />
               </Route>
