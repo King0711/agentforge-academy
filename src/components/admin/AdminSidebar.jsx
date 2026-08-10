@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Users, CalendarDays, MessageSquareText, Mail, ChevronDown } from 'lucide-react';
+import { Users, CalendarDays, Video, MessageSquareText, Mail, ChevronDown } from 'lucide-react';
 
 const NAV_ITEMS = [
   { to: '/admin', end: true, icon: Users, label: 'Users' },
   { to: '/admin/cohorts', end: false, icon: CalendarDays, label: 'Cohort Schedule' },
+  { to: '/admin/live-sessions', end: false, icon: Video, label: 'Live Sessions' },
   { to: '/admin/testimonials', end: false, icon: MessageSquareText, label: 'Testimonials' },
   { to: '/admin/emails', end: false, icon: Mail, label: 'Email Communications' },
 ];
