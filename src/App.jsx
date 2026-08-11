@@ -14,6 +14,7 @@ import About from './pages/About';
 import FAQ from './pages/FAQ';
 import WhatsAppBotGuide from './pages/WhatsAppBotGuide';
 import AIBuilder from './pages/AIBuilder';
+import Builder1Guide from './pages/Builder1Guide';
 import NotFound from './pages/NotFound';
 import { useProgress } from './hooks/useProgress';
 import { useCertificateClaims } from './hooks/useCertificateClaims';
@@ -135,6 +136,7 @@ function AppShell() {
             <Route path="/faq" element={<FAQ />} />
             <Route path="/whatsapp-bot-guide" element={<WhatsAppBotGuide />} />
             <Route path="/ai-builder" element={<AIBuilder />} />
+            <Route path="/builder-1-guide" element={<Builder1Guide />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
