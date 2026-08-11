@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CheckCircle2, Circle, ChevronDown } from 'lucide-react';
+import { CheckCircle2, Circle, ChevronDown, BookOpen } from 'lucide-react';
 import { getBuilderPagePath } from '../data/agents';
 import ProgressBar from './ProgressBar';
 
@@ -37,6 +37,31 @@ function LessonList({ tierAgents, currentSlug, progress, onNavigate }) {
   );
 }
 
+const GUIDE_PATH = {
+  'Builder 1': '/builder-1-guide',
+};
+
+function OrientationLink({ tier, onNavigate }) {
+  const location = useLocation();
+  const path = GUIDE_PATH[tier];
+  if (!path) return null;
+  const isCurrent = location.pathname === path;
+  return (
+    <Link
+      to={path}
+      onClick={onNavigate}
+      className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm mb-3 border transition-colors ${
+        isCurrent
+          ? 'bg-brand text-white font-bold border-brand'
+          : 'bg-[#F3EBFF] dark:bg-brand/10 text-brand font-semibold border-brand/25 hover:border-brand/50'
+      }`}
+    >
+      <BookOpen className="w-4 h-4 flex-shrink-0" />
+      <span className="truncate">Getting Started Guide</span>
+    </Link>
+  );
+}
+
 export default function CourseSidebar({ tier, tierAgents, currentSlug, progress }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const completedCount = tierAgents.filter((a) => progress.isCompleted(a.id)).length;
@@ -50,6 +75,7 @@ export default function CourseSidebar({ tier, tierAgents, currentSlug, progress 
           <ProgressBar value={completedCount} max={tierAgents.length} showLabel={false} height="h-1.5" />
           <p className="text-xs text-body mt-1.5">{completedCount} / {tierAgents.length} complete</p>
         </div>
+        <OrientationLink tier={tier} />
         <LessonList tierAgents={tierAgents} currentSlug={currentSlug} progress={progress} />
       </aside>
 
@@ -75,6 +101,7 @@ export default function CourseSidebar({ tier, tierAgents, currentSlug, progress 
               className="overflow-hidden"
             >
               <div className="px-3 pb-3">
+                <OrientationLink tier={tier} onNavigate={() => setMobileOpen(false)} />
                 <LessonList
                   tierAgents={tierAgents}
                   currentSlug={currentSlug}

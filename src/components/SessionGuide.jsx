@@ -3,6 +3,55 @@ import { Clock, Layers, Bot, Sparkles, ListChecks, CheckCircle2, Compass, Award,
 import PromptBox from './PromptBox';
 
 export default function SessionGuide({ session, troubleshooting }) {
+  // Multi-guide: session is an array of guide objects
+  if (Array.isArray(session)) {
+    return <MultiGuide guides={session} fallbackTroubleshooting={troubleshooting} />;
+  }
+  // Single guide (all existing sessions)
+  return <GuideContent session={session} troubleshooting={troubleshooting} />;
+}
+
+// ── Multi-guide switcher ──────────────────────────────────────────────────────
+
+function MultiGuide({ guides, fallbackTroubleshooting }) {
+  const [active, setActive] = useState(0);
+  const guide = guides[active];
+  return (
+    <div className="space-y-6">
+      {/* Switcher */}
+      <div className="grid grid-cols-2 gap-0 rounded-xl border border-border-soft overflow-hidden">
+        {guides.map((g, i) => (
+          <button
+            key={i}
+            onClick={() => setActive(i)}
+            className={`text-left px-4 py-3.5 transition-colors ${
+              i === active
+                ? 'bg-[#F3EBFF] dark:bg-brand/15'
+                : 'bg-[#FAF8FF] dark:bg-white/5 hover:bg-[#F3EBFF]/50 dark:hover:bg-brand/10'
+            } ${i > 0 ? 'border-l border-border-soft' : ''}`}
+          >
+            <span className={`text-[9px] font-bold uppercase tracking-widest block mb-0.5 ${i === active ? 'text-brand' : 'text-gray-400'}`}>
+              {g.guideName}
+            </span>
+            <span className={`text-sm font-extrabold block leading-tight ${i === active ? 'text-ink' : 'text-body'}`}>
+              {g.guideLabel}
+            </span>
+            <span className="text-[11px] text-gray-400 block mt-0.5">{g.guideSubtitle}</span>
+          </button>
+        ))}
+      </div>
+      {/* Active guide content */}
+      <GuideContent
+        session={guide}
+        troubleshooting={guide.troubleshooting ?? fallbackTroubleshooting}
+      />
+    </div>
+  );
+}
+
+// ── Single guide renderer (shared by both paths) ──────────────────────────────
+
+function GuideContent({ session, troubleshooting }) {
   return (
     <div className="space-y-8">
       {/* Session header */}
@@ -12,7 +61,7 @@ export default function SessionGuide({ session, troubleshooting }) {
         <Badge icon={Bot} label={session.model} />
       </div>
 
-      {/* By the end of this session — highlighted deliverables box */}
+      {/* By the end of this session */}
       <section className="rounded-xl border-[1.5px] border-green/25 bg-[#EAFAF1] dark:bg-green/10 p-5">
         <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-green mb-3">
           <Sparkles className="w-4 h-4" /> By the end of this session
@@ -47,7 +96,7 @@ export default function SessionGuide({ session, troubleshooting }) {
         ))}
       </div>
 
-      {/* Troubleshooting — common issues + fixes, grounded in this build's actual tech */}
+      {/* Troubleshooting */}
       {troubleshooting?.length > 0 && (
         <section id="troubleshooting">
           <SectionTitle icon={Wrench} title="Troubleshooting" />
@@ -77,6 +126,8 @@ export default function SessionGuide({ session, troubleshooting }) {
   );
 }
 
+// ── Sub-components ────────────────────────────────────────────────────────────
+
 function PortfolioPromptDropdown({ prompt }) {
   const [open, setOpen] = useState(false);
   return (
@@ -99,44 +150,56 @@ function PortfolioPromptDropdown({ prompt }) {
 
 function BuildCard({ build }) {
   return (
-    <div id={`build-${build.number}`} className="rounded-xl border border-border-soft bg-white dark:bg-[#181818] overflow-hidden scroll-mt-24">
-      <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b border-border-soft bg-[#FAF8FF] dark:bg-white/5">
-        <h4 className="font-bold text-ink text-sm sm:text-base">
-          Build {build.number} · {build.title}
-        </h4>
-        <span className="flex items-center gap-1 text-xs font-semibold text-body flex-shrink-0">
-          <Clock className="w-3.5 h-3.5" /> {build.time}
-        </span>
+    <>
+      {/* Optional phase divider — renders before the card when phaseLabel is set */}
+      {build.phaseLabel && (
+        <div className="flex items-center gap-3 pt-2">
+          <div className="flex-1 h-px bg-border-soft" />
+          <span className="text-[11px] font-bold text-brand bg-[#F3EBFF] dark:bg-brand/15 px-3 py-1 rounded-full whitespace-nowrap">
+            {build.phaseLabel}
+          </span>
+          <div className="flex-1 h-px bg-border-soft" />
+        </div>
+      )}
+      <div id={`build-${build.number}`} className="rounded-xl border border-border-soft bg-white dark:bg-[#181818] overflow-hidden scroll-mt-24">
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b border-border-soft bg-[#FAF8FF] dark:bg-white/5">
+          <h4 className="font-bold text-ink text-sm sm:text-base">
+            Build {build.number} · {build.title}
+          </h4>
+          <span className="flex items-center gap-1 text-xs font-semibold text-body flex-shrink-0">
+            <Clock className="w-3.5 h-3.5" /> {build.time}
+          </span>
+        </div>
+
+        <div className="px-4 sm:px-5 py-4 space-y-5">
+          {build.description && (
+            <p className="text-sm text-body">{build.description}</p>
+          )}
+
+          {build.steps.map((step, i) => (
+            <div key={i} className="space-y-2">
+              <p className="text-sm text-body-strong leading-relaxed">
+                <span className="font-bold text-brand">{i + 1}.</span> {step.instruction}
+              </p>
+              {step.prompt && <PromptBox text={step.prompt} />}
+              {step.verify && (
+                <div className="flex gap-2 items-start text-sm text-green bg-[#EAFAF1] dark:bg-green/10 border border-green/20 rounded-lg px-3 py-2">
+                  <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <span><span className="font-bold">Check your work: </span>{step.verify}</span>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {build.goFurther && (
+            <div className="flex gap-2 items-start text-sm text-brand bg-[#F3EBFF] dark:bg-brand/10 border border-brand/20 rounded-lg px-3 py-2">
+              <Compass className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span><span className="font-bold">Go further: </span>{build.goFurther}</span>
+            </div>
+          )}
+        </div>
       </div>
-
-      <div className="px-4 sm:px-5 py-4 space-y-5">
-        {build.description && (
-          <p className="text-sm text-body">{build.description}</p>
-        )}
-
-        {build.steps.map((step, i) => (
-          <div key={i} className="space-y-2">
-            <p className="text-sm text-body-strong leading-relaxed">
-              <span className="font-bold text-brand">{i + 1}.</span> {step.instruction}
-            </p>
-            {step.prompt && <PromptBox text={step.prompt} />}
-            {step.verify && (
-              <div className="flex gap-2 items-start text-sm text-green bg-[#EAFAF1] dark:bg-green/10 border border-green/20 rounded-lg px-3 py-2">
-                <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <span><span className="font-bold">Check your work: </span>{step.verify}</span>
-              </div>
-            )}
-          </div>
-        ))}
-
-        {build.goFurther && (
-          <div className="flex gap-2 items-start text-sm text-brand bg-[#F3EBFF] dark:bg-brand/10 border border-brand/20 rounded-lg px-3 py-2">
-            <Compass className="w-4 h-4 mt-0.5 flex-shrink-0" />
-            <span><span className="font-bold">Go further: </span>{build.goFurther}</span>
-          </div>
-        )}
-      </div>
-    </div>
+    </>
   );
 }
 
