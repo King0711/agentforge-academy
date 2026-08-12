@@ -19,6 +19,19 @@ export const getAgentsByDifficulty = (difficulty) => agents.filter((a) => a.diff
 export const getBuilder1Agents = () => getAgentsByDifficulty('Builder 1');
 export const getBuilder2Agents = () => getAgentsByDifficulty('Builder 2');
 
+// Week grouping — currently only set on Builder 1's agents (see
+// agentsBeginner.js). Returns [] for tiers without week data rather than
+// throwing, so callers can fall back to a flat list.
+export const groupAgentsByWeek = (tierAgents) => {
+  if (!tierAgents.every((a) => a.week)) return [];
+  const weeks = [...new Set(tierAgents.map((a) => a.week))].sort((a, b) => a - b);
+  return weeks.map((week) => ({
+    week,
+    agents: tierAgents.filter((a) => a.week === week),
+    mainAgent: tierAgents.find((a) => a.week === week && a.isMainProject),
+  }));
+};
+
 // Difficulty tiers that have dedicated SEO pages (as opposed to the modal) —
 // maps a tier label to its page's URL base.
 const BUILDER_PAGE_BASE = {
