@@ -13,6 +13,7 @@ import { useTheme } from '../context/ThemeContext';
 import XPBadge from '../components/XPBadge';
 import SessionGuide from '../components/SessionGuide';
 import CourseSidebar from '../components/CourseSidebar';
+import WeekCompletionPanel from '../components/WeekCompletionPanel';
 import NotFound from './NotFound';
 
 export default function BuilderSession({ progress, tier }) {
@@ -27,6 +28,11 @@ export default function BuilderSession({ progress, tier }) {
   const agent = index !== -1 ? tierAgents[index] : null;
   const prevAgent = index > 0 ? tierAgents[index - 1] : null;
   const nextAgent = index !== -1 && index < tierAgents.length - 1 ? tierAgents[index + 1] : null;
+  // Builder 1's first session links back to the getting-started guide
+  // (itself item 0 in CourseSidebar's list) rather than having no
+  // Previous at all — only Builder 1 has a guide, so this is scoped to
+  // that tier's first session specifically.
+  const showGuideBack = tier === 'Builder 1' && index === 0;
   const difficulty = getDifficulty(tier);
 
   const { content, loading, locked } = useCourseContent(agent?.id);
@@ -219,6 +225,10 @@ export default function BuilderSession({ progress, tier }) {
           )}
         </div>
 
+        {agent.isMainProject && completed && (
+          <WeekCompletionPanel agent={agent} week={agent.week} />
+        )}
+
         {loading && (
           <div className="flex items-center justify-center py-16 text-body gap-2">
             <Loader2 className="w-5 h-5 animate-spin" />
@@ -300,7 +310,7 @@ export default function BuilderSession({ progress, tier }) {
         )}
 
         {/* Previous / Next — cycle through this tier's sequence */}
-        {(prevAgent || nextAgent) && (
+        {(prevAgent || nextAgent || showGuideBack) && (
           <div className="flex items-stretch justify-between gap-3 pt-6 border-t border-border-soft">
             {prevAgent ? (
               <Link
@@ -311,6 +321,17 @@ export default function BuilderSession({ progress, tier }) {
                 <span className="min-w-0">
                   <span className="block text-[10px] font-bold uppercase tracking-wide text-gray-400">Previous</span>
                   <span className="block text-xs sm:text-sm font-bold text-ink truncate">{prevAgent.title}</span>
+                </span>
+              </Link>
+            ) : showGuideBack ? (
+              <Link
+                to="/builder-1-guide"
+                className="flex items-center gap-2 bg-white dark:bg-[#181818] border-[1.5px] border-border-soft hover:border-brand/40 rounded-xl pl-2.5 pr-4 py-2.5 transition-colors min-w-0"
+              >
+                <ChevronLeft className="w-4 h-4 text-brand flex-shrink-0" />
+                <span className="min-w-0">
+                  <span className="block text-[10px] font-bold uppercase tracking-wide text-gray-400">Previous</span>
+                  <span className="block text-xs sm:text-sm font-bold text-ink truncate">Getting Started Guide</span>
                 </span>
               </Link>
             ) : <span />}

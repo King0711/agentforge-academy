@@ -1,64 +1,123 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CheckCircle2, Circle, ChevronDown, BookOpen } from 'lucide-react';
-import { getBuilderPagePath } from '../data/agents';
+import { CheckCircle2, Circle, ChevronDown, Flag } from 'lucide-react';
+import { getBuilderPagePath, groupAgentsByWeek } from '../data/agents';
 import ProgressBar from './ProgressBar';
 
-function LessonList({ tierAgents, currentSlug, progress, onNavigate }) {
-  return (
-    <ul className="flex flex-col gap-0.5">
-      {tierAgents.map((agent, i) => {
-        const isCurrent = agent.slug === currentSlug;
-        const isDone = progress.isCompleted(agent.id);
-        return (
-          <li key={agent.id}>
-            <Link
-              to={getBuilderPagePath(agent)}
-              onClick={onNavigate}
-              className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
-                isCurrent
-                  ? 'bg-[#F3EBFF] dark:bg-brand/15 text-brand font-bold'
-                  : 'text-body hover:bg-[#FAF8FF] dark:hover:bg-white/5 hover:text-ink'
-              }`}
-            >
-              {isDone ? (
-                <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-green" />
-              ) : (
-                <Circle className="w-4 h-4 flex-shrink-0 text-gray-300 dark:text-gray-600" />
-              )}
-              <span className="text-[11px] font-mono text-gray-400 flex-shrink-0 w-4 text-right">{i + 1}</span>
-              <span className="truncate">{agent.title}</span>
-            </Link>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
+// Tiers with a dedicated pre-course guide — rendered as item 0 in the same
+// list as the real sessions (not a separate button above it) so the whole
+// course reads as one sequence with one Previous/Next, not two systems
+// glued together.
 const GUIDE_PATH = {
   'Builder 1': '/builder-1-guide',
 };
 
-function OrientationLink({ tier, onNavigate }) {
-  const location = useLocation();
-  const path = GUIDE_PATH[tier];
-  if (!path) return null;
-  const isCurrent = location.pathname === path;
+function LessonRow({ agent, i, currentSlug, progress, onNavigate }) {
+  const isCurrent = agent.slug === currentSlug;
+  const isDone = progress.isCompleted(agent.id);
   return (
-    <Link
-      to={path}
-      onClick={onNavigate}
-      className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm mb-3 border transition-colors ${
-        isCurrent
-          ? 'bg-brand text-white font-bold border-brand'
-          : 'bg-[#F3EBFF] dark:bg-brand/10 text-brand font-semibold border-brand/25 hover:border-brand/50'
-      }`}
-    >
-      <BookOpen className="w-4 h-4 flex-shrink-0" />
-      <span className="truncate">Getting Started Guide</span>
-    </Link>
+    <li>
+      <Link
+        to={getBuilderPagePath(agent)}
+        onClick={onNavigate}
+        className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
+          isCurrent
+            ? 'bg-[#F3EBFF] dark:bg-brand/15 text-brand font-bold'
+            : 'text-body hover:bg-[#FAF8FF] dark:hover:bg-white/5 hover:text-ink'
+        }`}
+      >
+        {isDone ? (
+          <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-green" />
+        ) : (
+          <Circle className="w-4 h-4 flex-shrink-0 text-gray-300 dark:text-gray-600" />
+        )}
+        <span className="text-[11px] font-mono text-gray-400 flex-shrink-0 w-4 text-right">{i + 1}</span>
+        <span className="truncate flex-1 min-w-0">{agent.title}</span>
+        {agent.isMainProject && (
+          <span className="text-[9px] font-bold uppercase tracking-wide text-brand bg-brand/10 px-1.5 py-0.5 rounded-full flex-shrink-0">
+            Main
+          </span>
+        )}
+      </Link>
+    </li>
+  );
+}
+
+function LessonList({ tier, tierAgents, currentSlug, progress, onNavigate }) {
+  const location = useLocation();
+  const guidePath = GUIDE_PATH[tier];
+  const weeks = groupAgentsByWeek(tierAgents);
+
+  const guideItem = guidePath && (
+    <li>
+      <Link
+        to={guidePath}
+        onClick={onNavigate}
+        className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
+          location.pathname === guidePath
+            ? 'bg-[#F3EBFF] dark:bg-brand/15 text-brand font-bold'
+            : 'text-body hover:bg-[#FAF8FF] dark:hover:bg-white/5 hover:text-ink'
+        }`}
+      >
+        <Flag className="w-4 h-4 flex-shrink-0" />
+        <span className="text-[11px] font-mono text-gray-400 flex-shrink-0 w-4 text-right">·</span>
+        <span className="truncate">Getting Started</span>
+      </Link>
+    </li>
+  );
+
+  // Weeks 1-4, one section each with its own header — falls back to a flat
+  // list for tiers without week data (Builder 2 doesn't have it yet).
+  // Start indices are computed up front (not mutated during the render map)
+  // so numbering stays 1, 2, 3... continuously across week boundaries.
+  if (weeks.length > 0) {
+    const weeksWithStart = weeks.reduce((acc, w) => {
+      const prev = acc[acc.length - 1];
+      const startIndex = prev ? prev.startIndex + prev.agents.length : 0;
+      return [...acc, { ...w, startIndex }];
+    }, []);
+
+    return (
+      <div className="flex flex-col gap-3">
+        <ul className="flex flex-col gap-0.5">{guideItem}</ul>
+        {weeksWithStart.map(({ week, agents: weekAgents, startIndex }) => {
+          return (
+            <div key={week}>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-3 mb-1">Week {week}</p>
+              <ul className="flex flex-col gap-0.5">
+                {weekAgents.map((agent, i) => (
+                  <LessonRow
+                    key={agent.id}
+                    agent={agent}
+                    i={startIndex + i}
+                    currentSlug={currentSlug}
+                    progress={progress}
+                    onNavigate={onNavigate}
+                  />
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return (
+    <ul className="flex flex-col gap-0.5">
+      {guideItem}
+      {tierAgents.map((agent, i) => (
+        <LessonRow
+          key={agent.id}
+          agent={agent}
+          i={i}
+          currentSlug={currentSlug}
+          progress={progress}
+          onNavigate={onNavigate}
+        />
+      ))}
+    </ul>
   );
 }
 
@@ -75,8 +134,7 @@ export default function CourseSidebar({ tier, tierAgents, currentSlug, progress 
           <ProgressBar value={completedCount} max={tierAgents.length} showLabel={false} height="h-1.5" />
           <p className="text-xs text-body mt-1.5">{completedCount} / {tierAgents.length} complete</p>
         </div>
-        <OrientationLink tier={tier} />
-        <LessonList tierAgents={tierAgents} currentSlug={currentSlug} progress={progress} />
+        <LessonList tier={tier} tierAgents={tierAgents} currentSlug={currentSlug} progress={progress} />
       </aside>
 
       {/* Mobile — collapsible toggle above the content */}
@@ -101,8 +159,8 @@ export default function CourseSidebar({ tier, tierAgents, currentSlug, progress 
               className="overflow-hidden"
             >
               <div className="px-3 pb-3">
-                <OrientationLink tier={tier} onNavigate={() => setMobileOpen(false)} />
                 <LessonList
+                  tier={tier}
                   tierAgents={tierAgents}
                   currentSlug={currentSlug}
                   progress={progress}

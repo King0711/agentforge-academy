@@ -23,7 +23,10 @@ export function useCertificateClaims(userId, completed) {
 
     for (const tier of CERTIFICATE_TIERS) {
       if (attemptedRef.current.has(tier.key)) continue;
-      const requiredIds = tier.difficulties.flatMap((d) => getAgentsByDifficulty(d).map((a) => a.id));
+      // Week tiers name a specific agent id directly (their single main
+      // project) rather than "every agent in a difficulty".
+      const requiredIds = tier.requiredAgentIds
+        ?? tier.difficulties.flatMap((d) => getAgentsByDifficulty(d).map((a) => a.id));
       const isComplete = requiredIds.length > 0 && requiredIds.every((id) => completed.includes(id));
       if (!isComplete) continue;
 

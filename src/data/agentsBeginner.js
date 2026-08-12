@@ -1,8 +1,20 @@
 // Beginner Agents (1-12) — metadata only; full guide content lives in Supabase `course_content`
 // Ordered simplest -> most advanced (see plan: playful-baking-flask) rather than by id.
+//
+// week/isMainProject group these into 4 weeks of a live cohort, each week
+// sharing a mechanism (not just a topic) rather than a random split:
+//   Week 1 — scheduled digests: read a source on a timer, summarize, deliver
+//   Week 2 — structuring: messy input in, clean organized output out
+//   Week 3 — triage & decisioning: something arrives, classify/score, act
+//   Week 4 — outward-facing: talks to or writes for other people
+// Each week has exactly one isMainProject:true agent — completing it alone
+// earns that week's certificate (see claim_certificate in Supabase); the
+// other two agents in the week are optional and don't gate it.
 export const agentsBeginner = [
   {
     id: 4,
+    week: 1,
+    isMainProject: true,
     slug: "daily-news-industry-summary-agent",
     title: "Daily News & Industry Summary Agent",
     emoji: "📰",
@@ -37,6 +49,8 @@ export const agentsBeginner = [
   },
   {
     id: 7,
+    week: 4,
+    isMainProject: false,
     slug: "social-media-post-generator",
     title: "Social Media Post Generator",
     emoji: "📱",
@@ -67,6 +81,8 @@ export const agentsBeginner = [
   },
   {
     id: 12,
+    week: 2,
+    isMainProject: false,
     slug: "basic-data-extractor-agent",
     title: "Basic Data Extractor Agent",
     emoji: "🧮",
@@ -98,6 +114,8 @@ export const agentsBeginner = [
   },
   {
     id: 5,
+    week: 2,
+    isMainProject: true,
     slug: "meeting-notes-formatter-agent",
     title: "Meeting Notes Formatter Agent",
     emoji: "📝",
@@ -129,6 +147,8 @@ export const agentsBeginner = [
   },
   {
     id: 3,
+    week: 1,
+    isMainProject: false,
     slug: "slack-morning-briefing-bot",
     title: "Slack Morning Briefing Bot",
     emoji: "☀️",
@@ -160,6 +180,8 @@ export const agentsBeginner = [
   },
   {
     id: 6,
+    week: 4,
+    isMainProject: false,
     slug: "simple-faq-chatbot",
     title: "Simple FAQ Chatbot",
     emoji: "🤖",
@@ -191,6 +213,8 @@ export const agentsBeginner = [
   },
   {
     id: 11,
+    week: 1,
+    isMainProject: false,
     slug: "calendar-task-prioritizer-agent",
     title: "Calendar & Task Prioritizer Agent",
     emoji: "🗓️",
@@ -222,6 +246,8 @@ export const agentsBeginner = [
   },
   {
     id: 1,
+    week: 3,
+    isMainProject: true,
     slug: "gmail-ai-triage-agent",
     title: "Gmail AI Triage Agent",
     emoji: "📧",
@@ -257,6 +283,8 @@ export const agentsBeginner = [
   },
   {
     id: 8,
+    week: 2,
+    isMainProject: false,
     slug: "document-summarizer-agent",
     title: "Document Summarizer Agent",
     emoji: "📄",
@@ -289,6 +317,8 @@ export const agentsBeginner = [
   },
   {
     id: 10,
+    week: 3,
+    isMainProject: false,
     slug: "price-competitor-monitor-agent",
     title: "Price & Competitor Monitor Agent",
     emoji: "🔍",
@@ -322,6 +352,8 @@ export const agentsBeginner = [
   },
   {
     id: 9,
+    week: 3,
+    isMainProject: false,
     slug: "lead-capture-qualifier-bot",
     title: "Lead Capture & Qualifier Bot",
     emoji: "🎯",
@@ -355,6 +387,8 @@ export const agentsBeginner = [
   },
   {
     id: 2,
+    week: 4,
+    isMainProject: true,
     slug: "whatsapp-auto-reply-bot",
     title: "WhatsApp Auto-Reply Bot",
     emoji: "💬",
