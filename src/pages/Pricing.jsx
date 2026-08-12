@@ -8,6 +8,7 @@ import { usePro } from '../hooks/usePro';
 import { useCohortSchedule } from '../hooks/useCohortSchedule';
 import { supabase } from '../lib/supabaseClient';
 import { agents } from '../data/agents';
+import { ANCHOR_PRICE, BUILDER_PRICE, BUILDER_SAVINGS, PRO_PRICE } from '../data/pricing';
 
 const builder1Count = agents.filter((a) => a.difficulty === 'Builder 1').length;
 const builder2Count = agents.filter((a) => a.difficulty === 'Builder 2').length;
@@ -36,11 +37,6 @@ const PRO_FEATURES = [
   'Priority support',
   '6 months of access',
 ];
-
-const ANCHOR_PRICE = 100000;
-const BUILDER_PRICE = 50000;
-const BUILDER_SAVINGS = ANCHOR_PRICE - BUILDER_PRICE;
-const PRO_PRICE = 90000;
 
 // Returns a display string for a cohort start date, or null if it's unset
 // or already in the past (an admin who forgets to clear a stale date
