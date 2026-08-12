@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import {
   Users, Shield, Zap, GraduationCap, Search, RefreshCw, Download,
   CheckCircle2, XCircle, Crown, AlertCircle, Loader2, Mail, ChevronDown, Sparkles,
+  Filter, ArrowUpDown,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -41,6 +42,34 @@ function planLabel(u) {
   if (b2) return 'Builder 2';
   return 'None';
 }
+
+// Same priority order as PlanBadge (admin badge wins even if the person
+// also holds an active plan) so the filter dropdown matches what's shown.
+function planCategory(u) {
+  if (u.is_admin) return 'admin';
+  const b1 = isActive(u.builder1_expires_at);
+  const b2 = isActive(u.builder2_expires_at);
+  if (b1 && b2) return 'pro';
+  if (b1) return 'builder1';
+  if (b2) return 'builder2';
+  return 'none';
+}
+
+const PLAN_FILTERS = [
+  { value: 'all', label: 'All plans' },
+  { value: 'pro', label: 'Pro (Builder 1 + 2)' },
+  { value: 'builder1', label: 'Builder 1' },
+  { value: 'builder2', label: 'Builder 2' },
+  { value: 'admin', label: 'Admin' },
+  { value: 'none', label: 'None' },
+];
+
+const SORT_OPTIONS = [
+  { value: 'newest', label: 'Newest first' },
+  { value: 'oldest', label: 'Oldest first' },
+  { value: 'name', label: 'Name (A-Z)' },
+  { value: 'xp', label: 'Most XP' },
+];
 
 function toCsvValue(value) {
   const str = String(value ?? '');
@@ -263,6 +292,8 @@ export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [planFilter, setPlanFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
   const [actionLoading, setActionLoading] = useState(null);
   const [error, setError] = useState('');
   const [expandedId, setExpandedId] = useState(null);
@@ -324,13 +355,21 @@ export default function AdminUsers() {
     }
   };
 
-  const filtered = users.filter((u) => {
-    const q = search.toLowerCase();
-    return (
-      (u.email || '').toLowerCase().includes(q) ||
-      (u.display_name || '').toLowerCase().includes(q)
-    );
-  });
+  const filtered = users
+    .filter((u) => {
+      const q = search.toLowerCase();
+      return (
+        (u.email || '').toLowerCase().includes(q) ||
+        (u.display_name || '').toLowerCase().includes(q)
+      );
+    })
+    .filter((u) => planFilter === 'all' || planCategory(u) === planFilter)
+    .sort((a, b) => {
+      if (sortBy === 'oldest') return new Date(a.created_at) - new Date(b.created_at);
+      if (sortBy === 'name') return (a.display_name || a.email || '').localeCompare(b.display_name || b.email || '');
+      if (sortBy === 'xp') return (b.xp ?? 0) - (a.xp ?? 0);
+      return new Date(b.created_at) - new Date(a.created_at); // newest
+    });
 
   const [now] = useState(() => Date.now());
   const stats = {
@@ -389,16 +428,44 @@ export default function AdminUsers() {
         </div>
       )}
 
-      {/* Search */}
-      <div className="relative mb-5">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name or email…"
-          className="w-full pl-11 pr-4 py-3 rounded-xl bg-white dark:bg-[#181818] border border-border text-sm text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/40"
-        />
+      {/* Search + filter + sort */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-5">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name or email…"
+            className="w-full pl-11 pr-4 py-3 rounded-xl bg-white dark:bg-[#181818] border border-border text-sm text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/40"
+          />
+        </div>
+        <div className="relative">
+          <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <select
+            value={planFilter}
+            onChange={(e) => setPlanFilter(e.target.value)}
+            className="appearance-none pl-10 pr-8 py-3 rounded-xl bg-white dark:bg-[#181818] border border-border text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand/40 cursor-pointer"
+          >
+            {PLAN_FILTERS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+        </div>
+        <div className="relative">
+          <ArrowUpDown className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="appearance-none pl-10 pr-8 py-3 rounded-xl bg-white dark:bg-[#181818] border border-border text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand/40 cursor-pointer"
+          >
+            {SORT_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+        </div>
       </div>
 
       {/* Table */}
