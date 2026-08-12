@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProfileInfoModal from './components/ProfileInfoModal';
+import WhatsAppFloatButton from './components/WhatsAppFloatButton';
 import Home from './pages/Home';
 import Catalog from './pages/Catalog';
 import PathDetail from './pages/PathDetail';
@@ -141,6 +142,7 @@ function AppShell() {
           </Routes>
         </main>
         {!hideChrome && <Footer />}
+        {!hideChrome && <WhatsAppFloatButton />}
 
         {selectedAgent && (
           <Suspense fallback={null}>

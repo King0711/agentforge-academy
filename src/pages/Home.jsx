@@ -1,12 +1,115 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Code2, Bot, KeyRound, MessageCircle, Video, CalendarDays, PlayCircle, Send, CheckCheck } from 'lucide-react';
 import AgentCard from '../components/AgentCard';
 import YouTubeFacade from '../components/YouTubeFacade';
 import TestimonialsSection from '../components/TestimonialsSection';
-import { agents } from '../data/agents';
+import { agents, getBuilder1Agents, groupAgentsByWeek } from '../data/agents';
 import { departments, isVisibleToPublic } from '../data/departments';
 import { usePro } from '../hooks/usePro';
 import { useTheme } from '../context/ThemeContext';
+import { useCohortSchedule } from '../hooks/useCohortSchedule';
+import { ANCHOR_PRICE, BUILDER_PRICE } from '../data/pricing';
+
+// Returns a display string for a cohort start date, or null if it's unset or
+// already in the past — same rule Pricing.jsx uses, duplicated rather than
+// shared since the two pages' surrounding date logic differs slightly.
+function formatCohortDate(dateStr) {
+  if (!dateStr) return null;
+  const date = new Date(`${dateStr}T00:00:00`);
+  if (date < new Date(new Date().toDateString())) return null;
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
+}
+
+// Stylized recreation of the real live-session card (see
+// src/pages/dashboard/LiveSessions.jsx), not a screenshot — avoids both the
+// consent issue of a real Zoom capture and the staleness of a screenshot
+// going out of date the next time that page's design changes.
+function LiveClassMockup() {
+  return (
+    <div className="relative bg-white dark:bg-[#181818] border-[1.5px] border-border-soft rounded-[22px] p-5 shadow-[0_20px_44px_-24px_rgba(80,40,160,.5)]">
+      <div className="flex items-center justify-between mb-4">
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-rose bg-[#FDEEF4] dark:bg-rose/10 px-2.5 py-1 rounded-full">
+          <span className="w-1.5 h-1.5 rounded-full bg-rose animate-pulse" /> LIVE THIS WEEK
+        </span>
+        <CalendarDays className="w-4 h-4 text-gray-300" />
+      </div>
+      {[
+        { title: 'Builder 1 — Week 1 walkthrough', tier: 'Builder 1' },
+        { title: 'Builder 2 — Office hours', tier: 'Builder 2' },
+      ].map((s) => (
+        <div key={s.title} className="flex items-center gap-3 rounded-xl border border-border-soft px-3.5 py-3 mb-2.5 last:mb-0">
+          <div className="w-9 h-9 rounded-lg bg-[#F3EBFF] dark:bg-brand/15 flex items-center justify-center flex-shrink-0">
+            <Video className="w-4 h-4 text-brand" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-bold text-sm text-ink truncate">{s.title}</p>
+            <p className="text-[11px] text-gray-400">{s.tier}</p>
+          </div>
+          <span className="flex-shrink-0 bg-brand text-white text-[11px] font-bold px-3 py-1.5 rounded-lg">Join</span>
+        </div>
+      ))}
+      <div className="flex items-center gap-2 mt-3.5 pt-3.5 border-t border-border-soft text-xs text-body">
+        <PlayCircle className="w-3.5 h-3.5 text-gray-400" /> Can't make it live? Every session is recorded.
+      </div>
+    </div>
+  );
+}
+
+// Stylized WhatsApp-style chat mockup — generic initials in place of avatars
+// and made-up (but realistic) support exchange, not real members' names,
+// photos, or messages.
+const CHAT_MESSAGES = [
+  { who: 'A', color: '#7C3AED', text: 'Anyone else stuck on the Gmail agent OAuth step? 😩', mine: false },
+  { who: 'D', color: '#16A34A', text: 'yep — check the scope you granted, easy to miss one', mine: false },
+  { who: 'Me', color: '#F5D90A', text: 'that was it, thank you!! 🙏', mine: true },
+];
+
+function CommunityMockup() {
+  return (
+    <div className="relative bg-white dark:bg-[#181818] border-[1.5px] border-border-soft rounded-[22px] overflow-hidden shadow-[0_20px_44px_-24px_rgba(22,163,74,.35)]">
+      <div className="flex items-center gap-2.5 px-4 py-3 bg-[#075E54]">
+        <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center text-white">
+          <MessageCircle className="w-4 h-4" />
+        </div>
+        <div>
+          <p className="text-white font-bold text-sm leading-tight">Social Dev Builders</p>
+          <p className="text-white/60 text-[11px] leading-tight">128 members</p>
+        </div>
+      </div>
+      <div className="p-4 flex flex-col gap-2.5" style={{ background: '#E5DDD5' }}>
+        {CHAT_MESSAGES.map((m, i) => (
+          <div key={i} className={`flex items-end gap-2 ${m.mine ? 'flex-row-reverse' : ''}`}>
+            {!m.mine && (
+              <div
+                className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
+                style={{ background: m.color }}
+              >
+                {m.who}
+              </div>
+            )}
+            <div
+              className={`max-w-[75%] rounded-xl px-3 py-2 text-[12.5px] leading-snug text-[#1F1F1F] ${
+                m.mine ? 'bg-[#DCF8C6] rounded-br-sm' : 'bg-white rounded-bl-sm'
+              }`}
+            >
+              {m.text}
+              {m.mine && (
+                <span className="inline-flex items-center gap-0.5 float-right mt-0.5 ml-1.5">
+                  <CheckCheck className="w-3 h-3 text-[#4FC3F7]" />
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+        <div className="flex items-center gap-2 bg-white rounded-full px-3 py-2 mt-1">
+          <span className="text-[12px] text-gray-400 flex-1">Message</span>
+          <Send className="w-3.5 h-3.5 text-[#075E54]" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const TECH_MARQUEE = ['PYTHON', 'CLAUDE API', 'GMAIL API', 'SLACK', 'SUPABASE', 'NOTION'];
 const YOUTUBE_VIDEO_ID = 'MYcREKgdAV4';
@@ -21,6 +124,40 @@ const HOW_IT_WORKS = [
   { num: 3, bg: '#16A34A', fg: '#fff', title: 'Ship to portfolio', text: 'Each session ends with a write-up prompt: LinkedIn post, resume bullets, project blurb.' },
 ];
 
+// Set expectations before checkout, not after — the Claude Pro line already
+// existed buried in step 2's fine print; this puts it (and the two other
+// things students actually get surprised by) somewhere a visitor deciding
+// whether to buy will actually see it.
+const BEFORE_YOU_START = [
+  {
+    icon: Code2,
+    title: 'No prior coding experience required',
+    text: 'Every build ships copy-paste-ready prompts — you\'re directing Claude, not writing code from scratch. Basic comfort with a browser and copy-paste is all you need to start.',
+  },
+  {
+    icon: Bot,
+    title: 'A paid Claude account',
+    text: 'You\'ll need Claude Pro or higher to complete the builds — Claude\'s free tier runs out of usage mid-session. That\'s billed separately by Anthropic, on top of your one-time course payment.',
+  },
+  {
+    icon: KeyRound,
+    title: 'A few Builder 2 sessions need their own API key',
+    text: 'A handful of advanced builds connect to a third-party service — Pinecone, HubSpot, DataForSEO — to do their job. Most have a free tier that\'s enough to complete the session; each build tells you exactly what it needs before you start.',
+  },
+];
+
+// Short theme labels for each Builder 1 week — the underlying data
+// (src/data/agentsBeginner.js) only stores week number + isMainProject, not
+// a display label, so the label lives here alongside the one place it's
+// rendered.
+const WEEK_THEMES = {
+  1: 'Info & briefing agents',
+  2: 'Document processing',
+  3: 'Inbound triage & lead handling',
+  4: 'Customer-facing messaging',
+};
+const builder1Weeks = groupAgentsByWeek(getBuilder1Agents());
+
 const totalXP = publicAgents.reduce((sum, a) => sum + a.xp, 0);
 const totalHours = Math.round(publicAgents.reduce((sum, a) => sum + parseFloat(a.buildTime), 0));
 const realDepartments = departments.filter((d) => d.id !== 'all');
@@ -29,8 +166,10 @@ export default function Home({ progress, onSelectAgent }) {
   const { hasBuilder1, hasBuilder2, isAdmin } = usePro();
   const { theme } = useTheme();
   const navigate = useNavigate();
+  const { builder1: builder1CohortDate, builder2: builder2CohortDate } = useCohortSchedule();
 
   const popularAgents = [...publicAgents].sort((a, b) => b.xp - a.xp).slice(0, 4);
+  const nextCohort = formatCohortDate(builder1CohortDate) || formatCohortDate(builder2CohortDate);
 
   return (
     <div>
@@ -62,9 +201,14 @@ export default function Home({ progress, onSelectAgent }) {
               <span className="text-brand">Earn XP.</span>{' '}
               <span className="inline-block bg-yellow px-2.5 rounded-lg -rotate-[1.5deg]">Level up.</span>
             </h1>
-            <p className="text-[17px] leading-relaxed text-body mt-5 mb-7 max-w-[480px]">
+            <p className="text-[17px] leading-relaxed text-body mt-5 mb-5 max-w-[480px]">
               {publicAgents.length} guided build sessions across every department. Copy-paste prompts, step-by-step builds, and a portfolio write-up — so you ship something real every session.
             </p>
+            <div className="flex items-baseline gap-2.5 mb-6">
+              <span className="text-base text-gray-400 line-through">₦{ANCHOR_PRICE.toLocaleString()}</span>
+              <span className="font-display font-extrabold text-2xl text-ink">₦{BUILDER_PRICE.toLocaleString()}</span>
+              <span className="text-sm text-body">one-time · 6 months access</span>
+            </div>
             <div className="flex gap-3.5 items-center flex-wrap">
               <Link
                 to="/pricing"
@@ -170,6 +314,47 @@ export default function Home({ progress, onSelectAgent }) {
         </div>
       </div>
 
+      {/* ── Before you start ── */}
+      <div className="px-4 sm:px-6 lg:px-[5vw] pt-2 pb-14 max-w-6xl mx-auto">
+        <h2 className="font-display font-extrabold text-[30px] text-ink tracking-[-.8px] text-center m-0">Before you start</h2>
+        <p className="text-center text-body mt-2 mb-7">What you actually need — no surprises after checkout</p>
+        <div className="grid sm:grid-cols-3 gap-5">
+          {BEFORE_YOU_START.map((item) => (
+            <div key={item.title} className="bg-white dark:bg-[#181818] border-[1.5px] border-border-soft rounded-[20px] p-6.5">
+              <div className="w-11 h-11 rounded-xl bg-[#F3EBFF] dark:bg-brand/15 text-brand flex items-center justify-center mb-4">
+                <item.icon className="w-5 h-5" />
+              </div>
+              <h3 className="font-display font-bold text-lg text-ink mb-2">{item.title}</h3>
+              <p className="text-sm leading-relaxed text-body m-0">{item.text}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Curriculum preview ── */}
+      {builder1Weeks.length > 0 && (
+        <div className="px-4 sm:px-6 lg:px-[5vw] pt-2 pb-14 max-w-6xl mx-auto">
+          <h2 className="font-display font-extrabold text-[30px] text-ink tracking-[-.8px] text-center m-0">What you'll build, week by week</h2>
+          <p className="text-center text-body mt-2 mb-7">Builder 1's first month, mapped out — each week has one main project and two optional ones</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {builder1Weeks.map(({ week, agents: weekAgents, mainAgent }) => (
+              <div key={week} className="bg-white dark:bg-[#181818] border-[1.5px] border-border-soft rounded-[20px] p-6">
+                <span className="inline-block text-[11px] font-bold uppercase tracking-widest text-brand bg-[#F3EBFF] dark:bg-brand/15 px-2.5 py-1 rounded-full mb-3">
+                  Week {week}
+                </span>
+                <h3 className="font-display font-bold text-lg text-ink mb-1">{WEEK_THEMES[week] || `Week ${week}`}</h3>
+                {mainAgent && (
+                  <p className="text-sm text-body leading-relaxed mb-3">
+                    <span className="font-semibold text-ink">Main build:</span> {mainAgent.title}
+                  </p>
+                )}
+                <p className="text-xs text-gray-400">{weekAgents.length} sessions this week</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── Browse by department ── */}
       <div className="px-4 sm:px-6 lg:px-[5vw] pt-2 pb-14 max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-4.5">
@@ -210,6 +395,67 @@ export default function Home({ progress, onSelectAgent }) {
       </div>
 
       <TestimonialsSection />
+
+      {/* ── Live classes ── */}
+      <div className="px-4 sm:px-6 lg:px-[5vw] pt-2 pb-14 max-w-6xl mx-auto">
+        <div className="grid lg:grid-cols-[1fr_1.1fr] gap-10 items-center">
+          <div className="order-2 lg:order-1">
+            <span className="inline-flex items-center gap-2 bg-[#FDEEF4] dark:bg-rose/10 text-rose font-bold text-[12.5px] px-4 py-2 rounded-full">
+              <Video className="w-3.5 h-3.5" /> Live classes
+            </span>
+            <h2 className="font-display font-extrabold text-[28px] sm:text-[32px] text-ink tracking-[-.7px] mt-4 mb-3">
+              It's not just a self-paced library
+            </h2>
+            <p className="text-body leading-relaxed mb-5 max-w-[440px]">
+              Every cohort gets scheduled live sessions — walkthroughs, office hours, and Q&A on Zoom — on top of the
+              self-paced builds. Can't make it live? Every session is recorded and added to your replays.
+            </p>
+            {nextCohort && (
+              <p className="inline-flex items-center gap-2 text-sm font-bold text-ink bg-[#F3EBFF] dark:bg-brand/15 px-4 py-2 rounded-full mb-5">
+                <CalendarDays className="w-4 h-4 text-brand" /> Next cohort starts {nextCohort}
+              </p>
+            )}
+            <div>
+              <Link
+                to="/pricing"
+                className="inline-flex bg-brand text-white font-bold text-base px-7 py-[15px] rounded-2xl shadow-[0_10px_22px_rgba(124,58,237,.4)] hover:bg-brand-deep transition-colors"
+              >
+                Join the next cohort →
+              </Link>
+            </div>
+          </div>
+          <div className="order-1 lg:order-2">
+            <LiveClassMockup />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Community support ── */}
+      <div className="px-4 sm:px-6 lg:px-[5vw] pt-2 pb-14 max-w-6xl mx-auto">
+        <div className="grid lg:grid-cols-[1.1fr_1fr] gap-10 items-center">
+          <div>
+            <CommunityMockup />
+          </div>
+          <div>
+            <span className="inline-flex items-center gap-2 bg-[#EAFAF1] dark:bg-green/10 text-green font-bold text-[12.5px] px-4 py-2 rounded-full">
+              <MessageCircle className="w-3.5 h-3.5" /> Community support
+            </span>
+            <h2 className="font-display font-extrabold text-[28px] sm:text-[32px] text-ink tracking-[-.7px] mt-4 mb-3">
+              Stuck on a build? You're not on your own
+            </h2>
+            <p className="text-body leading-relaxed mb-5 max-w-[440px]">
+              Every student gets added to our WhatsApp community — ask questions, share what you've shipped, and get
+              unstuck from other builders (and us) the same day, not a forum post that sits unanswered for a week.
+            </p>
+            <Link
+              to="/pricing"
+              className="inline-flex bg-brand text-white font-bold text-base px-7 py-[15px] rounded-2xl shadow-[0_10px_22px_rgba(124,58,237,.4)] hover:bg-brand-deep transition-colors"
+            >
+              Get started →
+            </Link>
+          </div>
+        </div>
+      </div>
 
       {/* ── Pricing CTA band ── */}
       <div className="px-4 sm:px-6 lg:px-[5vw] pb-14 max-w-6xl mx-auto">
