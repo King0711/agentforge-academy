@@ -1,7 +1,13 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, Video, PlayCircle, UserCircle2, HelpCircle, LogOut, Shield, Hammer } from 'lucide-react';
+import { Home, Video, PlayCircle, UserCircle2, HelpCircle, LogOut, Shield, Hammer, Rocket } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { usePro } from '../../hooks/usePro';
+import { getBuilder2Agents, getBuilderPagePath } from '../../data/agents';
+
+// Builder 2 has no dedicated guide page (unlike Builder 1's
+// /builder-1-guide), so its dashboard entry point goes straight to the
+// first session in the tier.
+const builder2FirstAgent = getBuilder2Agents()[0];
 
 const NAV_ITEMS = [
   { to: '/dashboard', end: true, icon: Home, label: 'Home' },
@@ -43,7 +49,7 @@ function NavItems({ onNavigate }) {
 // this same component into a hamburger drawer.
 export default function DashboardSidebar() {
   const { user, signOut } = useAuth();
-  const { isAdmin, hasBuilder1 } = usePro();
+  const { isAdmin, hasBuilder1, hasBuilder2 } = usePro();
   const navigate = useNavigate();
 
   const displayName = user?.user_metadata?.display_name || user?.email || '';
@@ -65,22 +71,38 @@ export default function DashboardSidebar() {
 
       <nav className="flex-1 overflow-y-auto">
         <NavItems />
-        {(hasBuilder1 || isAdmin) && (
+        {(hasBuilder1 || hasBuilder2 || isAdmin) && (
           <>
             <div className="border-t border-[#EFE9FB] dark:border-[#232228] my-3" />
             <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600 px-3.5 mb-1.5">My Courses</p>
-            <NavLink
-              to="/builder-1-guide"
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors ${
-                  isActive
-                    ? 'bg-[#F3EBFF] dark:bg-brand/15 text-brand'
-                    : 'text-[#4A4463] dark:text-[#B7AFC9] hover:bg-[#FAF8FF] dark:hover:bg-white/5 hover:text-ink'
-                }`
-              }
-            >
-              <Hammer className="w-[18px] h-[18px] flex-shrink-0" /> Builder 1
-            </NavLink>
+            {(hasBuilder1 || isAdmin) && (
+              <NavLink
+                to="/builder-1-guide"
+                className={({ isActive }) =>
+                  `flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors ${
+                    isActive
+                      ? 'bg-[#F3EBFF] dark:bg-brand/15 text-brand'
+                      : 'text-[#4A4463] dark:text-[#B7AFC9] hover:bg-[#FAF8FF] dark:hover:bg-white/5 hover:text-ink'
+                  }`
+                }
+              >
+                <Hammer className="w-[18px] h-[18px] flex-shrink-0" /> Builder 1
+              </NavLink>
+            )}
+            {(hasBuilder2 || isAdmin) && builder2FirstAgent && (
+              <NavLink
+                to={getBuilderPagePath(builder2FirstAgent)}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors ${
+                    isActive
+                      ? 'bg-[#F3EBFF] dark:bg-brand/15 text-brand'
+                      : 'text-[#4A4463] dark:text-[#B7AFC9] hover:bg-[#FAF8FF] dark:hover:bg-white/5 hover:text-ink'
+                  }`
+                }
+              >
+                <Rocket className="w-[18px] h-[18px] flex-shrink-0" /> Builder 2
+              </NavLink>
+            )}
           </>
         )}
         {isAdmin && (
@@ -115,8 +137,9 @@ export default function DashboardSidebar() {
 }
 
 export function DashboardMobileNav() {
-  const { isAdmin, hasBuilder1 } = usePro();
+  const { isAdmin, hasBuilder1, hasBuilder2 } = usePro();
   const showBuilder1 = hasBuilder1 || isAdmin;
+  const showBuilder2 = (hasBuilder2 || isAdmin) && builder2FirstAgent;
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-[#0A090F] border-t border-[#EFE9FB] dark:border-[#232228] flex items-stretch">
       {NAV_ITEMS.map(({ to, end, icon: Icon, label }) => (
@@ -145,6 +168,19 @@ export function DashboardMobileNav() {
         >
           <Hammer className="w-5 h-5" />
           Builder 1
+        </NavLink>
+      )}
+      {showBuilder2 && (
+        <NavLink
+          to={getBuilderPagePath(builder2FirstAgent)}
+          className={({ isActive }) =>
+            `flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-[10.5px] font-semibold transition-colors ${
+              isActive ? 'text-brand' : 'text-gray-400'
+            }`
+          }
+        >
+          <Rocket className="w-5 h-5" />
+          Builder 2
         </NavLink>
       )}
     </nav>
