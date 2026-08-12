@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   Users, Shield, Zap, GraduationCap, Search, RefreshCw, Download,
   CheckCircle2, XCircle, Crown, AlertCircle, Loader2, Mail, ChevronDown, Sparkles,
-  Filter, ArrowUpDown,
+  Filter, ArrowUpDown, Hammer, Rocket,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -135,8 +135,13 @@ function PlanBadge({ user }) {
   );
 }
 
-function UserRow({ u, index, expanded, onToggleExpand, actionLoading, onTogglePro, onToggleAdmin, currentUserId }) {
-  const userIsPro = isActive(u.builder1_expires_at) && isActive(u.builder2_expires_at);
+function UserRow({
+  u, index, expanded, onToggleExpand, actionLoading,
+  onToggleBuilder1, onToggleBuilder2, onTogglePro, onToggleAdmin, currentUserId,
+}) {
+  const hasB1 = isActive(u.builder1_expires_at);
+  const hasB2 = isActive(u.builder2_expires_at);
+  const userIsPro = hasB1 && hasB2;
   return (
     <>
       <motion.tr
@@ -202,6 +207,44 @@ function UserRow({ u, index, expanded, onToggleExpand, actionLoading, onTogglePr
         {/* Actions */}
         <td className="px-5 py-4">
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Toggle Builder 1 */}
+            <button
+              onClick={() => onToggleBuilder1(u.id, hasB1)}
+              disabled={!!actionLoading || u.is_admin}
+              title={hasB1 ? 'Revoke Builder 1' : 'Grant Builder 1'}
+              className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-40 ${
+                hasB1
+                  ? 'bg-[#EAFAF1] dark:bg-green/10 text-green hover:bg-[#FDEEF4] dark:hover:bg-rose/10 hover:text-rose'
+                  : 'bg-[#FAF8FF] dark:bg-white/5 text-body-strong hover:bg-[#EAFAF1] dark:hover:bg-green/10 hover:text-green'
+              }`}
+            >
+              {actionLoading === u.id + '_b1' ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <Hammer className="w-3 h-3" />
+              )}
+              B1
+            </button>
+
+            {/* Toggle Builder 2 */}
+            <button
+              onClick={() => onToggleBuilder2(u.id, hasB2)}
+              disabled={!!actionLoading || u.is_admin}
+              title={hasB2 ? 'Revoke Builder 2' : 'Grant Builder 2'}
+              className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-40 ${
+                hasB2
+                  ? 'bg-[#F3EBFF] dark:bg-brand/15 text-brand hover:bg-[#FDEEF4] dark:hover:bg-rose/10 hover:text-rose'
+                  : 'bg-[#FAF8FF] dark:bg-white/5 text-body-strong hover:bg-[#F3EBFF] dark:hover:bg-brand/15 hover:text-brand'
+              }`}
+            >
+              {actionLoading === u.id + '_b2' ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <Rocket className="w-3 h-3" />
+              )}
+              B2
+            </button>
+
             {/* Toggle Pro (grants/revokes both Builder 1 + 2) */}
             <button
               onClick={() => onTogglePro(u.id, userIsPro)}
@@ -329,6 +372,46 @@ export default function AdminUsers() {
         u.id === targetId ? { ...u, builder1_expires_at: expiry, builder2_expires_at: expiry } : u
       ));
       showToast(!currentPro ? 'Pro access granted (Builder 1 + 2, 6 months).' : 'Pro access revoked.');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const toggleBuilder1 = async (targetId, currentActive) => {
+    setActionLoading(targetId + '_b1');
+    try {
+      const { error: err } = await supabase.rpc('admin_set_user_builder1', {
+        target_user_id: targetId,
+        set_active: !currentActive,
+      });
+      if (err) throw err;
+      const expiry = !currentActive ? new Date(Date.now() + 182 * 24 * 60 * 60 * 1000).toISOString() : null;
+      setUsers((prev) => prev.map((u) =>
+        u.id === targetId ? { ...u, builder1_expires_at: expiry } : u
+      ));
+      showToast(!currentActive ? 'Builder 1 access granted (6 months).' : 'Builder 1 access revoked.');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const toggleBuilder2 = async (targetId, currentActive) => {
+    setActionLoading(targetId + '_b2');
+    try {
+      const { error: err } = await supabase.rpc('admin_set_user_builder2', {
+        target_user_id: targetId,
+        set_active: !currentActive,
+      });
+      if (err) throw err;
+      const expiry = !currentActive ? new Date(Date.now() + 182 * 24 * 60 * 60 * 1000).toISOString() : null;
+      setUsers((prev) => prev.map((u) =>
+        u.id === targetId ? { ...u, builder2_expires_at: expiry } : u
+      ));
+      showToast(!currentActive ? 'Builder 2 access granted (6 months).' : 'Builder 2 access revoked.');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -504,6 +587,8 @@ export default function AdminUsers() {
                     expanded={expandedId === u.id}
                     onToggleExpand={() => setExpandedId((id) => (id === u.id ? null : u.id))}
                     actionLoading={actionLoading}
+                    onToggleBuilder1={toggleBuilder1}
+                    onToggleBuilder2={toggleBuilder2}
                     onTogglePro={togglePro}
                     onToggleAdmin={toggleAdmin}
                     currentUserId={user?.id}

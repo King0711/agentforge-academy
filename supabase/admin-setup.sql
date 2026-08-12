@@ -91,6 +91,52 @@ begin
 end;
 $$;
 
+-- 3b. Admin functions: grant / revoke a single tier (Builder 1 or Builder 2)
+--     independently, for students who only bought one track rather than Pro.
+create or replace function public.admin_set_user_builder1(
+  target_user_id uuid,
+  set_active boolean
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not exists (
+    select 1 from entitlements ent where ent.user_id = auth.uid() and ent.is_admin = true
+  ) then
+    raise exception 'Unauthorized: Admin access required';
+  end if;
+
+  update entitlements
+  set builder1_expires_at = case when set_active then now() + interval '182 days' else null end
+  where user_id = target_user_id;
+end;
+$$;
+
+create or replace function public.admin_set_user_builder2(
+  target_user_id uuid,
+  set_active boolean
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not exists (
+    select 1 from entitlements ent where ent.user_id = auth.uid() and ent.is_admin = true
+  ) then
+    raise exception 'Unauthorized: Admin access required';
+  end if;
+
+  update entitlements
+  set builder2_expires_at = case when set_active then now() + interval '182 days' else null end
+  where user_id = target_user_id;
+end;
+$$;
+
 -- 4. Admin function: grant / revoke Admin for a user
 create or replace function public.admin_set_user_admin(
   target_user_id uuid,
@@ -122,6 +168,12 @@ grant execute on function public.admin_get_all_profiles() to authenticated;
 
 revoke execute on function public.admin_set_user_pro(uuid, boolean) from anon, public;
 grant execute on function public.admin_set_user_pro(uuid, boolean) to authenticated;
+
+revoke execute on function public.admin_set_user_builder1(uuid, boolean) from anon, public;
+grant execute on function public.admin_set_user_builder1(uuid, boolean) to authenticated;
+
+revoke execute on function public.admin_set_user_builder2(uuid, boolean) from anon, public;
+grant execute on function public.admin_set_user_builder2(uuid, boolean) to authenticated;
 
 revoke execute on function public.admin_set_user_admin(uuid, boolean) from anon, public;
 grant execute on function public.admin_set_user_admin(uuid, boolean) to authenticated;
