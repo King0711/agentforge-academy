@@ -291,10 +291,10 @@ export default function Builder1Guide() {
               The free plan has usage limits that will interrupt your work mid-session. Upgrade to Pro before Saturday — it takes 2 minutes.
             </Faq>
             <Faq q="Can I use ChatGPT or Gemini instead?">
-              Builder 1 is designed around Claude's specific strengths. The prompts, techniques, and exercises are Claude-specific. Other tools won't work as substitutes.
+              The sessions are built around Claude, so Claude works best. That said, you can use ChatGPT Plus/Pro, Gemini Pro, or Microsoft Copilot as alternatives — the core concepts still apply, but some prompts and techniques are Claude-specific and may need adapting.
             </Faq>
             <Faq q="Is $20/month in dollars or naira?">
-              US dollars — approximately ₦32,000–35,000/month at current rates. Use a dollar-capable card (GTB, Zenith, Access) or a virtual dollar card (Chipper, Grey, Barter). Virtual dollar cards take about 10 minutes to set up.
+              US dollars — approximately ₦27,800/month at current rates. Use a dollar-capable card (GTB, Zenith, Access) or a virtual dollar card (Chipper, Grey, Barter). Virtual dollar cards take about 10 minutes to set up.
             </Faq>
           </Section>
 
@@ -364,6 +364,20 @@ export default function Builder1Guide() {
             </Card>
             <div className="flex items-center gap-3 bg-green/10 border border-green/30 rounded-2xl px-5 py-4 mt-2 font-bold text-green text-base">
               🎉 You're all set — see you Saturday, August 15 at 5pm WAT!
+            </div>
+
+            <div className="mt-5 bg-[#F8F6FF] dark:bg-[#181818] border border-brand/25 rounded-2xl p-5">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-brand mb-2">Session 1 Guide</div>
+              <div className="font-display font-bold text-base text-ink mb-1.5">Ready to start building?</div>
+              <p className="text-sm text-body leading-relaxed mb-4">
+                Work through Session 1 at your own pace — build your portfolio, extract design DNA, create a reusable design skill, and publish live.
+              </p>
+              <Link
+                to="/session/build-real-product"
+                className="inline-flex items-center gap-2 bg-brand hover:bg-brand-deep text-white font-bold text-sm px-5 py-3 rounded-xl transition-colors shadow-[0_6px_16px_rgba(124,58,237,.35)]"
+              >
+                Build a real product, extract design DNA, build a reusable design skill and publish live →
+              </Link>
             </div>
           </Section>
 
