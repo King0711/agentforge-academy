@@ -1,6 +1,6 @@
 # Social Dev Technologies
 
-> Social Dev Technologies teaches practical AI-agent building through guided, hands-on sessions using Claude. Students follow step-by-step builds - copy-paste prompts, real integrations (Gmail, Slack, Notion, WhatsApp, and more), and a portfolio write-up at the end of each session - rather than watching passive video lectures.
+> Social Dev Technologies teaches practical Artificial Intelligence (AI) agent building through guided, hands-on sessions using Claude. Students follow step-by-step builds - copy-paste prompts, real integrations (Gmail, Slack, Notion, WhatsApp, and more), and a portfolio write-up at the end of each session - rather than watching passive video lectures.
 
 Social Dev Technologies is not a general AI-literacy or prompt-engineering course. Every session ends with a working, shippable agent and a portfolio artifact. Students need their own paid Claude account (Claude Pro or higher, billed separately by Anthropic) to follow along.
 
