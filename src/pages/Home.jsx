@@ -4,7 +4,7 @@ import { Code2, Bot, KeyRound, MessageCircle, Video, CalendarDays, PlayCircle, S
 import AgentCard from '../components/AgentCard';
 import YouTubeFacade from '../components/YouTubeFacade';
 import TestimonialsSection from '../components/TestimonialsSection';
-import { agents, getBuilder1Agents, groupAgentsByWeek } from '../data/agents';
+import { agents, getBuilder1Agents, groupAgentsByWeek, getAgentBySlug, getBuilderPagePath } from '../data/agents';
 import { departments, isVisibleToPublic } from '../data/departments';
 import { usePro } from '../hooks/usePro';
 import { useTheme } from '../context/ThemeContext';
@@ -158,6 +158,39 @@ const WEEK_THEMES = {
 };
 const builder1Weeks = groupAgentsByWeek(getBuilder1Agents());
 
+// Outcome-framed showcase: "what you'll actually walk away having built"
+// rather than a topic list — each entry names one or two real catalog
+// agents (by slug, so titles/emoji always stay in sync with the data) under
+// a punchier umbrella. Spans both tracks, unlike the week-by-week preview
+// above which is Builder 1 only.
+const FLAGSHIP_BUILDS = [
+  {
+    label: 'A personal inbox agent',
+    text: 'Triages your inbox and drafts replies before you even open it — start the day at zero, not 200 unread.',
+    slugs: ['gmail-ai-triage-agent'],
+  },
+  {
+    label: 'A daily briefing agent',
+    text: 'Turns raw meeting notes and industry noise into a clean summary waiting for you every morning.',
+    slugs: ['daily-news-industry-summary-agent', 'meeting-notes-formatter-agent'],
+  },
+  {
+    label: 'A customer-facing bot',
+    text: "A real bot your customers message directly on WhatsApp — live and answering, not a demo.",
+    slugs: ['whatsapp-auto-reply-bot'],
+  },
+  {
+    label: 'A RAG-powered support agent',
+    text: 'Feed it your own docs and past tickets — it answers customer questions accurately, not generically.',
+    slugs: ['customer-support-rag-bot'],
+  },
+  {
+    label: 'Business automation agents',
+    text: 'Agents that chase stale deals and write personalized outreach, so nothing falls through the cracks.',
+    slugs: ['crm-lead-follow-up-agent', 'sales-email-personalization-agent'],
+  },
+];
+
 const totalXP = publicAgents.reduce((sum, a) => sum + a.xp, 0);
 const totalHours = Math.round(publicAgents.reduce((sum, a) => sum + parseFloat(a.buildTime), 0));
 const realDepartments = departments.filter((d) => d.id !== 'all');
@@ -202,7 +235,7 @@ export default function Home({ progress, onSelectAgent }) {
               <span className="inline-block bg-yellow px-2.5 rounded-lg -rotate-[1.5deg]">Level up.</span>
             </h1>
             <p className="text-[17px] leading-relaxed text-body mt-5 mb-5 max-w-[480px]">
-              {publicAgents.length} guided build sessions across every department. Copy-paste prompts, step-by-step builds, and a portfolio write-up — so you ship something real every session.
+              {publicAgents.length} guided Artificial Intelligence (AI) agent build sessions across every department. Copy-paste prompts, step-by-step builds, and a portfolio write-up — so you ship something real every session.
             </p>
             <div className="flex items-baseline gap-2.5 mb-6">
               <span className="text-base text-gray-400 line-through">₦{ANCHOR_PRICE.toLocaleString()}</span>
@@ -230,7 +263,7 @@ export default function Home({ progress, onSelectAgent }) {
               <YouTubeFacade
                 className="w-full h-full"
                 videoId={YOUTUBE_VIDEO_ID}
-                title="Social Dev Technologies preview"
+                title="Don't Get Left Behind: Learn AI Automation with Claude"
                 thumbnailSrc="/video-thumbnail.jpg"
               />
             </div>
@@ -331,6 +364,35 @@ export default function Home({ progress, onSelectAgent }) {
         </div>
       </div>
 
+      {/* ── Flagship builds ── */}
+      <div className="px-4 sm:px-6 lg:px-[5vw] pt-2 pb-14 max-w-6xl mx-auto">
+        <h2 className="font-display font-extrabold text-[30px] text-ink tracking-[-.8px] text-center m-0">What you'll actually walk away having built</h2>
+        <p className="text-center text-body mt-2 mb-7">Real agents from the catalog — not a topic list, a portfolio</p>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {FLAGSHIP_BUILDS.map((item) => {
+            const buildAgents = item.slugs.map(getAgentBySlug).filter(Boolean);
+            const primary = buildAgents[0];
+            return (
+              <Link
+                key={item.label}
+                to={primary ? getBuilderPagePath(primary) : '/catalog'}
+                className="bg-white dark:bg-[#181818] border-[1.5px] border-border-soft rounded-[20px] p-6 hover:border-brand/40 transition-colors"
+              >
+                <div className="flex gap-1.5 mb-4">
+                  {buildAgents.map((a) => (
+                    <span key={a.id} className="w-11 h-11 rounded-xl bg-[#F3EBFF] dark:bg-brand/15 flex items-center justify-center text-xl flex-shrink-0">
+                      {a.emoji}
+                    </span>
+                  ))}
+                </div>
+                <h3 className="font-display font-bold text-lg text-ink mb-2">{item.label}</h3>
+                <p className="text-sm leading-relaxed text-body m-0">{item.text}</p>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
       {/* ── Curriculum preview ── */}
       {builder1Weeks.length > 0 && (
         <div className="px-4 sm:px-6 lg:px-[5vw] pt-2 pb-14 max-w-6xl mx-auto">
@@ -394,8 +456,6 @@ export default function Home({ progress, onSelectAgent }) {
         </div>
       </div>
 
-      <TestimonialsSection />
-
       {/* ── Live classes ── */}
       <div className="px-4 sm:px-6 lg:px-[5vw] pt-2 pb-14 max-w-6xl mx-auto">
         <div className="grid lg:grid-cols-[1fr_1.1fr] gap-10 items-center">
@@ -456,6 +516,8 @@ export default function Home({ progress, onSelectAgent }) {
           </div>
         </div>
       </div>
+
+      <TestimonialsSection />
 
       {/* ── Pricing CTA band ── */}
       <div className="px-4 sm:px-6 lg:px-[5vw] pb-14 max-w-6xl mx-auto">
