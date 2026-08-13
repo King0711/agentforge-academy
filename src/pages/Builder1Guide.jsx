@@ -13,6 +13,8 @@ import CourseSidebar from '../components/CourseSidebar';
 // and BuilderSession.jsx for the Previous link back to this page from
 // Session 1. The in-page nav below (sticky, anchor-based) is the same
 // pattern WhatsAppBotGuide.jsx uses for a long single-page guide.
+const COHORT_WHATSAPP_LINK = 'https://chat.whatsapp.com/JoZQehOdBmGISFs77HKVSk';
+
 const NAV_SECTIONS = [
   { id: 'welcome', label: 'Welcome' },
   { id: 'requirements', label: 'Requirements' },
@@ -206,6 +208,14 @@ export default function Builder1Guide() {
 
           <Callout type="success" icon="🚀">
             <strong>Builder 1 starts Saturday, August 16, 2026.</strong> Use this guide to get fully set up so Day 1 is pure building, not setup.
+            <a
+              href={COHORT_WHATSAPP_LINK}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2.5 flex w-fit items-center gap-1.5 text-sm font-bold text-green hover:underline"
+            >
+              💬 Join the Builder 1 WhatsApp group →
+            </a>
           </Callout>
 
           {/* Sticky in-page nav — same pattern as WhatsAppBotGuide.jsx */}
@@ -255,7 +265,8 @@ export default function Builder1Guide() {
                 desc="You already have Builder 1 access. Make sure you can log in and see your sessions before Saturday."
                 link="/dashboard" linkLabel="→ Check your dashboard" />
               <ReqRow icon="📱" title="WhatsApp (for class updates)"
-                desc="Session reminders and community discussion happen on WhatsApp. Details in the Community section below." />
+                desc="Session reminders and community discussion happen on WhatsApp. Join the cohort group now so you don't miss anything."
+                link={COHORT_WHATSAPP_LINK} linkLabel="→ Join the Builder 1 WhatsApp group" />
             </Card>
             <Callout type="info" icon="💡">
               <strong>First month tip:</strong> Start your Claude Pro subscription this week so it's fully active on Saturday — new accounts can have rate limits on their first day.
@@ -323,7 +334,7 @@ export default function Builder1Guide() {
             <Card title="How to get help">
               <ReqRow icon="💬" title="WhatsApp Community"
                 desc="Primary space for questions, updates, and sharing what you build."
-                link="https://wa.me/2349066006963" linkLabel="→ WhatsApp: +234 906 600 6963" />
+                link={COHORT_WHATSAPP_LINK} linkLabel="→ Join the Builder 1 WhatsApp group" />
               <ReqRow icon="📧" title="Email"
                 desc="For account issues, billing, or anything that needs a longer conversation."
                 link="mailto:support@socialdevtechnologies.com" linkLabel="→ support@socialdevtechnologies.com" />
@@ -336,7 +347,18 @@ export default function Builder1Guide() {
                 <CheckItem>Claude Pro subscription is active at claude.ai</CheckItem>
                 <CheckItem>Tested Claude with the prompt from the Setup section — it responded well</CheckItem>
                 <CheckItem>Can log in to the Social Dev Technologies dashboard</CheckItem>
-                <CheckItem>Joined the WhatsApp community group</CheckItem>
+                <CheckItem>
+                  Joined the{' '}
+                  <a
+                    href={COHORT_WHATSAPP_LINK}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-brand font-bold hover:underline"
+                  >
+                    WhatsApp community group
+                  </a>
+                </CheckItem>
                 <CheckItem>Saturday, August 16 blocked in my calendar</CheckItem>
               </ul>
             </Card>
