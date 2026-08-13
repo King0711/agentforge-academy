@@ -207,7 +207,7 @@ export default function Builder1Guide() {
           </Link>
 
           <Callout type="success" icon="🚀">
-            <strong>Builder 1 starts Saturday, August 16, 2026.</strong> Use this guide to get fully set up so Day 1 is pure building, not setup.
+            <strong>Builder 1 starts Saturday, August 15, 2026 at 5pm WAT.</strong> Use this guide to get fully set up so Day 1 is pure building, not setup.
             <a
               href={COHORT_WHATSAPP_LINK}
               target="_blank"
@@ -310,11 +310,11 @@ export default function Builder1Guide() {
 
           <Section id="schedule" eyebrow="Schedule" title="Session schedule & how it works" subtitle="Builder 1 runs as a live cohort with sessions every week. Here's the rhythm so you can plan your time.">
             <Callout type="success" icon="📅">
-              <strong>First live session: Saturday, August 16, 2026.</strong> Time and link shared on WhatsApp. Block 2 hours in your calendar now.
+              <strong>First live session: Saturday, August 15, 2026 at 5pm WAT.</strong> Join link shared on WhatsApp. Block 2 hours in your calendar now.
             </Callout>
             <Card title="Weekly Rhythm">
               <div className="space-y-2.5">
-                <SchedRow n="1" title="Saturday — Live Session" badge="Live"
+                <SchedRow n="1" title="Saturday — Live Session, 5pm WAT" badge="Live"
                   desc="1.5–2 hrs with Samuel and the cohort. Hands-on building, Q&A, and peer review." />
                 <SchedRow n="2" title="Sun–Fri — Self-Paced Guides" badge="Self-paced"
                   desc="Written session guides unlock after each live class. Go deeper, experiment, apply what you built." />
@@ -323,7 +323,7 @@ export default function Builder1Guide() {
               </div>
             </Card>
             <Faq q="What time do live sessions run?">
-              Session times are shared on WhatsApp 48 hours before each class — typically morning or afternoon WAT.
+              Every Saturday at 5pm WAT. The join link is shared in the WhatsApp group before each class.
             </Faq>
             <Faq q="How long does my Builder 1 access last?">
               6 months from your enrollment date — enough time to complete the cohort and revisit any session you want to go deeper on.
@@ -359,11 +359,11 @@ export default function Builder1Guide() {
                     WhatsApp community group
                   </a>
                 </CheckItem>
-                <CheckItem>Saturday, August 16 blocked in my calendar</CheckItem>
+                <CheckItem>Saturday, August 15 at 5pm WAT blocked in my calendar</CheckItem>
               </ul>
             </Card>
             <div className="flex items-center gap-3 bg-green/10 border border-green/30 rounded-2xl px-5 py-4 mt-2 font-bold text-green text-base">
-              🎉 You're all set — see you Saturday, August 16!
+              🎉 You're all set — see you Saturday, August 15 at 5pm WAT!
             </div>
           </Section>
 
