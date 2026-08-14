@@ -136,27 +136,41 @@ You will receive raw items (titles/snippets from RSS feeds, or raw HTML excerpts
 
 Respond with ONLY a JSON array of these objects, no prose before or after, no markdown code fence.`;
 
+const GEMINI_MAX_ATTEMPTS = 3;
+const GEMINI_RETRY_DELAY_MS = 2000;
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function draftWithGemini(rawItems) {
   // gemini-3.7-flash: current stable/GA flash model, free-tier eligible —
   // this is a repetitive daily curation/drafting job (dedupe, pick notable
   // stories, write in a fixed voice), well within its capability.
   const model = 'gemini-3.7-flash';
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        contents: [{ role: 'user', parts: [{ text: `Here are today's raw items:\n\n${JSON.stringify(rawItems)}` }] }],
-        generationConfig: { maxOutputTokens: 8000, responseMimeType: 'application/json' },
-      }),
-    },
-  );
-  if (!res.ok) throw new Error(`Gemini API returned ${res.status}: ${await res.text()}`);
-  const data = await res.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '[]';
-  return JSON.parse(text);
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+  const body = JSON.stringify({
+    systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+    contents: [{ role: 'user', parts: [{ text: `Here are today's raw items:\n\n${JSON.stringify(rawItems)}` }] }],
+    generationConfig: { maxOutputTokens: 8000, responseMimeType: 'application/json' },
+  });
+
+  let lastError;
+  for (let attempt = 1; attempt <= GEMINI_MAX_ATTEMPTS; attempt++) {
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+    if (res.ok) {
+      const data = await res.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '[]';
+      return JSON.parse(text);
+    }
+    lastError = new Error(`Gemini API returned ${res.status}: ${await res.text()}`);
+    // Only retry on transient server-side errors (e.g. 503 "high demand") —
+    // a 4xx (bad key, bad request) will just fail the same way every time.
+    if (res.status < 500 || attempt === GEMINI_MAX_ATTEMPTS) throw lastError;
+    console.error(`Gemini attempt ${attempt}/${GEMINI_MAX_ATTEMPTS} failed, retrying:`, lastError.message);
+    await sleep(GEMINI_RETRY_DELAY_MS * attempt);
+  }
+  throw lastError;
 }
 
 // Best-effort — returns null (no image) rather than throwing, so a missing
