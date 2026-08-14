@@ -93,7 +93,19 @@ export default async function handler(req, res) {
   // see App.jsx's own comments — so this is safely replaced, not
   // reconciled, once the client bundle loads. Same behavior the existing
   // Puppeteer-prerendered pages already rely on.
-  html = html.replace('<div id="root"></div>', `<div id="root">${articleHtml}</div>`);
+  //
+  // NOT a literal '<div id="root"></div>' match: scripts/inject-home.mjs
+  // splices the prerendered homepage into dist/index.html's #root (so "/"
+  // is crawlable — see that script's own comment), so the shell fetched
+  // above is never actually empty in production. A literal-string replace
+  // here silently no-ops against that non-empty div, leaving the homepage
+  // in the response and only swapping to the real article once client JS
+  // mounts — a real flash-of-wrong-content bug, not just cosmetic; non-JS
+  // crawlers would see homepage markup instead of the article body. The
+  // greedy match runs to the LAST `</div>` in the document, which is
+  // reliably the root div's own closing tag (everything after it in body
+  // is script data islands, not more divs) regardless of what's inside.
+  html = html.replace(/<div id="root">[\s\S]*<\/div>/, `<div id="root">${articleHtml}</div>`);
 
   res.statusCode = 200;
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
