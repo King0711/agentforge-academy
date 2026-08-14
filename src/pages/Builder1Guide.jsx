@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ChevronRight, Copy, Check, ChevronDown } from 'lucide-react';
 import { getAgentsByDifficulty, getBuilderPagePath } from '../data/agents';
@@ -192,6 +192,25 @@ export default function Builder1Guide() {
   const progress = useProgress(user);
   const tierAgents = getAgentsByDifficulty('Builder 1');
   const firstAgent = tierAgents[0];
+
+  useEffect(() => {
+    const prevTitle = document.title;
+    const metaDesc = document.querySelector('meta[name="description"]');
+    const prevDesc = metaDesc?.getAttribute('content');
+
+    document.title = 'Builder 1 Guide — Social Dev Technologies';
+    if (metaDesc) {
+      metaDesc.setAttribute(
+        'content',
+        'Getting started with Builder 1 — requirements, setup, and how the 12-session sequence works before you build your first AI agent.'
+      );
+    }
+
+    return () => {
+      document.title = prevTitle;
+      if (metaDesc && prevDesc) metaDesc.setAttribute('content', prevDesc);
+    };
+  }, []);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
