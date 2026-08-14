@@ -79,7 +79,12 @@ export default async function handler(req, res) {
   // React mounts via createRoot (not hydrateRoot) — see App.jsx and
   // api/news/[slug].js's own comments — so this is safely replaced, not
   // reconciled, once the client bundle loads.
-  html = html.replace('<div id="root"></div>', `<div id="root">${bodyHtml}</div>`);
+  //
+  // Not a literal '<div id="root"></div>' match — see the matching comment
+  // in api/news/[slug].js for why: scripts/inject-home.mjs splices the
+  // prerendered homepage into dist/index.html's #root, so the shell
+  // fetched above is never actually empty in production.
+  html = html.replace(/<div id="root">[\s\S]*<\/div>/, `<div id="root">${bodyHtml}</div>`);
 
   res.statusCode = 200;
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
