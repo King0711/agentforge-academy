@@ -145,8 +145,15 @@ async function draftWithClaude(rawItems) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'claude-opus-4-5-20251101',
+      // Sonnet 5, not Opus — this is a repetitive daily curation/drafting
+      // job (dedupe, pick notable stories, write in a fixed voice), well
+      // within Sonnet's capability, at roughly a third of Opus's per-token
+      // cost. Thinking is adaptive by default (no `thinking` param needed);
+      // effort is dialed down from the "high" default since this isn't a
+      // hard-reasoning task.
+      model: 'claude-sonnet-5',
       max_tokens: 8000,
+      output_config: { effort: 'medium' },
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: `Here are today's raw items:\n\n${JSON.stringify(rawItems)}` }],
     }),
