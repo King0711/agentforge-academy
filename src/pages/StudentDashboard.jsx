@@ -1,4 +1,6 @@
-import { Routes, Route, Outlet } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Routes, Route, Outlet, useNavigate } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLiveSessions } from '../hooks/useLiveSessions';
 import DashboardSidebar, { DashboardMobileNav } from '../components/dashboard/DashboardSidebar';
@@ -20,8 +22,27 @@ function DashboardOutlet({ context }) {
 }
 
 export default function StudentDashboard({ progress, onSelectAgent }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
   const liveSessions = useLiveSessions(user);
+
+  // Anonymous visitors get bounced to /welcome — this shell used to render
+  // for anyone regardless of auth state, so a signed-out visitor hitting
+  // /dashboard directly saw the full sidebar/topbar chrome with nothing
+  // behind it. Waits on `loading` so a real logged-in user isn't
+  // redirected during the brief window before the session is restored.
+  useEffect(() => {
+    if (loading) return;
+    if (!user) navigate('/welcome', { replace: true });
+  }, [user, loading, navigate]);
+
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-brand" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-bg">
