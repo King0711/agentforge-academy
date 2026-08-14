@@ -221,20 +221,27 @@ export default function Navbar() {
               <div className="border-t border-[#EFE9FB] dark:border-[#232228] mt-2 pt-3">
                 {user ? (
                   <>
-                    <NavLink
-                      to="/dashboard"
-                      onClick={() => setOpen(false)}
-                      className="flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-sm font-semibold text-[#4A4463] dark:text-[#B7AFC9] hover:bg-[#FAF8FF] dark:hover:bg-white/5"
-                    >
+                    <div className="flex items-center gap-2 px-3.5 py-2 mb-1">
                       <div className="w-7 h-7 rounded-full bg-brand text-white flex items-center justify-center font-extrabold text-xs flex-shrink-0">
                         {initial}
                       </div>
-                      {displayName}
-                      {isPro && (
-                        <span className="flex items-center gap-0.5 text-[10px] font-bold bg-brand text-white px-1.5 py-0.5 rounded-full">
+                      <span className="font-bold text-ink text-sm truncate">{displayName}</span>
+                      {isAdmin ? (
+                        <span className="flex items-center gap-0.5 text-[10px] font-bold bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                          <Shield className="w-2.5 h-2.5" /> ADMIN
+                        </span>
+                      ) : isPro ? (
+                        <span className="flex items-center gap-0.5 text-[10px] font-bold bg-brand text-white px-1.5 py-0.5 rounded-full whitespace-nowrap">
                           <Zap className="w-2.5 h-2.5" /> PRO
                         </span>
-                      )}
+                      ) : null}
+                    </div>
+                    <NavLink
+                      to="/dashboard"
+                      onClick={() => setOpen(false)}
+                      className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-semibold text-[#4A4463] dark:text-[#B7AFC9] hover:bg-[#FAF8FF] dark:hover:bg-white/5"
+                    >
+                      <LayoutDashboard className="w-4 h-4" /> My Dashboard
                     </NavLink>
                     <NavLink
                       to="/certificates"
