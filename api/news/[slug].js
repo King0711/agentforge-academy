@@ -89,10 +89,12 @@ export default async function handler(req, res) {
       ${bodyHtml}
       <p><a href="${article.source_url}">Original source: ${escapeHtml(article.source_name)}</a></p>
     </article>`;
-  // React mounts via createRoot (not hydrateRoot) everywhere in this app —
-  // see App.jsx's own comments — so this is safely replaced, not
-  // reconciled, once the client bundle loads. Same behavior the existing
-  // Puppeteer-prerendered pages already rely on.
+  // data-ssr-stub tells src/main.jsx to skip hydration for this markup and
+  // do a clean createRoot render instead — this HTML is a hand-written
+  // stub for crawlers, not real React output, so attempting to hydrate
+  // against it throws a React #418 mismatch and forces a disruptive
+  // teardown/rebuild (confirmed via Lighthouse: CLS 0.651 on this route
+  // before this fix). See main.jsx's own comment for the full mechanism.
   //
   // NOT a literal '<div id="root"></div>' match: scripts/inject-home.mjs
   // splices the prerendered homepage into dist/index.html's #root (so "/"
@@ -105,7 +107,7 @@ export default async function handler(req, res) {
   // greedy match runs to the LAST `</div>` in the document, which is
   // reliably the root div's own closing tag (everything after it in body
   // is script data islands, not more divs) regardless of what's inside.
-  html = html.replace(/<div id="root">[\s\S]*<\/div>/, `<div id="root">${articleHtml}</div>`);
+  html = html.replace(/<div id="root">[\s\S]*<\/div>/, `<div id="root" data-ssr-stub="1">${articleHtml}</div>`);
 
   res.statusCode = 200;
   res.setHeader('Content-Type', 'text/html; charset=utf-8');

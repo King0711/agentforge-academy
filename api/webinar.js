@@ -42,13 +42,15 @@ export default async function handler(req, res) {
       <p>${escapeHtml(description)}</p>
       <p><a href="${siteUrl}/ai-builder">Learn more about becoming an AI Builder</a></p>
     </main>`;
-  // React mounts via createRoot (not hydrateRoot) — see App.jsx and
-  // api/news/[slug].js's own comments — so this is safely replaced, not
-  // reconciled, once the client bundle loads. Matches the last </div> in
-  // the document rather than a literal empty div, since scripts/inject-
+  // data-ssr-stub tells src/main.jsx to skip hydration and do a clean
+  // createRoot render instead — see main.jsx and api/news/[slug].js's own
+  // comments for why: this is hand-written HTML for crawlers, not real
+  // React output, so hydrating against it throws a React #418 mismatch and
+  // forces a disruptive teardown/rebuild. Matches the last </div> in the
+  // document rather than a literal empty div, since scripts/inject-
   // home.mjs splices the prerendered homepage into #root in production
   // (see the matching fix/comment in api/news/[slug].js).
-  html = html.replace(/<div id="root">[\s\S]*<\/div>/, `<div id="root">${bodyHtml}</div>`);
+  html = html.replace(/<div id="root">[\s\S]*<\/div>/, `<div id="root" data-ssr-stub="1">${bodyHtml}</div>`);
 
   res.statusCode = 200;
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
