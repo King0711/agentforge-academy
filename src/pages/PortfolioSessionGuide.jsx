@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Copy, Check, ChevronDown, ExternalLink } from 'lucide-react';
 
@@ -721,6 +721,25 @@ After adding the sections, fix any spacing, alignment, or visual inconsistencies
 export default function PortfolioSessionGuide() {
   const [current, setCurrent] = useState(0);
   const [completed, setCompleted] = useState(new Set());
+
+  useEffect(() => {
+    const prevTitle = document.title;
+    const metaDesc = document.querySelector('meta[name="description"]');
+    const prevDesc = metaDesc?.getAttribute('content');
+
+    document.title = 'Build a Real Product with World-Class Design — Social Dev Technologies';
+    if (metaDesc) {
+      metaDesc.setAttribute(
+        'content',
+        'Vibe code an AI portfolio, extract design DNA from a site you admire, turn it into a reusable design skill, and publish live — a hands-on 90-minute session.'
+      );
+    }
+
+    return () => {
+      document.title = prevTitle;
+      if (metaDesc && prevDesc) metaDesc.setAttribute('content', prevDesc);
+    };
+  }, []);
 
   const goTo = (n) => {
     if (n === current) return;
