@@ -26,7 +26,16 @@ const app = (
 // so visitors see real content instantly with no flash. In dev mode (and for
 // any route that isn't prerendered) #root starts empty, so this falls back
 // to a normal client-only render.
-if (rootEl.hasChildNodes()) {
+//
+// data-ssr-stub opts a route OUT of hydration even though #root is non-
+// empty: api/news/[slug].js, api/news-index.js, and api/webinar.js inject
+// hand-written HTML stubs for crawlers (not real React output — these are
+// plain serverless functions with no React renderer), so the markup never
+// matches what the client would actually render. Attempting to hydrate
+// against it throws a React #418 mismatch error and forces a disruptive
+// full-subtree teardown/rebuild instead of a clean replace — confirmed via
+// Lighthouse as the direct cause of a CLS 0.651 layout shift on /news/:slug.
+if (rootEl.hasChildNodes() && !rootEl.hasAttribute('data-ssr-stub')) {
   hydrateRoot(rootEl, app)
 } else {
   createRoot(rootEl).render(app)
