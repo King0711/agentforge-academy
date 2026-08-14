@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import {
-  Mail, Send, UserX, ShoppingCart, CalendarDays, History, Save, Loader2, AlertCircle,
+  Mail, Send, UserX, ShoppingCart, CalendarDays, History, Save, Loader2, AlertCircle, Bell,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
@@ -57,7 +57,14 @@ export default function AdminEmails() {
   const [broadcastSegment, setBroadcastSegment] = useState('all');
   const [broadcastUseCustomRecipients, setBroadcastUseCustomRecipients] = useState(false);
   const [broadcastRecipientsInput, setBroadcastRecipientsInput] = useState('');
-  const [sendingType, setSendingType] = useState(null); // 'broadcast' | 'winback' | 'abandoned_checkout' | 'cohort_reminder' | null
+  const [notifTitle, setNotifTitle] = useState('');
+  const [notifBody, setNotifBody] = useState('');
+  const [notifLink, setNotifLink] = useState('');
+  const [notifSegment, setNotifSegment] = useState('all');
+  const [notifUseCustomRecipients, setNotifUseCustomRecipients] = useState(false);
+  const [notifRecipientsInput, setNotifRecipientsInput] = useState('');
+  const [notifSending, setNotifSending] = useState(false);
+  const [sendingType, setSendingType] = useState(null); // 'broadcast' | 'winback' | 'abandoned_checkout' | 'cohort_reminder' | 'class_reminder' | null
   const [error, setError] = useState('');
 
   const fetchEmailSettings = useCallback(async () => {
@@ -119,6 +126,7 @@ export default function AdminEmails() {
         p_winback_automation_enabled: emailSettings.winback_automation_enabled,
         p_abandoned_checkout_automation_enabled: emailSettings.abandoned_checkout_automation_enabled,
         p_cohort_reminder_automation_enabled: emailSettings.cohort_reminder_automation_enabled,
+        p_class_reminder_automation_enabled: emailSettings.class_reminder_automation_enabled,
       });
       if (err) throw err;
       showToast('Email settings saved.');
@@ -179,6 +187,51 @@ export default function AdminEmails() {
       setBroadcastSubject('');
       setBroadcastBody('');
       setBroadcastRecipientsInput('');
+    }
+  };
+
+  // In-app only — this creates notifications.rows via admin_send_notification,
+  // it doesn't touch Resend. Use the broadcast composer above for anything
+  // that also needs to land in an inbox.
+  const sendAnnouncementNow = async () => {
+    if (!notifTitle.trim() || !notifBody.trim()) {
+      setError('Title and message are required for a notification.');
+      return;
+    }
+
+    let params;
+    let confirmMessage;
+    if (notifUseCustomRecipients) {
+      const recipients = [...new Set(
+        notifRecipientsInput.split(/[,\n]/).map((e) => e.trim()).filter(Boolean),
+      )];
+      if (recipients.length === 0) {
+        setError('Enter at least one email address.');
+        return;
+      }
+      params = { p_title: notifTitle, p_body: notifBody, p_link: notifLink || null, p_recipient_emails: recipients };
+      confirmMessage = `Send this notification to ${recipients.length} specific address${recipients.length === 1 ? '' : 'es'} right now?`;
+    } else {
+      const segmentLabel = { all: 'everyone', builder1: 'Builder 1 students', builder2: 'Builder 2 students', pro: 'Pro students' }[notifSegment];
+      params = { p_title: notifTitle, p_body: notifBody, p_link: notifLink || null, p_segment: notifSegment };
+      confirmMessage = `Send this notification to ${segmentLabel} right now?`;
+    }
+    if (!window.confirm(confirmMessage)) return;
+
+    setNotifSending(true);
+    setError('');
+    try {
+      const { data, error: err } = await supabase.rpc('admin_send_notification', params);
+      if (err) throw err;
+      showToast(`Sent to ${data ?? 0} student${data === 1 ? '' : 's'}.`);
+      setNotifTitle('');
+      setNotifBody('');
+      setNotifLink('');
+      setNotifRecipientsInput('');
+    } catch (err) {
+      setError(err.message || 'Failed to send notification.');
+    } finally {
+      setNotifSending(false);
     }
   };
 
@@ -305,6 +358,12 @@ export default function AdminEmails() {
                   checked={emailSettings.cohort_reminder_automation_enabled}
                   onChange={(v) => setEmailSettings((s) => ({ ...s, cohort_reminder_automation_enabled: v }))}
                 />
+                <AutomationToggle
+                  label="Automatic class reminders"
+                  description="Runs hourly — notifies (bell + email) each student 24h before a live class in a tier they have active."
+                  checked={emailSettings.class_reminder_automation_enabled}
+                  onChange={(v) => setEmailSettings((s) => ({ ...s, class_reminder_automation_enabled: v }))}
+                />
               </div>
               <button
                 onClick={saveEmailSettings}
@@ -341,6 +400,88 @@ export default function AdminEmails() {
               {sendingType === 'cohort_reminder' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CalendarDays className="w-3.5 h-3.5" />}
               Send cohort reminder now
             </button>
+            <button
+              onClick={() => invokeEmailFunction('send-class-reminder-emails', {}, 'Send class reminders to everyone with a live class in the next 24h?', 'class_reminder')}
+              disabled={!!sendingType}
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-[#FAF8FF] dark:bg-white/5 text-body-strong hover:bg-[#F3EBFF] dark:hover:bg-brand/15 hover:text-brand transition-colors disabled:opacity-40"
+            >
+              {sendingType === 'class_reminder' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bell className="w-3.5 h-3.5" />}
+              Send class reminders now
+            </button>
+          </div>
+        </div>
+
+        {/* In-app notification composer — bell-only, no email. Use the
+            broadcast composer above for anything that also needs to land
+            in an inbox. */}
+        <div className="rounded-2xl border border-border-soft bg-white dark:bg-[#181818] p-5">
+          <h3 className="font-bold text-ink text-sm mb-3 flex items-center gap-1.5">
+            <Bell className="w-4 h-4 text-brand" /> Send an in-app notification
+          </h3>
+          <div className="space-y-3">
+            <input
+              type="text"
+              value={notifTitle}
+              onChange={(e) => setNotifTitle(e.target.value)}
+              placeholder="Title"
+              className="w-full px-3 py-2 rounded-lg border border-border text-sm text-ink bg-white dark:bg-[#0A090F] focus:outline-none focus:ring-2 focus:ring-brand/40"
+            />
+            <textarea
+              value={notifBody}
+              onChange={(e) => setNotifBody(e.target.value)}
+              placeholder="Message"
+              rows={3}
+              className="w-full px-3 py-2 rounded-lg border border-border text-sm text-ink bg-white dark:bg-[#0A090F] focus:outline-none focus:ring-2 focus:ring-brand/40 resize-none"
+            />
+            <input
+              type="text"
+              value={notifLink}
+              onChange={(e) => setNotifLink(e.target.value)}
+              placeholder="Link when clicked (optional) — e.g. /dashboard/live-sessions"
+              className="w-full px-3 py-2 rounded-lg border border-border text-sm text-ink bg-white dark:bg-[#0A090F] focus:outline-none focus:ring-2 focus:ring-brand/40"
+            />
+            <label className="flex items-center gap-2 text-xs font-semibold text-body-strong cursor-pointer">
+              <input
+                type="checkbox"
+                checked={notifUseCustomRecipients}
+                onChange={(e) => setNotifUseCustomRecipients(e.target.checked)}
+                className="accent-brand w-3.5 h-3.5"
+              />
+              Send to specific addresses instead of a segment
+            </label>
+
+            {notifUseCustomRecipients ? (
+              <textarea
+                value={notifRecipientsInput}
+                onChange={(e) => setNotifRecipientsInput(e.target.value)}
+                placeholder="Emails separated by commas or new lines — e.g. a test batch before a full segment send"
+                rows={2}
+                className="w-full px-3 py-2 rounded-lg border border-border text-sm text-ink bg-white dark:bg-[#0A090F] focus:outline-none focus:ring-2 focus:ring-brand/40 resize-none"
+              />
+            ) : null}
+
+            <div className="flex items-center gap-2 flex-wrap">
+              {!notifUseCustomRecipients && (
+                <select
+                  value={notifSegment}
+                  onChange={(e) => setNotifSegment(e.target.value)}
+                  className="px-3 py-2 rounded-lg border border-border text-sm text-ink bg-white dark:bg-[#0A090F] focus:outline-none focus:ring-2 focus:ring-brand/40"
+                >
+                  <option value="all">Everyone</option>
+                  <option value="builder1">Builder 1 students</option>
+                  <option value="builder2">Builder 2 students</option>
+                  <option value="pro">Pro students</option>
+                </select>
+              )}
+              <button
+                onClick={sendAnnouncementNow}
+                disabled={notifSending}
+                className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg bg-brand hover:bg-brand-deep disabled:opacity-40 text-white transition-colors ml-auto"
+              >
+                {notifSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bell className="w-3.5 h-3.5" />}
+                Send now
+              </button>
+            </div>
           </div>
         </div>
       </div>

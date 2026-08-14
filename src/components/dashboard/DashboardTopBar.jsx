@@ -3,10 +3,8 @@ import { Sun, Moon } from 'lucide-react';
 import SearchBar from '../SearchBar';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import NotificationBell from './NotificationBell';
 
-// No notifications bell here deliberately — there's no notifications backend
-// yet, and shipping a bell icon that never does anything would be exactly
-// the kind of "looks real, isn't" UI this dashboard is trying to avoid.
 export default function DashboardTopBar() {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -21,6 +19,7 @@ export default function DashboardTopBar() {
         <SearchBar value="" onChange={(v) => navigate(`/catalog${v ? `?q=${encodeURIComponent(v)}` : ''}`)} />
       </div>
       <div className="flex items-center gap-3 ml-auto flex-shrink-0">
+        <NotificationBell />
         <button
           onClick={toggleTheme}
           aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
