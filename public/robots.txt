@@ -6,3 +6,4 @@ Disallow: /certificates
 Disallow: /certificate/
 
 Sitemap: https://socialdevtechnologies.com/sitemap.xml
+Sitemap: https://socialdevtechnologies.com/news-sitemap.xml
