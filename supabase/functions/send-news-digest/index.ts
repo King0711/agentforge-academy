@@ -54,6 +54,7 @@ function digestEmailHtml(fullArticles, blurbs) {
       <div style="margin:0 0 20px;">
         <a href="https://socialdevtechnologies.com/news/${a.slug}" style="font-size:16px;font-weight:700;color:#1A1333;text-decoration:none;">${a.title}</a>
         <p style="font-size:14px;color:#3A3358;line-height:1.5;margin:4px 0 0;">${a.dek}</p>
+        <a href="https://socialdevtechnologies.com/news/${a.slug}" style="font-size:13px;font-weight:600;color:#7C3AED;text-decoration:none;">Read more →</a>
       </div>`,
     )
     .join('');
