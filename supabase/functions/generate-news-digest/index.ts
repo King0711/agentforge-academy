@@ -2,7 +2,7 @@ import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Parser from 'https://esm.sh/rss-parser@3';
 
-const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') ?? '';
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') ?? '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
@@ -136,31 +136,26 @@ You will receive raw items (titles/snippets from RSS feeds, or raw HTML excerpts
 
 Respond with ONLY a JSON array of these objects, no prose before or after, no markdown code fence.`;
 
-async function draftWithClaude(rawItems) {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-      'Content-Type': 'application/json',
+async function draftWithGemini(rawItems) {
+  // gemini-3.7-flash: current stable/GA flash model, free-tier eligible —
+  // this is a repetitive daily curation/drafting job (dedupe, pick notable
+  // stories, write in a fixed voice), well within its capability.
+  const model = 'gemini-3.7-flash';
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        contents: [{ role: 'user', parts: [{ text: `Here are today's raw items:\n\n${JSON.stringify(rawItems)}` }] }],
+        generationConfig: { maxOutputTokens: 8000, responseMimeType: 'application/json' },
+      }),
     },
-    body: JSON.stringify({
-      // Sonnet 5, not Opus — this is a repetitive daily curation/drafting
-      // job (dedupe, pick notable stories, write in a fixed voice), well
-      // within Sonnet's capability, at roughly a third of Opus's per-token
-      // cost. Thinking is adaptive by default (no `thinking` param needed);
-      // effort is dialed down from the "high" default since this isn't a
-      // hard-reasoning task.
-      model: 'claude-sonnet-5',
-      max_tokens: 8000,
-      output_config: { effort: 'medium' },
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: `Here are today's raw items:\n\n${JSON.stringify(rawItems)}` }],
-    }),
-  });
-  if (!res.ok) throw new Error(`Anthropic API returned ${res.status}: ${await res.text()}`);
+  );
+  if (!res.ok) throw new Error(`Gemini API returned ${res.status}: ${await res.text()}`);
   const data = await res.json();
-  const text = data.content?.[0]?.text ?? '[]';
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '[]';
   return JSON.parse(text);
 }
 
@@ -211,7 +206,7 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405);
 
-  if (!ANTHROPIC_API_KEY) return jsonResponse({ error: 'ANTHROPIC_API_KEY is not configured' }, 500);
+  if (!GEMINI_API_KEY) return jsonResponse({ error: 'GEMINI_API_KEY is not configured' }, 500);
 
   const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   const cronHeader = req.headers.get('x-cron-secret') ?? '';
@@ -238,7 +233,7 @@ serve(async (req) => {
 
   let drafts;
   try {
-    drafts = await draftWithClaude(rawItems);
+    drafts = await draftWithGemini(rawItems);
   } catch (err) {
     console.error('Drafting failed:', err.message);
     return jsonResponse({ error: 'Drafting failed', detail: err.message }, 500);
