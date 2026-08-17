@@ -1,8 +1,28 @@
+import { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { PlayCircle, Lock, Loader2 } from 'lucide-react';
+import { PlayCircle, Lock, Loader2, Copy, Check } from 'lucide-react';
 
 function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function PasscodeChip({ passcode }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(passcode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  };
+  return (
+    <button
+      onClick={copy}
+      className="flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold text-body-strong bg-[#FAF8FF] dark:bg-white/5 hover:bg-[#F3EBFF] dark:hover:bg-brand/15 px-3 py-2.5 rounded-xl transition-colors"
+      title="Copy Zoom passcode"
+    >
+      {copied ? <Check className="w-3.5 h-3.5 text-green" /> : <Copy className="w-3.5 h-3.5" />}
+      Passcode: <span className="font-mono">{passcode}</span>
+    </button>
+  );
 }
 
 function ReplayCard({ session }) {
@@ -25,14 +45,17 @@ function ReplayCard({ session }) {
         </div>
       </div>
       {available ? (
-        <a
-          href={session.recording_url}
-          target="_blank"
-          rel="noreferrer"
-          className="flex-shrink-0 bg-brand hover:bg-brand-deep text-white font-bold text-sm px-4 py-2.5 rounded-xl transition-colors"
-        >
-          Watch replay
-        </a>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {session.recording_passcode && <PasscodeChip passcode={session.recording_passcode} />}
+          <a
+            href={session.recording_url}
+            target="_blank"
+            rel="noreferrer"
+            className="flex-shrink-0 bg-brand hover:bg-brand-deep text-white font-bold text-sm px-4 py-2.5 rounded-xl transition-colors"
+          >
+            Watch replay
+          </a>
+        </div>
       ) : (
         <span className="flex-shrink-0 text-xs font-semibold text-gray-400 bg-[#FAF8FF] dark:bg-white/5 px-3 py-2 rounded-lg">
           Recording coming soon
