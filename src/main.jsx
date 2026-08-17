@@ -28,7 +28,7 @@ const app = (
 // to a normal client-only render.
 //
 // data-ssr-stub opts a route OUT of hydration even though #root is non-
-// empty: api/news/[slug].js, api/news-index.js, and api/webinar.js inject
+// empty: api/news-article.js, api/news-index.js, and api/webinar.js inject
 // hand-written HTML stubs for crawlers (not real React output — these are
 // plain serverless functions with no React renderer), so the markup never
 // matches what the client would actually render. Attempting to hydrate

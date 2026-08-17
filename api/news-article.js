@@ -1,12 +1,20 @@
-import { escapeHtml, renderBlocksToHtml } from '../../src/lib/newsBlocks.js';
+import { escapeHtml, renderBlocksToHtml } from '../src/lib/newsBlocks.js';
 
 // Server-renders a real HTML document for /news/:slug (routed here via the
-// vercel.json rewrite) — this is the fix for the fact that this whole app
-// is otherwise a client-rendered SPA with no SSR (see the notes in
-// src/pages/BuilderSession.jsx: title/meta are only ever set from a
-// useEffect, invisible to WhatsApp/Slack/Twitter link-preview crawlers,
-// which never execute JS). Every visitor — human or bot — hits this same
-// function for this one route; there's no user-agent branching/cloaking.
+// vercel.json rewrite, which passes the slug as ?slug=) — this is the fix
+// for the fact that this whole app is otherwise a client-rendered SPA with
+// no SSR (see the notes in src/pages/BuilderSession.jsx: title/meta are
+// only ever set from a useEffect, invisible to WhatsApp/Slack/Twitter
+// link-preview crawlers, which never execute JS). Every visitor — human or
+// bot — hits this same function for this one route; there's no user-agent
+// branching/cloaking.
+//
+// Flat file taking ?slug=, NOT a nested api/news/[slug].js: that nested
+// bracket form silently failed to route in production (every request fell
+// through to the SPA catch-all and served homepage markup, so articles were
+// listed in the sitemap but had no crawlable content). The two SSR routes
+// that always worked — api/news-index.js and api/webinar.js — are both flat
+// files, so this one matches that proven shape.
 //
 // Rather than hand-duplicating fonts/GA4/CSP-safe script loading/etc, this
 // fetches the real built index.html from the same deployment and does

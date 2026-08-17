@@ -1,7 +1,7 @@
 import { escapeHtml } from '../src/lib/newsBlocks.js';
 
 // Server-renders /news (routed here via the vercel.json rewrite) — same
-// reasoning as api/news/[slug].js: this app is otherwise a client-rendered
+// reasoning as api/news-article.js: this app is otherwise a client-rendered
 // SPA with no SSR, invisible to crawlers that don't execute JS. Unlike the
 // fixed marketing/session routes (scripts/prerender.mjs), this page's
 // content changes throughout the day as admins approve new articles, so a
@@ -77,13 +77,13 @@ export default async function handler(req, res) {
       ${articles.length ? `<ul>${articleItems}</ul>` : '<p>No articles yet — check back soon.</p>'}
     </main>`;
   // data-ssr-stub tells src/main.jsx to skip hydration and do a clean
-  // createRoot render instead — see main.jsx and api/news/[slug].js's own
+  // createRoot render instead — see main.jsx and api/news-article.js's own
   // comments for why: this is hand-written HTML for crawlers, not real
   // React output, so hydrating against it throws a React #418 mismatch and
   // forces a disruptive teardown/rebuild.
   //
   // Not a literal '<div id="root"></div>' match — see the matching comment
-  // in api/news/[slug].js for why: scripts/inject-home.mjs splices the
+  // in api/news-article.js for why: scripts/inject-home.mjs splices the
   // prerendered homepage into dist/index.html's #root, so the shell
   // fetched above is never actually empty in production.
   html = html.replace(/<div id="root">[\s\S]*<\/div>/, `<div id="root" data-ssr-stub="1">${bodyHtml}</div>`);
