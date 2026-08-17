@@ -3,6 +3,7 @@
     { "source": "/news", "destination": "/api/news-index" },
     { "source": "/news/:slug", "destination": "/api/news-article?slug=:slug" },
     { "source": "/news-sitemap.xml", "destination": "/api/news-sitemap.xml" },
+    { "source": "/news-rss.xml", "destination": "/api/news-rss.xml" },
     { "source": "/webinar", "destination": "/api/webinar" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],

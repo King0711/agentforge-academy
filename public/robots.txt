@@ -7,3 +7,4 @@ Disallow: /certificate/
 
 Sitemap: https://socialdevtechnologies.com/sitemap.xml
 Sitemap: https://socialdevtechnologies.com/news-sitemap.xml
+Sitemap: https://socialdevtechnologies.com/news-rss.xml
