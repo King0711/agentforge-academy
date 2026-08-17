@@ -19,7 +19,7 @@ export function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
-// Plain-string HTML renderer — used server-side (api/news/[slug].js) where
+// Plain-string HTML renderer — used server-side (api/news-article.js) where
 // there's no React runtime, so crawlers/no-JS clients get real markup.
 export function renderBlocksToHtml(blocks) {
   return (blocks || [])
