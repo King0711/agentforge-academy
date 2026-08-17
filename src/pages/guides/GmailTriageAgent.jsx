@@ -2,10 +2,34 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, Mail } from 'lucide-react';
 import { usePageSeo } from '../../hooks/usePageSeo';
 import { getGuideBySlug } from '../../data/guides';
-import { Section, Prose, Callout, Practice, DoesList, BuildItCta } from '../../components/guides/GuideUI';
+import { Section, Prose, Callout, Practice, DoesList, FaqList, RelatedGuides, BuildItCta } from '../../components/guides/GuideUI';
 
-const guide = getGuideBySlug('gmail-ai-triage-agent');
-const CANONICAL_PATH = '/guides/gmail-ai-triage-agent';
+const SLUG = 'gmail-ai-triage-agent';
+const guide = getGuideBySlug(SLUG);
+const CANONICAL_PATH = `/guides/${SLUG}`;
+
+const FAQS = [
+  {
+    q: 'Can AI sort my Gmail inbox automatically?',
+    a: 'Yes. An agent can read incoming mail, judge what each message is and how urgent it is, and apply Gmail labels accordingly — so the inbox is already ordered by importance before you open it.',
+  },
+  {
+    q: 'Is this different from Gmail filters?',
+    a: 'Filters follow rules you wrote in advance: if the sender is X, do Y. They handle only the cases you anticipated. A triage agent reads the actual content and forms a view, so it can categorise an email from a sender it has never seen before.',
+  },
+  {
+    q: 'Can it reply to emails for me?',
+    a: 'It can draft replies and leave them in your drafts for approval. Letting it send without review is possible and almost always a mistake — approving a good draft takes two seconds and removes the entire category of risk.',
+  },
+  {
+    q: 'Is it safe to give an AI agent access to my email?',
+    a: 'It depends on the permissions you grant. Read-and-label access is low risk and fully reversible. Send or delete access is not. Start with the former, and be deliberate about your mail being sent to an AI model for classification — particularly for confidential or client material.',
+  },
+  {
+    q: 'What happens if it marks an important email as low priority?',
+    a: 'It will occasionally, which is why nothing should ever be auto-archived or deleted. Everything stays in the inbox; only the labels change. Reviewing what it deprioritised once a week is how you catch and correct the pattern.',
+  },
+];
 
 // Evergreen explainer — deliberately contains no build instructions. The
 // how-to is the paid Builder 1 session this links out to; this page exists to
@@ -209,6 +233,10 @@ export default function GmailTriageAgent() {
           </Prose>
         </Section>
 
+        <Section eyebrow="Common questions" title="Frequently asked questions">
+          <FaqList items={FAQS} />
+        </Section>
+
         <BuildItCta
           to="/builder-1/gmail-ai-triage-agent"
           sessionTitle="Gmail AI Triage Agent"
@@ -218,6 +246,8 @@ export default function GmailTriageAgent() {
           connecting it to a real Gmail account, writing the classification logic, and getting it running on a
           schedule — that's a guided session inside Builder 1.
         </BuildItCta>
+
+        <RelatedGuides currentSlug={SLUG} />
       </div>
     </div>
   );

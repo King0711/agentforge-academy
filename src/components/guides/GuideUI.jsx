@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Lightbulb, AlertTriangle, Check } from 'lucide-react';
+import { guides } from '../../data/guides';
 
 // Shared building blocks for the /guides section. These are evergreen
 // explainer pages (what a given agent is, where it helps, how to run one
@@ -76,18 +77,70 @@ export function DoesList({ items }) {
   );
 }
 
+// Q&A pairs, rendered expanded rather than collapsed — these target the
+// long-tail questions people actually type, so the text should be plainly
+// present in the HTML rather than hidden behind a toggle.
+export function FaqList({ items }) {
+  return (
+    <div className="mt-2">
+      {items.map(({ q, a }) => (
+        <div key={q} className="py-4 border-b border-border-soft last:border-none">
+          <h3 className="font-display font-bold text-[15.5px] text-ink mb-1.5">{q}</h3>
+          <p className="text-[14.5px] text-body leading-relaxed m-0">{a}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Cross-links between guides. The /guides section is built as a hub and
+// spokes: the broad "what is an AI agent" explainer links out to every
+// specific agent guide, and each of those links back to it and sideways to
+// its siblings, so a reader (and a crawler) can move through the whole set.
+export function RelatedGuides({ currentSlug, slugs }) {
+  const items = (slugs || guides.map((g) => g.slug))
+    .filter((s) => s !== currentSlug)
+    .map((s) => guides.find((g) => g.slug === s))
+    .filter(Boolean);
+
+  if (items.length === 0) return null;
+
+  return (
+    <div className="mt-10 pt-8 border-t border-border-soft">
+      <h2 className="font-display font-extrabold text-lg text-ink mb-4">Keep reading</h2>
+      <div className="grid sm:grid-cols-2 gap-3">
+        {items.map((g) => (
+          <Link
+            key={g.slug}
+            to={`/guides/${g.slug}`}
+            className="group flex items-start gap-3 rounded-xl border border-border-soft bg-white dark:bg-[#181818] p-4 hover:border-brand/40 transition-colors"
+          >
+            <span className="text-xl flex-shrink-0">{g.emoji}</span>
+            <span className="min-w-0">
+              <span className="block font-display font-bold text-[14px] text-ink leading-snug mb-0.5">{g.title}</span>
+              <span className="block text-[12.5px] text-body leading-relaxed">{g.readingTime}</span>
+            </span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // The one commercial element on a guide page: a link through to the paid
 // Builder session that actually teaches the build.
-export function BuildItCta({ to, sessionTitle, tier, children }) {
+export function BuildItCta({ to, sessionTitle, tier, eyebrow = 'Build this one', children }) {
   return (
     <div className="mt-8 rounded-2xl border-[1.5px] border-brand/30 bg-[#F8F6FF] dark:bg-brand/10 p-6">
-      <div className="text-[10px] font-bold uppercase tracking-widest text-brand mb-2">Build this one</div>
+      <div className="text-[10px] font-bold uppercase tracking-widest text-brand mb-2">{eyebrow}</div>
       <p className="text-[15px] text-body leading-relaxed mb-5">{children}</p>
       <Link
         to={to}
         className="inline-flex items-center gap-2 bg-brand hover:bg-brand-deep text-white font-bold text-sm px-5 py-3 rounded-xl transition-colors shadow-[0_6px_16px_rgba(124,58,237,.3)]"
       >
-        <span>{sessionTitle} — {tier} session</span>
+        {/* tier is optional — the hub guide points at the catalog rather than
+            one specific session, so there's no tier to name. */}
+        <span>{tier ? `${sessionTitle} — ${tier} session` : sessionTitle}</span>
         <ArrowRight className="w-4 h-4 flex-shrink-0" />
       </Link>
     </div>
