@@ -19,6 +19,8 @@ import Builder1Guide from './pages/Builder1Guide';
 import PortfolioSessionGuide from './pages/PortfolioSessionGuide';
 import News from './pages/News';
 import NewsArticle from './pages/NewsArticle';
+import GuidesIndex from './pages/guides/GuidesIndex';
+import GmailTriageAgent from './pages/guides/GmailTriageAgent';
 import NotFound from './pages/NotFound';
 import { useProgress } from './hooks/useProgress';
 import { useCertificateClaims } from './hooks/useCertificateClaims';
@@ -144,6 +146,11 @@ function AppShell() {
             <Route path="/session/build-real-product" element={<PortfolioSessionGuide />} />
             <Route path="/news" element={<News />} />
             <Route path="/news/:slug" element={<NewsArticle />} />
+            {/* Evergreen explainer section — eager imports (not lazy) because
+                these routes are prerendered; see the note above about
+                Suspense boundaries breaking hydration on snapshotted routes. */}
+            <Route path="/guides" element={<GuidesIndex />} />
+            <Route path="/guides/gmail-ai-triage-agent" element={<GmailTriageAgent />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>

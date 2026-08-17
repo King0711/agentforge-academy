@@ -48,6 +48,8 @@ export const routes = [
   '/ai-builder',
   '/builder-1-guide',
   '/session/build-real-product',
+  '/guides',
+  '/guides/gmail-ai-triage-agent',
   '/legal/terms',
   '/legal/privacy',
   ...builder1Slugs.map((slug) => `/builder-1/${slug}`),

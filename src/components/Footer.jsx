@@ -24,6 +24,7 @@ export default function Footer() {
             links={[
               { label: 'Become an AI Builder', to: '/ai-builder' },
               { label: 'Catalog', to: '/catalog' },
+              { label: 'Agent Guides', to: '/guides' },
               { label: 'Learning Paths', to: '/paths' },
               { label: 'Pricing', to: '/pricing' },
               { label: 'Home', to: '/' },
