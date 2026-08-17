@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { Video, Save, Trash2, Loader2, AlertCircle, Pencil, X } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
-const emptyForm = { id: null, tier: 'builder1', title: '', description: '', session_date: '', join_link: '', recording_url: '' };
+const emptyForm = { id: null, tier: 'builder1', title: '', description: '', session_date: '', join_link: '', recording_url: '', recording_passcode: '' };
 
 // Converts a Postgres timestamptz into the value <input type="datetime-local">
 // expects (local time, no timezone/seconds) and back.
@@ -53,6 +53,7 @@ export default function AdminLiveSessions() {
       session_date: toLocalInputValue(session.session_date),
       join_link: session.join_link || '',
       recording_url: session.recording_url || '',
+      recording_passcode: session.recording_passcode || '',
     });
   };
 
@@ -73,6 +74,7 @@ export default function AdminLiveSessions() {
         p_session_date: new Date(form.session_date).toISOString(),
         p_join_link: form.join_link.trim() || null,
         p_recording_url: form.recording_url.trim() || null,
+        p_recording_passcode: form.recording_passcode.trim() || null,
       });
       if (err) throw err;
       showToast(form.id ? 'Session updated.' : 'Session created.');
@@ -169,6 +171,13 @@ export default function AdminLiveSessions() {
           placeholder="Recording URL — paste in once the session has happened, to publish it as a replay"
           className="w-full px-3 py-2 rounded-lg border border-border text-sm text-ink bg-white dark:bg-[#0A090F] focus:outline-none focus:ring-2 focus:ring-brand/40"
         />
+        <input
+          type="text"
+          value={form.recording_passcode}
+          onChange={(e) => setForm((f) => ({ ...f, recording_passcode: e.target.value }))}
+          placeholder="Recording passcode (optional) — from Zoom's Share dialog, not the sharing-info text block"
+          className="w-full px-3 py-2 rounded-lg border border-border text-sm text-ink bg-white dark:bg-[#0A090F] focus:outline-none focus:ring-2 focus:ring-brand/40"
+        />
 
         <button
           type="submit"
@@ -198,6 +207,7 @@ export default function AdminLiveSessions() {
                   {formatSessionDate(s.session_date)}
                   {s.join_link && ' · has join link'}
                   {s.recording_url && ' · has replay'}
+                  {s.recording_passcode && ' · has passcode'}
                 </p>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
