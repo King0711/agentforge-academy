@@ -45,6 +45,18 @@ export const guides = [
     readingTime: '8 min read',
     relatedAgentSlug: 'lead-capture-qualifier-bot',
   },
+  {
+    // Not tied to one bot/session — a technique guide, not an agent guide.
+    // Its BuildItCta points broadly at the catalog rather than one session
+    // (BuildItCta's `tier` prop is optional for exactly this case — see
+    // WhatIsAnAiAgent.jsx for the same pattern).
+    slug: 'brainstorming-with-ai',
+    title: 'How to Brainstorm with AI: Practical Techniques for Study, Business, and Work',
+    dek: 'Five real brainstorming techniques you can run with Claude or ChatGPT — plus an interactive prompt generator — for schoolwork, business ideas, and everyday problem-solving.',
+    emoji: '💡',
+    readingTime: '10 min read',
+    relatedAgentSlug: null,
+  },
 ];
 
 export const getGuideBySlug = (slug) => guides.find((g) => g.slug === slug);

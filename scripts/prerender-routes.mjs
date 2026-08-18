@@ -53,6 +53,7 @@ export const routes = [
   '/guides/whatsapp-auto-reply-bot',
   '/guides/gmail-ai-triage-agent',
   '/guides/ai-lead-qualification',
+  '/guides/brainstorming-with-ai',
   '/legal/terms',
   '/legal/privacy',
   ...builder1Slugs.map((slug) => `/builder-1/${slug}`),
