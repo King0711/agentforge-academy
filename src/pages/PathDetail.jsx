@@ -56,9 +56,9 @@ export default function PathDetail({ progress }) {
                     className="inline-flex items-center gap-1.5 text-sm font-bold px-3 py-1 rounded-md"
                     style={{ backgroundColor: level.tint, color: level.color }}
                   >
-                    {level.icon} {level.label}
+                    <span>{level.icon}</span> <span>{level.label}</span>
                   </span>
-                  <span className="text-sm text-body">{tierAgents.length} agents</span>
+                  <span className="text-sm text-body"><span>{tierAgents.length}</span> agents</span>
                 </div>
                 <p className="text-sm text-body-strong">{tierDescriptions[level.id]}</p>
                 <ProgressBar value={completedCount} max={tierAgents.length} color={level.color} showLabel={false} />
@@ -90,7 +90,7 @@ export default function PathDetail({ progress }) {
                     <span className="text-2xl">{dept.icon}</span>
                     {dept.name}
                   </span>
-                  <span className="text-sm text-body">{deptAgents.length} agents</span>
+                  <span className="text-sm text-body"><span>{deptAgents.length}</span> agents</span>
                 </div>
                 <ProgressBar value={completedCount} max={deptAgents.length} color={dept.color} showLabel={false} />
               </Link>

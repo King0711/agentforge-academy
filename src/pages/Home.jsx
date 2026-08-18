@@ -44,7 +44,7 @@ function LiveClassMockup() {
           </div>
           <div className="min-w-0 flex-1">
             <p className="font-bold text-sm text-ink truncate">{s.title}</p>
-            <p className="text-[11px] text-gray-400">{s.tier}</p>
+            <p className="text-[11px] text-gray-500">{s.tier}</p>
           </div>
           <span className="flex-shrink-0 bg-brand text-white text-[11px] font-bold px-3 py-1.5 rounded-lg">Join</span>
         </div>
@@ -74,7 +74,7 @@ function CommunityMockup() {
         </div>
         <div>
           <p className="text-white font-bold text-sm leading-tight">Social Dev Builders</p>
-          <p className="text-white/60 text-[11px] leading-tight">128 members</p>
+          <p className="text-white/80 text-[11px] leading-tight">128 members</p>
         </div>
       </div>
       <div className="p-4 flex flex-col gap-2.5" style={{ background: '#E5DDD5' }}>
@@ -103,7 +103,7 @@ function CommunityMockup() {
           </div>
         ))}
         <div className="flex items-center gap-2 bg-white rounded-full px-3 py-2 mt-1">
-          <span className="text-[12px] text-gray-400 flex-1">Message</span>
+          <span className="text-[12px] text-gray-500 flex-1">Message</span>
           <Send className="w-3.5 h-3.5 text-[#075E54]" />
         </div>
       </div>
@@ -235,11 +235,16 @@ export default function Home({ progress, onSelectAgent }) {
               <span className="inline-block bg-yellow px-2.5 rounded-lg -rotate-[1.5deg]">Level up.</span>
             </h1>
             <p className="text-[17px] leading-relaxed text-body mt-5 mb-5 max-w-[480px]">
-              {publicAgents.length} guided Artificial Intelligence (AI) agent build sessions across every department. Copy-paste prompts, step-by-step builds, and a portfolio write-up — so you ship something real every session.
+              {/* Dynamic count kept in its own element rather than a bare
+                  text sibling: two adjacent JSX text children serialize as
+                  one merged text node in prerendered static HTML, which
+                  then mismatches React's two-node hydration expectation
+                  (React #418) on every visit. */}
+              <span>{publicAgents.length}</span> guided Artificial Intelligence (AI) agent build sessions across every department. Copy-paste prompts, step-by-step builds, and a portfolio write-up — so you ship something real every session.
             </p>
             <div className="flex items-baseline gap-2.5 mb-6">
-              <span className="text-base text-gray-400 line-through">₦{ANCHOR_PRICE.toLocaleString()}</span>
-              <span className="font-display font-extrabold text-2xl text-ink">₦{BUILDER_PRICE.toLocaleString()}</span>
+              <span className="text-base text-gray-400 line-through">₦<span>{ANCHOR_PRICE.toLocaleString()}</span></span>
+              <span className="font-display font-extrabold text-2xl text-ink">₦<span>{BUILDER_PRICE.toLocaleString()}</span></span>
               <span className="text-sm text-body">one-time · 6 months access</span>
             </div>
             <div className="flex gap-3.5 items-center flex-wrap">
@@ -319,11 +324,11 @@ export default function Home({ progress, onSelectAgent }) {
           <div className="text-[13px] text-body font-semibold mt-0.5">Departments</div>
         </div>
         <div className="bg-[#EAFAF1] dark:bg-[#181818] rounded-[18px] px-5 py-5.5 text-center">
-          <div className="font-display font-extrabold text-[34px] text-green">{Math.round(totalXP / 1000)}k+</div>
+          <div className="font-display font-extrabold text-[34px] text-green"><span>{Math.round(totalXP / 1000)}</span>k+</div>
           <div className="text-[13px] text-body font-semibold mt-0.5">XP Available</div>
         </div>
         <div className="bg-[#FDEEF4] dark:bg-[#181818] rounded-[18px] px-5 py-5.5 text-center">
-          <div className="font-display font-extrabold text-[34px] text-rose">{totalHours}+</div>
+          <div className="font-display font-extrabold text-[34px] text-rose"><span>{totalHours}</span>+</div>
           <div className="text-[13px] text-body font-semibold mt-0.5">Hours of content</div>
         </div>
       </div>
@@ -403,15 +408,15 @@ export default function Home({ progress, onSelectAgent }) {
             {builder1Weeks.map(({ week, agents: weekAgents, mainAgent }) => (
               <div key={week} className="bg-white dark:bg-[#181818] border-[1.5px] border-border-soft rounded-[20px] p-6">
                 <span className="inline-block text-[11px] font-bold uppercase tracking-widest text-brand bg-[#F3EBFF] dark:bg-brand/15 px-2.5 py-1 rounded-full mb-3">
-                  Week {week}
+                  Week <span>{week}</span>
                 </span>
                 <h3 className="font-display font-bold text-lg text-ink mb-1">{WEEK_THEMES[week] || `Week ${week}`}</h3>
                 {mainAgent && (
                   <p className="text-sm text-body leading-relaxed mb-3">
-                    <span className="font-semibold text-ink">Main build:</span> {mainAgent.title}
+                    <span className="font-semibold text-ink">Main build:</span> <span>{mainAgent.title}</span>
                   </p>
                 )}
-                <p className="text-xs text-gray-400">{weekAgents.length} sessions this week</p>
+                <p className="text-xs text-gray-500"><span>{weekAgents.length}</span> sessions this week</p>
               </div>
             ))}
           </div>
@@ -473,7 +478,7 @@ export default function Home({ progress, onSelectAgent }) {
             </p>
             {nextCohort && (
               <p className="inline-flex items-center gap-2 text-sm font-bold text-ink bg-[#F3EBFF] dark:bg-brand/15 px-4 py-2 rounded-full mb-5">
-                <CalendarDays className="w-4 h-4 text-brand" /> Next cohort starts {nextCohort}
+                <CalendarDays className="w-4 h-4 text-brand" /> Next cohort starts <span>{nextCohort}</span>
               </p>
             )}
             <div>
@@ -527,7 +532,7 @@ export default function Home({ progress, onSelectAgent }) {
           style={{ background: 'linear-gradient(120deg, #7C3AED, #9D5CFF)' }}
         >
           <div>
-            <h2 className="font-display font-extrabold text-2xl sm:text-[26px] text-white m-0">Unlock all {publicAgents.length} sessions</h2>
+            <h2 className="font-display font-extrabold text-2xl sm:text-[26px] text-white m-0">Unlock all <span>{publicAgents.length}</span> sessions</h2>
             <p className="text-[#EDE4FF] mt-2 mb-0 text-[15px]">Get Builder 1, Builder 2, or both bundled as Pro — every plan is a one-time payment for 6 months of access.</p>
           </div>
           <Link

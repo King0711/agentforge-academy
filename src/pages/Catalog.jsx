@@ -58,7 +58,7 @@ export default function Catalog({ progress, onSelectAgent }) {
           Agent Catalog
         </h1>
         <p className="text-body mt-2">
-          {filtered.length} of {visibleAgents.length} agents — filter by department, difficulty, or search.
+          <span>{filtered.length}</span> of <span>{visibleAgents.length}</span> agents — filter by department, difficulty, or search.
         </p>
       </div>
 

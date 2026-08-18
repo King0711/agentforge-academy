@@ -12,7 +12,7 @@ export default function XPBadge({ xp, size = 'md', className = '' }) {
       className={`inline-flex items-center rounded-md font-semibold bg-[#FEF9E7] dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber/30 ${sizes[size]} ${className}`}
     >
       <Zap className={size === 'lg' ? 'w-4 h-4' : 'w-3.5 h-3.5'} fill="currentColor" />
-      {xp.toLocaleString()} XP
+      <span>{xp.toLocaleString()}</span> XP
     </span>
   );
 }

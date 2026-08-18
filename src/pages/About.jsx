@@ -107,7 +107,7 @@ export default function About() {
       >
         <div>
           <h2 className="font-display font-extrabold text-2xl sm:text-[26px] text-white m-0">Ready to build your first agent?</h2>
-          <p className="text-[#EDE4FF] mt-2 mb-0 text-[15px]">Browse all {publicAgents.length} sessions and pick where to start.</p>
+          <p className="text-[#EDE4FF] mt-2 mb-0 text-[15px]">Browse all <span>{publicAgents.length}</span> sessions and pick where to start.</p>
         </div>
         <Link
           to="/catalog"

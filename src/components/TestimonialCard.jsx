@@ -14,7 +14,7 @@ export default function TestimonialCard({ testimonial }) {
         ))}
       </div>
 
-      <p className="text-sm text-body-strong leading-relaxed flex-1">&ldquo;{body}&rdquo;</p>
+      <p className="text-sm text-body-strong leading-relaxed flex-1">&ldquo;<span>{body}</span>&rdquo;</p>
 
       <div className="flex items-center justify-between gap-2 pt-2 border-t border-border-soft">
         <span className="font-bold text-ink text-sm">{display_name}</span>

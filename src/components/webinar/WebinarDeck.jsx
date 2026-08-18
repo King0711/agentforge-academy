@@ -177,7 +177,7 @@ export default function WebinarDeck() {
 
       <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3 flex-shrink-0">
         <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-          <img src="/logo-icon.webp" alt="Social Dev Technologies" className="w-7 h-7 object-contain rounded-md" />
+          <img src="/logo-icon.webp" alt="" className="w-7 h-7 object-contain rounded-md" />
           <span className="hidden sm:inline font-display font-extrabold text-sm text-ink tracking-tight">
             Social Dev<span className="text-brand"> Technologies</span>
           </span>
