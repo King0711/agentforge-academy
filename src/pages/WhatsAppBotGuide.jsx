@@ -321,9 +321,9 @@ export default function WhatsAppBotGuide() {
             <div className="flex gap-3">
               <StepNumber n={1} />
               <p className="text-[14px] text-body-strong leading-relaxed m-0 pt-0.5">
-                For <strong className="text-ink">index.js</strong>: copy everything Claude wrote for it, open Notepad, paste it in. Click{' '}
+                For <strong className="text-ink">index.js</strong>: copy everything Claude wrote for it, open Notepad, paste it in. Click<span> </span>
                 <strong className="text-ink">File → Save As</strong>. Navigate to your <strong className="text-ink">whatsapp-bot</strong> folder.
-                In the "Save as type" dropdown, choose <strong className="text-ink">All Files</strong>. Type the filename exactly:{' '}
+                In the "Save as type" dropdown, choose <strong className="text-ink">All Files</strong>. Type the filename exactly:<span> </span>
                 <code className="text-brand font-semibold">index.js</code>. Click Save.
               </p>
             </div>
@@ -337,7 +337,7 @@ export default function WhatsAppBotGuide() {
             <div className="flex gap-3">
               <StepNumber n={3} />
               <p className="text-[14px] text-body-strong leading-relaxed m-0 pt-0.5">
-                For the settings file — this one's a little different. Copy what Claude gave you for{' '}
+                For the settings file — this one's a little different. Copy what Claude gave you for<span> </span>
                 <strong className="text-ink">.env.example</strong>, paste into a new Notepad window, but this time Save As with the filename
                 exactly <code className="text-brand font-semibold">.env</code> (not .env.example — save it directly as your real settings
                 file, one step, done).
@@ -355,8 +355,8 @@ export default function WhatsAppBotGuide() {
             <div className="flex gap-3">
               <StepNumber n={1} />
               <p className="text-[14px] text-body-strong leading-relaxed m-0 pt-0.5">
-                Go to <strong className="text-ink">console.groq.com</strong>, sign up, click{' '}
-                <strong className="text-ink">API Keys → Create API Key</strong>. Copy it — it starts with{' '}
+                Go to <strong className="text-ink">console.groq.com</strong>, sign up, click<span> </span>
+                <strong className="text-ink">API Keys → Create API Key</strong>. Copy it — it starts with<span> </span>
                 <code className="text-brand font-semibold">gsk_</code>.
               </p>
             </div>
@@ -405,7 +405,7 @@ export default function WhatsAppBotGuide() {
               <StepNumber n={2} />
               <p className="text-[14px] text-body-strong leading-relaxed m-0 pt-0.5">
                 Type <code className="text-brand font-semibold">cd</code> followed by one space — don't press Enter yet. Now open File
-                Explorer, find your <strong className="text-ink">whatsapp-bot</strong> folder, and{' '}
+                Explorer, find your <strong className="text-ink">whatsapp-bot</strong> folder, and<span> </span>
                 <strong className="text-ink">drag the folder icon</strong> directly into the Command Prompt window. The full path types
                 itself in. Now press Enter.
               </p>
@@ -463,15 +463,15 @@ export default function WhatsAppBotGuide() {
             <div className="flex gap-3">
               <StepNumber n={4} />
               <p className="text-[14px] text-body-strong leading-relaxed m-0 pt-0.5">
-                <strong className="text-ink">To stop the bot:</strong> click into the black window and press{' '}
+                <strong className="text-ink">To stop the bot:</strong> click into the black window and press<span> </span>
                 <strong className="text-ink">Ctrl+C</strong>, or just close the window.
               </p>
             </div>
             <div className="flex gap-3">
               <StepNumber n={5} />
               <p className="text-[14px] text-body-strong leading-relaxed m-0 pt-0.5">
-                <strong className="text-ink">To start it again later:</strong> open Command Prompt, drag your folder in after typing{' '}
-                <code className="text-brand font-semibold">cd </code> again, then just type{' '}
+                <strong className="text-ink">To start it again later:</strong> open Command Prompt, drag your folder in after typing<span> </span>
+                <code className="text-brand font-semibold">cd </code> again, then just type<span> </span>
                 <code className="text-brand font-semibold">npm start</code> — no need to reinstall.
               </p>
             </div>

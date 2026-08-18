@@ -384,7 +384,7 @@ export default function Builder1Guide() {
                 <CheckItem>Tested Claude with the prompt from the Setup section — it responded well</CheckItem>
                 <CheckItem>Can log in to the Social Dev Technologies dashboard</CheckItem>
                 <CheckItem>
-                  Joined the{' '}
+                  <span>Joined the </span>
                   <a
                     href={COHORT_WHATSAPP_LINK}
                     target="_blank"

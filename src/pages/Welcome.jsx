@@ -204,7 +204,7 @@ export default function Welcome() {
           </div>
 
           <h1 className="font-display font-extrabold text-4xl sm:text-5xl text-ink leading-tight tracking-[-1px] mb-4">
-            Create your account.{' '}
+            Create your account.<span> </span>
             <span className="inline-block bg-yellow px-2.5 rounded-lg -rotate-[1.5deg]">Never lose your progress.</span>
           </h1>
           <p className="text-body text-lg mb-10 max-w-xl">
@@ -237,7 +237,7 @@ export default function Welcome() {
             <div className="mb-6 flex items-start gap-2 text-sm text-amber-700 dark:text-amber-400 bg-[#FEF9E7] dark:bg-amber-500/10 border border-amber/30 rounded-lg px-3 py-2.5">
               <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
               <span>
-                Accounts aren't configured yet. Add <code className="font-mono">VITE_SUPABASE_URL</code> and{' '}
+                Accounts aren't configured yet. Add <code className="font-mono">VITE_SUPABASE_URL</code> and<span> </span>
                 <code className="font-mono">VITE_SUPABASE_ANON_KEY</code> to your <code className="font-mono">.env</code> file.
               </span>
             </div>
@@ -393,7 +393,7 @@ export default function Welcome() {
                           />
                         </div>
                         <p className="text-xs text-gray-400 mt-1.5">
-                          Sent to {email}. <button type="button" onClick={handleSendCode} className="text-brand font-semibold hover:underline">Resend code</button>
+                          Sent to <span>{email}</span>. <button type="button" onClick={handleSendCode} className="text-brand font-semibold hover:underline">Resend code</button>
                         </p>
                       </div>
 
@@ -512,7 +512,7 @@ export default function Welcome() {
 
                   <p className="text-xs text-gray-400 text-center">
                     {mode === 'signup' ? (
-                      <>Already have an account?{' '}
+                      <>Already have an account?<span> </span>
                         <button type="button" onClick={() => { setMode('login'); resetAuxState(); }} className="text-brand font-bold hover:underline">Log in</button>
                       </>
                     ) : (
@@ -521,8 +521,8 @@ export default function Welcome() {
                           Log in with an emailed code instead
                         </button>
                         <br className="sm:hidden" />
-                        {' '}·{' '}
-                        Don't have an account?{' '}
+                        <span> </span>·<span> </span>
+                        Don't have an account?<span> </span>
                         <button type="button" onClick={() => { setMode('signup'); resetAuxState(); }} className="text-brand font-bold hover:underline">Sign up</button>
                       </>
                     )}

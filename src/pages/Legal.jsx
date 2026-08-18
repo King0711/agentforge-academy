@@ -114,7 +114,7 @@ export default function Legal() {
           </div>
 
           <h1 className="font-display text-3xl sm:text-4xl font-extrabold text-ink mb-2">{content.title}</h1>
-          <p className="text-gray-400 text-sm mb-10">Last updated: {content.updated}</p>
+          <p className="text-gray-400 text-sm mb-10">Last updated: <span>{content.updated}</span></p>
 
           <div className="space-y-8">
             {content.sections.map((s) => (

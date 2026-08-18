@@ -338,7 +338,7 @@ const PANELS = [
           ['Session', 'One continuous conversation. Start a new session and the AI starts fresh. Stay in the same session and it remembers everything you\'ve shared.'],
         ].map(([term, def]) => (
           <div key={term}>
-            <span className="font-bold text-ink">{term} — </span>
+            <span className="font-bold text-ink"><span>{term}</span> — </span>
             <span>{def}</span>
           </div>
         ))}
@@ -442,7 +442,7 @@ Once I've answered, build the animation and embed it directly in my portfolio as
     </StepItem>
 
     <StepItem num={2}>
-      Open Chrome and go to the{' '}
+      Open Chrome and go to the<span> </span>
       <a href="https://chromewebstore.google.com/publisher/anthropic" target="_blank" rel="noreferrer" className="text-brand font-semibold inline-flex items-center gap-1">Claude in Chrome extension <ExternalLink className="w-3 h-3" /></a>.
       Click <strong>Add to Chrome</strong> then <strong>Add extension</strong>.
     </StepItem>
@@ -776,7 +776,7 @@ export default function PortfolioSessionGuide() {
           <div className="h-full bg-brand rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
         </div>
         <span className="text-xs text-body flex-shrink-0 font-medium tabular-nums">
-          {current < STEPS.length - 1 ? `${STEPS[current].time}` : 'Done'} · {current + 1}/{STEPS.length}
+          <span>{current < STEPS.length - 1 ? `${STEPS[current].time}` : 'Done'}</span> · <span>{current + 1}</span>/<span>{STEPS.length}</span>
         </span>
         <button
           onClick={next}
@@ -826,7 +826,7 @@ export default function PortfolioSessionGuide() {
         {/* Content */}
         <main className="flex-1 px-5 sm:px-10 py-8 max-w-2xl">
           <div className="text-[10px] font-bold uppercase tracking-widest text-brand mb-2">
-            {STEPS[current].eyebrow} · Step {current + 1} of {STEPS.length}
+            <span>{STEPS[current].eyebrow}</span> · Step <span>{current + 1}</span> of <span>{STEPS.length}</span>
           </div>
           <h1 className="font-display text-2xl sm:text-[28px] font-extrabold text-ink mb-2 leading-tight" style={{ textWrap: 'balance' }}>
             {HEADINGS[current]}
