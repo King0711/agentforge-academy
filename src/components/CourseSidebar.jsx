@@ -84,7 +84,7 @@ function LessonList({ tier, tierAgents, currentSlug, progress, onNavigate }) {
         {weeksWithStart.map(({ week, agents: weekAgents, startIndex }) => {
           return (
             <div key={week}>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-3 mb-1">Week {week}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-3 mb-1">Week <span>{week}</span></p>
               <ul className="flex flex-col gap-0.5">
                 {weekAgents.map((agent, i) => (
                   <LessonRow
@@ -129,10 +129,10 @@ export default function CourseSidebar({ tier, tierAgents, currentSlug, progress 
     <>
       {/* Desktop — persistent sticky sidebar */}
       <aside className="hidden lg:block sticky top-24 self-start w-full rounded-xl border border-border-soft bg-[#FAF8FF] dark:bg-white/5 p-4">
-        <p className="text-xs font-bold uppercase tracking-wide text-body mb-2">{tier} Sessions</p>
+        <p className="text-xs font-bold uppercase tracking-wide text-body mb-2"><span>{tier}</span> Sessions</p>
         <div className="mb-4">
           <ProgressBar value={completedCount} max={tierAgents.length} showLabel={false} height="h-1.5" />
-          <p className="text-xs text-body mt-1.5">{completedCount} / {tierAgents.length} complete</p>
+          <p className="text-xs text-body mt-1.5"><span>{completedCount}</span> / <span>{tierAgents.length}</span> complete</p>
         </div>
         <LessonList tier={tier} tierAgents={tierAgents} currentSlug={currentSlug} progress={progress} />
       </aside>
@@ -144,8 +144,8 @@ export default function CourseSidebar({ tier, tierAgents, currentSlug, progress 
           className="w-full flex items-center justify-between px-4 py-3"
         >
           <span className="flex items-center gap-2 text-sm font-bold text-ink">
-            {tier} Course Menu
-            <span className="text-xs font-medium text-body">({completedCount}/{tierAgents.length})</span>
+            <span>{tier}</span> Course Menu
+            <span className="text-xs font-medium text-body">(<span>{completedCount}</span>/<span>{tierAgents.length}</span>)</span>
           </span>
           <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${mobileOpen ? 'rotate-180' : ''}`} />
         </button>

@@ -63,7 +63,7 @@ export default function DashboardSidebar() {
   return (
     <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-screen w-64 bg-white dark:bg-[#0A090F] border-r border-[#EFE9FB] dark:border-[#232228] px-4 py-5">
       <NavLink to="/" className="flex items-center gap-2.5 px-1.5 mb-8">
-        <img src="/logo-icon.webp" alt="Social Dev Technologies" className="w-9 h-9 object-contain rounded-lg" />
+        <img src="/logo-icon.webp" alt="" className="w-9 h-9 object-contain rounded-lg" />
         <span className="font-display font-extrabold text-[14px] text-ink tracking-tight leading-tight">
           Social Dev<br />Technologies
         </span>

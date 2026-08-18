@@ -154,16 +154,16 @@ export default function Pricing() {
         >
           <div className="font-extrabold text-ink text-lg">🌱 Builder 1</div>
           <div className="flex items-baseline gap-2.5 mt-2.5 mb-0.5">
-            <span className="text-base text-gray-400 line-through">₦{ANCHOR_PRICE.toLocaleString()}</span>
-            <span className="font-display font-extrabold text-[34px] text-ink">₦{BUILDER_PRICE.toLocaleString()}</span>
+            <span className="text-base text-gray-400 line-through">₦<span>{ANCHOR_PRICE.toLocaleString()}</span></span>
+            <span className="font-display font-extrabold text-[34px] text-ink">₦<span>{BUILDER_PRICE.toLocaleString()}</span></span>
           </div>
           <div className="flex flex-wrap gap-1.5 mb-3.5">
             <span className="inline-flex items-center gap-1 bg-[#EAFAF1] dark:bg-green/10 text-green font-extrabold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
-              <Tag className="w-3 h-3" /> Save ₦{BUILDER_SAVINGS.toLocaleString()} · 50% off
+              <Tag className="w-3 h-3" /> Save ₦<span>{BUILDER_SAVINGS.toLocaleString()}</span> · 50% off
             </span>
             {builder1Cohort && (
               <span className="inline-flex items-center gap-1 bg-[#F3EBFF] dark:bg-brand/15 text-brand font-bold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
-                <CalendarDays className="w-3 h-3" /> Cohort starts {builder1Cohort}
+                <CalendarDays className="w-3 h-3" /> Cohort starts <span>{builder1Cohort}</span>
               </span>
             )}
           </div>
@@ -204,16 +204,16 @@ export default function Pricing() {
         >
           <div className="font-extrabold text-ink text-lg">⚡ Builder 2</div>
           <div className="flex items-baseline gap-2.5 mt-2.5 mb-0.5">
-            <span className="text-base text-gray-400 line-through">₦{ANCHOR_PRICE.toLocaleString()}</span>
-            <span className="font-display font-extrabold text-[34px] text-ink">₦{BUILDER_PRICE.toLocaleString()}</span>
+            <span className="text-base text-gray-400 line-through">₦<span>{ANCHOR_PRICE.toLocaleString()}</span></span>
+            <span className="font-display font-extrabold text-[34px] text-ink">₦<span>{BUILDER_PRICE.toLocaleString()}</span></span>
           </div>
           <div className="flex flex-wrap gap-1.5 mb-3.5">
             <span className="inline-flex items-center gap-1 bg-[#EAFAF1] dark:bg-green/10 text-green font-extrabold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
-              <Tag className="w-3 h-3" /> Save ₦{BUILDER_SAVINGS.toLocaleString()} · 50% off
+              <Tag className="w-3 h-3" /> Save ₦<span>{BUILDER_SAVINGS.toLocaleString()}</span> · 50% off
             </span>
             {builder2Cohort && (
               <span className="inline-flex items-center gap-1 bg-[#F3EBFF] dark:bg-brand/15 text-brand font-bold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
-                <CalendarDays className="w-3 h-3" /> Cohort starts {builder2Cohort}
+                <CalendarDays className="w-3 h-3" /> Cohort starts <span>{builder2Cohort}</span>
               </span>
             )}
           </div>
@@ -260,7 +260,7 @@ export default function Pricing() {
             <Zap className="w-4 h-4 text-brand" /> Pro
           </div>
           <div className="font-display font-extrabold text-[38px] text-ink mt-2.5 mb-0.5">
-            ₦{PRO_PRICE.toLocaleString()}
+            ₦<span>{PRO_PRICE.toLocaleString()}</span>
           </div>
           <p className="text-[13.5px] text-body mb-4.5">
             One-time payment for Builder 1 + Builder 2 together — no prerequisite, both unlock immediately.

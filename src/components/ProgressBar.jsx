@@ -9,7 +9,7 @@ export default function ProgressBar({ value, max, color = '#7C3AED', label, show
         <div className="flex items-center justify-between mb-1.5 text-sm">
           <span className="text-body-strong font-medium">{label}</span>
           <span className="text-body">
-            {value.toLocaleString()} / {max.toLocaleString()}
+            <span>{value.toLocaleString()}</span> / <span>{max.toLocaleString()}</span>
           </span>
         </div>
       )}

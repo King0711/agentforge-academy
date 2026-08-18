@@ -27,7 +27,7 @@ export default function AgentCard({ agent, completed, onClick, hasBuilder1 = fal
           className="inline-flex items-center gap-1 font-bold text-[11px] px-2.5 py-1 rounded-full"
           style={{ background: difficulty.tint, color: difficulty.color }}
         >
-          {difficulty.icon} {difficulty.label}
+          <span>{difficulty.icon}</span> <span>{difficulty.label}</span>
         </span>
         <span className="text-[15px]">{agent.emoji}</span>
       </div>
@@ -50,7 +50,7 @@ export default function AgentCard({ agent, completed, onClick, hasBuilder1 = fal
 
       <div className="flex justify-between text-[12.5px] text-[#6E6389] dark:text-[#9B93B8] font-semibold pt-2 border-t border-border-soft">
         <span>{agent.buildTime}</span>
-        <span>⚡ {agent.xp} XP</span>
+        <span>⚡ <span>{agent.xp}</span> XP</span>
       </div>
 
       {locked && (

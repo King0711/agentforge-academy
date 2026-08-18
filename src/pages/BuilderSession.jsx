@@ -163,7 +163,7 @@ export default function BuilderSession({ progress, tier }) {
           to={`/catalog?difficulty=${encodeURIComponent(tier)}`}
           className="inline-flex items-center gap-1.5 text-sm font-semibold text-body hover:text-brand transition-colors mb-6"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to {tier} catalog
+          <ArrowLeft className="w-4 h-4" /> Back to <span>{tier}</span> catalog
         </Link>
 
         {/* Hero */}
@@ -178,7 +178,7 @@ export default function BuilderSession({ progress, tier }) {
           }}
         >
           <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-brand bg-white dark:bg-[#181818] border border-brand/25 rounded-full px-3 py-1.5 mb-4">
-            {difficulty.icon} {tier} · Session {index + 1} of {tierAgents.length}
+            <span>{difficulty.icon}</span> <span>{tier}</span> · Session <span>{index + 1}</span> of <span>{tierAgents.length}</span>
           </span>
           <div className="flex items-start gap-4">
             <div className="text-5xl sm:text-6xl">{agent.emoji}</div>
@@ -187,7 +187,7 @@ export default function BuilderSession({ progress, tier }) {
               <p className="text-body text-sm sm:text-base mt-2 max-w-2xl">{agent.description}</p>
               <div className="flex flex-wrap items-center gap-3 mt-4">
                 <span className="flex items-center gap-1 text-xs font-semibold text-body">
-                  <Clock className="w-3.5 h-3.5" /> {agent.buildTime}
+                  <Clock className="w-3.5 h-3.5" /> <span>{agent.buildTime}</span>
                 </span>
                 <XPBadge xp={agent.xp} size="sm" />
               </div>
@@ -211,7 +211,7 @@ export default function BuilderSession({ progress, tier }) {
                 transition={{ duration: 1.2 }}
                 className="absolute left-5 -top-2 text-amber-600 font-extrabold text-lg pointer-events-none flex items-center gap-1"
               >
-                <Sparkles className="w-5 h-5" /> +{agent.xp} XP!
+                <Sparkles className="w-5 h-5" /> +<span>{agent.xp}</span> XP!
               </motion.div>
             )}
           </AnimatePresence>
@@ -261,9 +261,9 @@ export default function BuilderSession({ progress, tier }) {
         {!loading && locked && (
           <div className="flex flex-col items-center text-center gap-3 py-16 border-2 border-dashed border-border rounded-2xl mb-8">
             <Lock className="w-8 h-8 text-brand" />
-            <p className="font-bold text-ink">This session's guide is {tier} content</p>
+            <p className="font-bold text-ink">This session's guide is <span>{tier}</span> content</p>
             <p className="text-sm text-body max-w-sm">
-              Get {tier} (or the Pro bundle) to unlock the full step-by-step build, prompts, and resources.
+              Get <span>{tier}</span> (or the Pro bundle) to unlock the full step-by-step build, prompts, and resources.
             </p>
             <Link
               to="/pricing"
