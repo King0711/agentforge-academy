@@ -212,13 +212,20 @@ export default function CertificateView() {
         @media print {
           .no-print { display: none !important; }
           @page { size: landscape; margin: 0.4in; }
-          body { background: white !important; }
+          html, body { height: 100%; background: white !important; }
           #certificate-page {
             max-width: none !important;
             padding: 0 !important;
             margin: 0 !important;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
           }
           #certificate {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
             page-break-inside: avoid;
           }
         }

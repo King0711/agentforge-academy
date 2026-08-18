@@ -78,6 +78,17 @@ async function main() {
         // (Supabase testimonials/course content, etc.) to settle.
         await page.goto(`${BASE_URL}${route}`, { waitUntil: 'networkidle2', timeout: 20000 });
         await new Promise((r) => setTimeout(r, 300));
+
+        // Drop nodes that runtime code injected into the DOM (currently the
+        // deferred gtag.js loader — see public/gtag-init.js). page.content()
+        // serializes the live DOM, so anything a script appended would
+        // otherwise be committed into the snapshot as if it had been in the
+        // source HTML all along — re-introducing on page load exactly the
+        // request the runtime injection exists to defer.
+        await page.evaluate(() => {
+          document.querySelectorAll('[data-runtime-injected]').forEach((el) => el.remove());
+        });
+
         const html = await page.content();
         await page.close();
 

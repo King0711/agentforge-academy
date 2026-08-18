@@ -20,8 +20,12 @@
          Deferring is safe here — gtag-init.js guards with
          `window.dataLayer = window.dataLayer || []`, so it doesn't matter
          whether it or the async gtag.js runs first; commands queue either
-         way. -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-42RD6R909Z"></script>
+         way. gtag.js itself is no longer requested here — /gtag-init.js
+         loads it once the browser goes idle. It's ~164KB of third-party JS
+         that nothing on screen depends on, and even as `async` it competed
+         for CPU during load (Lighthouse: 68.6KB of it unused). Commands are
+         queued into dataLayer immediately either way, so nothing is lost
+         for anyone who stays on the page. -->
     <script defer src="/gtag-init.js"></script>
 
     <!-- Preconnects: fonts and YouTube video thumbnails are on the critical
@@ -29,7 +33,11 @@
          instead of waiting for CSS/JS discovery to find them. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preconnect" href="https://i.ytimg.com" />
+    <!-- No i.ytimg.com preconnect: the homepage hero now uses a self-hosted
+         /video-thumbnail.jpg, so that origin is never requested on first
+         load and Lighthouse flagged the hint as unused. AgentModal still
+         falls back to i.ytimg.com, but only after a user opens a modal —
+         far too late for a preconnect to have helped. -->
     <!-- Loaded as non-render-blocking: media="print" makes the browser fetch
          it at full priority without waiting for it before first paint.
          src/main.jsx flips data-defer-font links to media="all" once each
