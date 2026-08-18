@@ -1,0 +1,161 @@
+import { Link } from 'react-router-dom';
+import { ArrowRight, Lightbulb, AlertTriangle, Check } from 'lucide-react';
+import { splitBold } from '../../lib/guideBlocks';
+import PromptGenerator from './PromptGenerator';
+
+// React counterpart to renderGuideBlocksToHtml in src/lib/guideBlocks.js —
+// same block-type switch, kept small so the two stay easy to keep in sync.
+// React escapes text content on its own, so only the **bold** segmentation
+// needs handling here (no manual escaping, unlike the string renderer).
+
+// Interactive islands a guide can embed by name. Adding a new one means
+// adding it here — an admin can turn an existing widget on or off from the
+// editor, but can't invent a new interactive component without a developer.
+const WIDGETS = {
+  'prompt-generator': PromptGenerator,
+};
+
+function Rich({ text }) {
+  return splitBold(text).map((part, i) =>
+    part.bold ? <strong key={i} className="text-ink">{part.text}</strong> : <span key={i}>{part.text}</span>,
+  );
+}
+
+function Callout({ block }) {
+  const isWarning = block.variant === 'warning';
+  return (
+    <div
+      className={`flex items-start gap-3 rounded-xl px-4 py-3.5 my-5 ${
+        isWarning
+          ? 'bg-[#FEF9E7] dark:bg-amber-500/10 border border-amber/30'
+          : 'bg-[#F3EBFF] dark:bg-brand/10 border border-brand/20'
+      }`}
+    >
+      {isWarning ? (
+        <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+      ) : (
+        <Lightbulb className="w-4 h-4 text-brand mt-0.5 flex-shrink-0" />
+      )}
+      <p className="text-[14px] text-body-strong leading-relaxed m-0">
+        {block.title && <strong className="text-ink">{block.title} </strong>}
+        <Rich text={block.text} />
+        {block.linkTo && (
+          <>
+            {' '}
+            <Link to={block.linkTo} className="text-brand font-bold hover:underline">
+              {block.linkLabel || 'Read more'}
+            </Link>
+          </>
+        )}
+      </p>
+    </div>
+  );
+}
+
+function Cta({ block }) {
+  return (
+    <div className="mt-8 rounded-2xl border-[1.5px] border-brand/30 bg-[#F8F6FF] dark:bg-brand/10 p-6">
+      <div className="text-[10px] font-bold uppercase tracking-widest text-brand mb-2">
+        {block.eyebrow || 'Build this one'}
+      </div>
+      <p className="text-[15px] text-body leading-relaxed mb-5"><Rich text={block.text} /></p>
+      <Link
+        to={block.to}
+        className="inline-flex items-center gap-2 bg-brand hover:bg-brand-deep text-white font-bold text-sm px-5 py-3 rounded-xl transition-colors shadow-[0_6px_16px_rgba(124,58,237,.3)]"
+      >
+        <span>{block.tier ? `${block.label} — ${block.tier} session` : block.label}</span>
+        <ArrowRight className="w-4 h-4 flex-shrink-0" />
+      </Link>
+    </div>
+  );
+}
+
+export default function GuideBody({ blocks }) {
+  return (
+    <>
+      {(blocks || []).map((block, i) => {
+        switch (block.type) {
+          case 'intro':
+            return (
+              <p key={i} className="text-[17px] text-body leading-relaxed mt-4 mb-2">
+                <Rich text={block.text} />
+              </p>
+            );
+
+          case 'section':
+            return (
+              <div key={i} className="pt-9 mt-1 border-t border-border-soft first:border-none first:pt-2">
+                {block.eyebrow && (
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-brand mb-2">{block.eyebrow}</div>
+                )}
+                <h2 className="font-display text-2xl sm:text-[28px] font-extrabold text-ink mb-4" style={{ textWrap: 'balance' }}>
+                  {block.title}
+                </h2>
+              </div>
+            );
+
+          case 'subheading':
+            return <p key={i} className="text-[15px] font-bold text-ink mt-6 mb-1">{block.text}</p>;
+
+          case 'checklist':
+            return (
+              <ul key={i} className="flex flex-col gap-2.5 my-4">
+                {(block.items || []).map((item, j) => (
+                  <li key={j} className="flex items-start gap-2.5 text-[15px] text-body-strong leading-relaxed">
+                    <Check className="w-4 h-4 text-green mt-1 flex-shrink-0" />
+                    <span><Rich text={item} /></span>
+                  </li>
+                ))}
+              </ul>
+            );
+
+          case 'list':
+            return (
+              <ul key={i} className="list-disc pl-5 space-y-1.5 my-4 text-[15.5px] text-body leading-relaxed">
+                {(block.items || []).map((item, j) => <li key={j}><Rich text={item} /></li>)}
+              </ul>
+            );
+
+          case 'quote':
+            return (
+              <blockquote key={i} className="border-l-[3px] border-brand pl-4 italic text-body-strong my-4">
+                <Rich text={block.text} />
+              </blockquote>
+            );
+
+          case 'callout':
+            return <Callout key={i} block={block} />;
+
+          case 'practice':
+            return (
+              <div key={i} className="flex gap-3.5 py-4 border-b border-border-soft last:border-none">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[#F3EBFF] dark:bg-brand/15 text-brand flex items-center justify-center font-display font-extrabold text-[13px] mt-0.5">
+                  {block.n}
+                </div>
+                <div>
+                  <h3 className="font-display font-bold text-[15.5px] text-ink mb-1">{block.title}</h3>
+                  <p className="text-[14.5px] text-body leading-relaxed m-0"><Rich text={block.text} /></p>
+                </div>
+              </div>
+            );
+
+          case 'widget': {
+            const Widget = WIDGETS[block.name];
+            return Widget ? <Widget key={i} /> : null;
+          }
+
+          case 'cta':
+            return <Cta key={i} block={block} />;
+
+          case 'paragraph':
+          default:
+            return (
+              <p key={i} className="text-[15.5px] leading-relaxed text-body my-4">
+                <Rich text={block.text} />
+              </p>
+            );
+        }
+      })}
+    </>
+  );
+}

@@ -11,7 +11,11 @@ const links = [
   { to: '/', label: 'Home' },
   { to: '/catalog', label: 'Catalog' },
   { to: '/paths', label: 'Learning Paths' },
-  { to: '/news', label: 'News' },
+  // Grouped under one "Learn" dropdown rather than separate top-level links.
+  // Both stay real, separately-crawlable routes — the dropdown is only a
+  // navigation affordance, not a tab switcher that would hide one of them
+  // from crawlers.
+  { label: 'Learn', children: [{ to: '/guides', label: 'Guides' }, { to: '/news', label: 'AI News' }] },
   { to: '/pricing', label: 'Pricing' },
 ];
 
@@ -66,16 +70,50 @@ export default function Navbar() {
         </Link>
 
         <nav className="hidden lg:flex items-center gap-6 ml-6 font-semibold text-[14.5px] text-[#4A4463] dark:text-[#B7AFC9] flex-shrink-0">
-          {links.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              end={link.to === '/'}
-              className={({ isActive }) => `flex-shrink-0 whitespace-nowrap transition-colors ${isActive ? 'text-brand' : 'hover:text-ink'}`}
-            >
-              {link.label}
-            </NavLink>
-          ))}
+          {links.map((link) =>
+            link.children ? (
+              <div key={link.label} className="relative group flex-shrink-0">
+                <button
+                  className={`flex items-center gap-1 whitespace-nowrap transition-colors ${
+                    link.children.some((c) => location.pathname.startsWith(c.to)) ? 'text-brand' : 'hover:text-ink'
+                  }`}
+                >
+                  {link.label}
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </button>
+                {/* Hover-opened, but rendered in the DOM at all times so the
+                    links inside are always crawlable. */}
+                <div className="absolute left-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity">
+                  <div className="w-44 bg-white dark:bg-[#141319] border border-[#EFE9FB] dark:border-[#232228] rounded-xl shadow-[0_16px_40px_-12px_rgba(30,20,60,.3)] py-1.5 overflow-hidden">
+                    {link.children.map((child) => (
+                      <NavLink
+                        key={child.to}
+                        to={child.to}
+                        className={({ isActive }) =>
+                          `block px-4 py-2.5 text-sm font-semibold transition-colors ${
+                            isActive
+                              ? 'text-brand bg-[#F7F4FF] dark:bg-white/5'
+                              : 'text-[#4A4463] dark:text-[#B7AFC9] hover:bg-[#FAF8FF] dark:hover:bg-white/5'
+                          }`
+                        }
+                      >
+                        {child.label}
+                      </NavLink>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                end={link.to === '/'}
+                className={({ isActive }) => `flex-shrink-0 whitespace-nowrap transition-colors ${isActive ? 'text-brand' : 'hover:text-ink'}`}
+              >
+                {link.label}
+              </NavLink>
+            ),
+          )}
         </nav>
 
         <div className="flex-1 hidden md:block max-w-xs ml-4">
@@ -203,7 +241,13 @@ export default function Navbar() {
                 {theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
               </button>
               <SearchBar value={value} onChange={handleChange} className="mb-2" />
-              {links.map((link) => (
+              {/* Flattened on mobile — a nested dropdown inside an already
+                  collapsible menu is worse than just listing the children. */}
+              {links.flatMap((link) =>
+                link.children
+                  ? link.children.map((child) => ({ ...child, indented: true }))
+                  : [link],
+              ).map((link) => (
                 <NavLink
                   key={link.to}
                   to={link.to}

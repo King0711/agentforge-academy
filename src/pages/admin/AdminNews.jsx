@@ -44,6 +44,7 @@ function EditForm({ draft, onSave, onCancel, saving }) {
   const [departmentIds, setDepartmentIds] = useState(draft.department_ids || []);
   const [relatedAgentSlug, setRelatedAgentSlug] = useState(draft.related_agent_slug || '');
   const [relatedAgentTier, setRelatedAgentTier] = useState(draft.related_agent_tier || 'builder1');
+  const [imageUrl, setImageUrl] = useState(draft.image_url || '');
 
   const toggleDept = (id) => {
     setDepartmentIds((prev) => (prev.includes(id) ? prev.filter((d) => d !== id) : [...prev, id]));
@@ -89,6 +90,13 @@ function EditForm({ draft, onSave, onCancel, saving }) {
           </button>
         ))}
       </div>
+      <input
+        type="text"
+        value={imageUrl}
+        onChange={(e) => setImageUrl(e.target.value)}
+        placeholder="Image URL — leave blank to remove the image"
+        className="w-full px-3 py-2 rounded-lg border border-border text-sm text-ink bg-white dark:bg-[#0A090F] focus:outline-none focus:ring-2 focus:ring-brand/40"
+      />
       <div className="flex items-center gap-2 flex-wrap">
         <input
           type="text"
@@ -119,6 +127,7 @@ function EditForm({ draft, onSave, onCancel, saving }) {
             department_ids: departmentIds,
             related_agent_slug: relatedAgentSlug.trim() || null,
             related_agent_tier: relatedAgentSlug.trim() ? relatedAgentTier : null,
+            image_url: imageUrl.trim() || null,
           })}
           disabled={saving}
           className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-brand hover:bg-brand-deep disabled:opacity-40 text-white transition-colors"
@@ -261,7 +270,7 @@ export default function AdminNews() {
         p_department_ids: fields.department_ids,
         p_related_agent_slug: fields.related_agent_slug,
         p_related_agent_tier: fields.related_agent_tier,
-        p_image_url: null,
+        p_image_url: fields.image_url,
       });
       if (err) throw err;
       setDrafts((prev) => prev.map((d) => (d.id === id ? { ...d, ...fields } : d)));

@@ -11,6 +11,7 @@ import AdminLiveSessions from './admin/AdminLiveSessions';
 import AdminTestimonials from './admin/AdminTestimonials';
 import AdminEmails from './admin/AdminEmails';
 import AdminNews from './admin/AdminNews';
+import AdminGuides from './admin/AdminGuides';
 
 // Passes showToast down to whichever section route is active via Outlet
 // context, since a plain layout `element` can't take props from its parent
@@ -64,6 +65,7 @@ export default function Admin() {
                 <Route path="testimonials" element={<AdminTestimonials />} />
                 <Route path="emails" element={<AdminEmails />} />
                 <Route path="news" element={<AdminNews />} />
+                <Route path="guides" element={<AdminGuides />} />
               </Route>
             </Routes>
           </div>
