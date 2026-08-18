@@ -24,6 +24,7 @@ import GmailTriageAgent from './pages/guides/GmailTriageAgent';
 import WhatIsAnAiAgent from './pages/guides/WhatIsAnAiAgent';
 import WhatsAppAutoReplyBot from './pages/guides/WhatsAppAutoReplyBot';
 import AiLeadQualification from './pages/guides/AiLeadQualification';
+import BrainstormingWithAi from './pages/guides/BrainstormingWithAi';
 import NotFound from './pages/NotFound';
 import { useProgress } from './hooks/useProgress';
 import { useCertificateClaims } from './hooks/useCertificateClaims';
@@ -157,6 +158,7 @@ function AppShell() {
             <Route path="/guides/whatsapp-auto-reply-bot" element={<WhatsAppAutoReplyBot />} />
             <Route path="/guides/gmail-ai-triage-agent" element={<GmailTriageAgent />} />
             <Route path="/guides/ai-lead-qualification" element={<AiLeadQualification />} />
+            <Route path="/guides/brainstorming-with-ai" element={<BrainstormingWithAi />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
