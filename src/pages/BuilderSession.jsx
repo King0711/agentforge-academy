@@ -59,6 +59,28 @@ export default function BuilderSession({ progress, tier }) {
     };
   }, [agent, tier]);
 
+  // Canonical — kept as its own effect (not folded into the title/description
+  // one above) since combining them tripped the react-compiler eslint plugin's
+  // immutability check on this particular component; isolated like this it's
+  // clean, same net behavior.
+  useEffect(() => {
+    if (!agent) return;
+    let canonicalEl = document.querySelector('link[rel="canonical"]');
+    const hadCanonical = Boolean(canonicalEl);
+    const prevCanonical = canonicalEl?.getAttribute('href');
+    if (!canonicalEl) {
+      canonicalEl = document.createElement('link');
+      canonicalEl.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonicalEl);
+    }
+    canonicalEl.setAttribute('href', `https://socialdevtechnologies.com${getBuilderPagePath(agent)}`);
+
+    return () => {
+      if (hadCanonical && prevCanonical) canonicalEl.setAttribute('href', prevCanonical);
+      else canonicalEl.remove();
+    };
+  }, [agent]);
+
   // Structured data — Course rich results in Google Search. Injected per
   // session (not baked into index.html) since name/description/URL differ
   // per agent; removed on unmount so it doesn't leak onto the next page.

@@ -145,11 +145,16 @@ function SchedRow({ n, title, desc, badge }) {
   );
 }
 
-function Section({ id, eyebrow, title, subtitle, children }) {
+// as="h1" only for the page's very first Section (Welcome) — the page had
+// no true <h1> at all, every Section rendering h2. Rather than change the
+// component's default (which would still leave the page without a real
+// top-level heading), the first section alone gets the real one; the rest
+// stay h2 so the outline still reads top-down.
+function Section({ id, eyebrow, title, subtitle, children, as: HeadingTag = 'h2' }) {
   return (
     <section id={id} className="py-10 border-b border-border-soft last:border-none scroll-mt-24">
       <div className="text-[10px] font-bold uppercase tracking-widest text-brand mb-2">{eyebrow}</div>
-      <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-ink mb-2" style={{ textWrap: 'balance' }}>{title}</h2>
+      <HeadingTag className="font-display text-2xl sm:text-3xl font-extrabold text-ink mb-2" style={{ textWrap: 'balance' }}>{title}</HeadingTag>
       {subtitle && <p className="text-body text-sm mb-6 leading-relaxed max-w-xl">{subtitle}</p>}
       {children}
     </section>
@@ -206,9 +211,21 @@ export default function Builder1Guide() {
       );
     }
 
+    let canonicalEl = document.querySelector('link[rel="canonical"]');
+    const hadCanonical = Boolean(canonicalEl);
+    const prevCanonical = canonicalEl?.getAttribute('href');
+    if (!canonicalEl) {
+      canonicalEl = document.createElement('link');
+      canonicalEl.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonicalEl);
+    }
+    canonicalEl.setAttribute('href', 'https://socialdevtechnologies.com/builder-1-guide');
+
     return () => {
       document.title = prevTitle;
       if (metaDesc && prevDesc) metaDesc.setAttribute('content', prevDesc);
+      if (hadCanonical && prevCanonical) canonicalEl.setAttribute('href', prevCanonical);
+      else canonicalEl.remove();
     };
   }, []);
 
@@ -248,7 +265,7 @@ export default function Builder1Guide() {
             </div>
           </div>
 
-          <Section id="welcome" eyebrow="Welcome" title="Welcome to Builder 1 — you're in.">
+          <Section id="welcome" eyebrow="Welcome" title="Welcome to Builder 1 — you're in." as="h1">
             <Card title="What is Builder 1?">
               <p className="text-sm text-body leading-relaxed mb-4">
                 Builder 1 is the first tier of Social Dev Technologies' AI agent training. Hands-on from session one — no lengthy theory, no slide decks. You build real agents with Claude, session by session, and ship something portfolio-worthy by the end.

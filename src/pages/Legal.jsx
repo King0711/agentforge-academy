@@ -1,5 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { usePageSeo } from '../hooks/usePageSeo';
 
 const PAGES = {
   terms: {
@@ -83,6 +84,14 @@ const PAGES = {
 export default function Legal() {
   const { page } = useParams();
   const content = PAGES[page];
+
+  // Called unconditionally (rules-of-hooks) — falls back to a generic title
+  // for an unrecognised :page rather than skipping the hook.
+  usePageSeo({
+    title: content ? `${content.title} | Social Dev Technologies` : 'Social Dev Technologies',
+    description: content ? `${content.title} for Social Dev Technologies — last updated ${content.updated}.` : undefined,
+    canonicalPath: content ? `/legal/${page}` : undefined,
+  });
 
   if (!content) {
     return (
