@@ -17,10 +17,18 @@ import WhatsAppBotGuide from './pages/WhatsAppBotGuide';
 import AIBuilder from './pages/AIBuilder';
 import Builder1Guide from './pages/Builder1Guide';
 import PortfolioSessionGuide from './pages/PortfolioSessionGuide';
-import News from './pages/News';
-import NewsArticle from './pages/NewsArticle';
-import GuidesIndex from './pages/guides/GuidesIndex';
-import GuidePage from './pages/guides/GuidePage';
+// /news and /guides are the one group of PUBLIC routes safe to lazy-load.
+// The eager-import rule above exists because a lazy component introduces a
+// Suspense boundary, and Suspense can't hydrate against a plain Puppeteer
+// snapshot (React #418). These four never hydrate: their SSR functions emit
+// data-ssr-stub="1", which main.jsx uses to pick createRoot over
+// hydrateRoot, so there's no snapshot to reconcile against. Splitting them
+// out keeps four page components (plus the guide renderer and the prompt
+// generator) out of the entry bundle for the ~everyone who lands elsewhere.
+const News = lazy(() => import('./pages/News'));
+const NewsArticle = lazy(() => import('./pages/NewsArticle'));
+const GuidesIndex = lazy(() => import('./pages/guides/GuidesIndex'));
+const GuidePage = lazy(() => import('./pages/guides/GuidePage'));
 import NotFound from './pages/NotFound';
 import { useProgress } from './hooks/useProgress';
 import { useCertificateClaims } from './hooks/useCertificateClaims';
@@ -144,13 +152,13 @@ function AppShell() {
             <Route path="/ai-builder" element={<AIBuilder />} />
             <Route path="/builder-1-guide" element={<Builder1Guide />} />
             <Route path="/session/build-real-product" element={<PortfolioSessionGuide />} />
-            <Route path="/news" element={<News />} />
-            <Route path="/news/:slug" element={<NewsArticle />} />
+            <Route path="/news" element={<Suspense fallback={null}><News /></Suspense>} />
+            <Route path="/news/:slug" element={<Suspense fallback={null}><NewsArticle /></Suspense>} />
             {/* Evergreen explainer section — DB-backed, so one route handles
                 every guide. Served by api/guide-article.js for crawlers (same
                 SSR pattern as /news/:slug), not prerendered. */}
-            <Route path="/guides" element={<GuidesIndex />} />
-            <Route path="/guides/:slug" element={<GuidePage />} />
+            <Route path="/guides" element={<Suspense fallback={null}><GuidesIndex /></Suspense>} />
+            <Route path="/guides/:slug" element={<Suspense fallback={null}><GuidePage /></Suspense>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
