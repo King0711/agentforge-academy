@@ -12,9 +12,17 @@
 
     <!-- Google tag (gtag.js) — the config/dataLayer bootstrap lives in
          /gtag-init.js rather than inline here because this site's CSP has
-         no script-src 'unsafe-inline' (see vercel.json). -->
+         no script-src 'unsafe-inline' (see vercel.json).
+         Both are off the critical path: without `defer` the bootstrap was
+         render-blocking, and because it sat ahead of the app bundle in the
+         document it pushed /assets/index.js to the end of a 4-request
+         critical chain (Lighthouse: 1,379ms max critical path latency).
+         Deferring is safe here — gtag-init.js guards with
+         `window.dataLayer = window.dataLayer || []`, so it doesn't matter
+         whether it or the async gtag.js runs first; commands queue either
+         way. -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-42RD6R909Z"></script>
-    <script src="/gtag-init.js"></script>
+    <script defer src="/gtag-init.js"></script>
 
     <!-- Preconnects: fonts and YouTube video thumbnails are on the critical
          path from the very first paint, so warm the connections up front

@@ -8,7 +8,13 @@ import { Play } from 'lucide-react';
 // blocking / third-party-cookie contributor on the homepage per Lighthouse.
 // This renders just a thumbnail + play button until the user actually
 // wants the video, and only then swaps in the real iframe.
-export default function YouTubeFacade({ videoId, title, className = '', thumbnailSrc }) {
+// `priority` marks this instance as the page's LCP element (the homepage
+// hero). It renders the thumbnail as a real <img fetchpriority="high"> rather
+// than a CSS background, because a background-image can't be found by the
+// preload scanner and can't carry a fetch priority — Lighthouse flagged both
+// ("fetchpriority=high should be applied"). Set it only where the thumbnail
+// really is the largest paint; elsewhere (AgentModal) the image stays lazy.
+export default function YouTubeFacade({ videoId, title, className = '', thumbnailSrc, priority = false }) {
   const [playing, setPlaying] = useState(false);
   // Defaults to YouTube's own CDN (i.ytimg.com), which only serves a 2-hour
   // cache lifetime — fine for the many different per-agent thumbnails in
@@ -34,9 +40,17 @@ export default function YouTubeFacade({ videoId, title, className = '', thumbnai
       type="button"
       onClick={() => setPlaying(true)}
       aria-label={`Play video: ${title}`}
-      className={`${className} relative flex items-center justify-center bg-cover bg-center group`}
-      style={{ backgroundImage: `url(${thumbnail})` }}
+      className={`${className} relative flex items-center justify-center overflow-hidden group`}
     >
+      <img
+        src={thumbnail}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 w-full h-full object-cover"
+        fetchPriority={priority ? 'high' : undefined}
+        loading={priority ? 'eager' : 'lazy'}
+        decoding="async"
+      />
       <span className="absolute inset-0 bg-black/25 group-hover:bg-black/35 transition-colors" />
       <span className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/95 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
         <Play className="w-6 h-6 sm:w-7 sm:h-7 text-brand ml-1" fill="currentColor" />
