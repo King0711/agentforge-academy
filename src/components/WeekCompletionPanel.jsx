@@ -140,10 +140,10 @@ export default function WeekCompletionPanel({ agent, week }) {
     <div className="rounded-2xl border-[1.5px] border-brand/25 bg-[#F3EBFF] dark:bg-brand/10 p-5 sm:p-6 mb-8">
       <div className="flex items-center gap-2 mb-1">
         <Award className="w-5 h-5 text-brand" />
-        <h3 className="font-display font-bold text-lg text-ink">Week {week} complete 🎉</h3>
+        <h3 className="font-display font-bold text-lg text-ink">Week <span>{week}</span> complete 🎉</h3>
       </div>
       <p className="text-sm text-body mb-4">
-        This was Week {week}'s main project — you're good to go for the week.
+        This was Week <span>{week}</span>'s main project — you're good to go for the week.
       </p>
 
       {cert ? (
@@ -151,7 +151,7 @@ export default function WeekCompletionPanel({ agent, week }) {
           to={`/certificate/${cert.id}`}
           className="inline-flex items-center gap-2 bg-brand hover:bg-brand-deep text-white font-bold text-sm px-4 py-2.5 rounded-xl transition-colors mb-5"
         >
-          View your Week {week} certificate <ExternalLink className="w-3.5 h-3.5" />
+          View your Week <span>{week}</span> certificate <ExternalLink className="w-3.5 h-3.5" />
         </Link>
       ) : (
         <p className="text-xs text-body mb-5">Your certificate is being issued — refresh in a moment if it doesn't appear.</p>

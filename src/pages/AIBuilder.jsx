@@ -198,7 +198,7 @@ export default function AIBuilder() {
               to="/pricing"
               className="bg-brand text-white font-extrabold text-base px-8 py-4 rounded-2xl shadow-[0_10px_22px_rgba(124,58,237,.4)] hover:bg-brand-deep transition-colors"
             >
-              Get Builder 1 — ₦{BUILDER_PRICE.toLocaleString()} →
+              Get Builder 1 — ₦<span>{BUILDER_PRICE.toLocaleString()}</span> →
             </Link>
             <a href="#what-you-build" className="text-body-strong font-bold text-[14.5px] hover:text-brand transition-colors">
               See what you'll build ↓
@@ -206,7 +206,7 @@ export default function AIBuilder() {
           </motion.div>
 
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45 }} className="flex flex-wrap justify-center gap-x-5 gap-y-1.5 mt-6 text-[13px] text-body font-semibold">
-            <span>{builder1Count} sessions</span>
+            <span><span>{builder1Count}</span> sessions</span>
             <span>·</span>
             <span>6 months access</span>
             <span>·</span>
@@ -340,7 +340,7 @@ export default function AIBuilder() {
         <p className="text-center font-display font-bold text-[15px] sm:text-lg text-ink mt-7 max-w-lg mx-auto">
           By the end of Builder 1, you won't just understand AI — <span className="text-brand">you'll have built 12 real AI agents solving real business problems.</span>
         </p>
-        {remaining > 0 && <p className="text-center text-[13px] text-body font-semibold mt-2">+ {remaining} more sessions across sales, data, and operations.</p>}
+        {remaining > 0 && <p className="text-center text-[13px] text-body font-semibold mt-2">+ <span>{remaining}</span> more sessions across sales, data, and operations.</p>}
       </div>
 
       {/* Journey */}
@@ -469,16 +469,16 @@ export default function AIBuilder() {
         <div className="max-w-md mx-auto rounded-[22px] border-[2.5px] border-brand bg-white dark:bg-[#181818] p-7.5">
           <div className="font-extrabold text-ink text-lg">🌱 Builder 1</div>
           <div className="flex items-baseline gap-2.5 mt-2.5 mb-0.5">
-            <span className="text-base text-gray-400 line-through">₦{ANCHOR_PRICE.toLocaleString()}</span>
-            <span className="font-display font-extrabold text-[34px] text-ink">₦{BUILDER_PRICE.toLocaleString()}</span>
+            <span className="text-base text-gray-400 line-through">₦<span>{ANCHOR_PRICE.toLocaleString()}</span></span>
+            <span className="font-display font-extrabold text-[34px] text-ink">₦<span>{BUILDER_PRICE.toLocaleString()}</span></span>
           </div>
           <div className="flex flex-wrap gap-1.5 mb-4">
             <span className="inline-flex items-center gap-1 bg-[#EAFAF1] dark:bg-green/10 text-green font-extrabold text-[11.5px] px-2.5 py-1 rounded-full">
-              <Tag className="w-3 h-3" /> Save ₦{BUILDER_SAVINGS.toLocaleString()} · 50% off
+              <Tag className="w-3 h-3" /> Save ₦<span>{BUILDER_SAVINGS.toLocaleString()}</span> · 50% off
             </span>
             {builder1Cohort && (
               <span className="inline-flex items-center gap-1 bg-[#F3EBFF] dark:bg-brand/15 text-brand font-bold text-[11.5px] px-2.5 py-1 rounded-full">
-                <CalendarDays className="w-3 h-3" /> Cohort starts {builder1Cohort}
+                <CalendarDays className="w-3 h-3" /> Cohort starts <span>{builder1Cohort}</span>
               </span>
             )}
           </div>

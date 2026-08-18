@@ -164,10 +164,10 @@ function BuildCard({ build }) {
       <div id={`build-${build.number}`} className="rounded-xl border border-border-soft bg-white dark:bg-[#181818] overflow-hidden scroll-mt-24">
         <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b border-border-soft bg-[#FAF8FF] dark:bg-white/5">
           <h4 className="font-bold text-ink text-sm sm:text-base">
-            Build {build.number} · {build.title}
+            Build <span>{build.number}</span> · <span>{build.title}</span>
           </h4>
           <span className="flex items-center gap-1 text-xs font-semibold text-body flex-shrink-0">
-            <Clock className="w-3.5 h-3.5" /> {build.time}
+            <Clock className="w-3.5 h-3.5" /> <span>{build.time}</span>
           </span>
         </div>
 
@@ -179,7 +179,7 @@ function BuildCard({ build }) {
           {build.steps.map((step, i) => (
             <div key={i} className="space-y-2">
               <p className="text-sm text-body-strong leading-relaxed">
-                <span className="font-bold text-brand">{i + 1}.</span> {step.instruction}
+                <span className="font-bold text-brand"><span>{i + 1}</span>.</span> <span>{step.instruction}</span>
               </p>
               {step.prompt && <PromptBox text={step.prompt} />}
               {step.verify && (

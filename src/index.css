@@ -22,7 +22,11 @@
   --color-yellow: #F5D90A;
   --color-green: #15803D;
   --color-amber: #F59E0B;
-  --color-rose: #E11D48;
+  /* Darkened from #E11D48: that failed WCAG AA on the --color-rose tint
+     background (#FDEEF4) at 4.19:1, which is the pairing used in ~35 places
+     (error banners, status pills, the homepage "LIVE THIS WEEK" badge).
+     This clears it at 4.99:1 on the tint and 5.60:1 on white. */
+  --color-rose: #C81E4E;
   --color-border-soft: #EEE6FB;
   --color-border: #E6DDFA;
   --color-bg: #FDFCFF;
