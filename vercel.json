@@ -4,6 +4,9 @@
     { "source": "/news/:slug", "destination": "/api/news-article?slug=:slug" },
     { "source": "/news-sitemap.xml", "destination": "/api/news-sitemap.xml" },
     { "source": "/news-rss.xml", "destination": "/api/news-rss.xml" },
+    { "source": "/guides", "destination": "/api/guides-index" },
+    { "source": "/guides/:slug", "destination": "/api/guide-article?slug=:slug" },
+    { "source": "/guides-sitemap.xml", "destination": "/api/guides-sitemap.xml" },
     { "source": "/webinar", "destination": "/api/webinar" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],

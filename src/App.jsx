@@ -20,11 +20,7 @@ import PortfolioSessionGuide from './pages/PortfolioSessionGuide';
 import News from './pages/News';
 import NewsArticle from './pages/NewsArticle';
 import GuidesIndex from './pages/guides/GuidesIndex';
-import GmailTriageAgent from './pages/guides/GmailTriageAgent';
-import WhatIsAnAiAgent from './pages/guides/WhatIsAnAiAgent';
-import WhatsAppAutoReplyBot from './pages/guides/WhatsAppAutoReplyBot';
-import AiLeadQualification from './pages/guides/AiLeadQualification';
-import BrainstormingWithAi from './pages/guides/BrainstormingWithAi';
+import GuidePage from './pages/guides/GuidePage';
 import NotFound from './pages/NotFound';
 import { useProgress } from './hooks/useProgress';
 import { useCertificateClaims } from './hooks/useCertificateClaims';
@@ -150,15 +146,11 @@ function AppShell() {
             <Route path="/session/build-real-product" element={<PortfolioSessionGuide />} />
             <Route path="/news" element={<News />} />
             <Route path="/news/:slug" element={<NewsArticle />} />
-            {/* Evergreen explainer section — eager imports (not lazy) because
-                these routes are prerendered; see the note above about
-                Suspense boundaries breaking hydration on snapshotted routes. */}
+            {/* Evergreen explainer section — DB-backed, so one route handles
+                every guide. Served by api/guide-article.js for crawlers (same
+                SSR pattern as /news/:slug), not prerendered. */}
             <Route path="/guides" element={<GuidesIndex />} />
-            <Route path="/guides/what-is-an-ai-agent" element={<WhatIsAnAiAgent />} />
-            <Route path="/guides/whatsapp-auto-reply-bot" element={<WhatsAppAutoReplyBot />} />
-            <Route path="/guides/gmail-ai-triage-agent" element={<GmailTriageAgent />} />
-            <Route path="/guides/ai-lead-qualification" element={<AiLeadQualification />} />
-            <Route path="/guides/brainstorming-with-ai" element={<BrainstormingWithAi />} />
+            <Route path="/guides/:slug" element={<GuidePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
