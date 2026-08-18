@@ -1,11 +1,108 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import QRCode from 'qrcode';
-import { Printer, ArrowLeft, Loader2 } from 'lucide-react';
+import { Printer, ArrowLeft, Loader2, Pencil, Check, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { getCertificateTier } from '../data/certificateTiers';
 import NotFound from './NotFound';
+
+// Certificate names are a one-time snapshot taken when claim_certificate
+// runs (see that RPC) — editing the Account page's display name afterward
+// does not touch already-issued certificates, so a typo or a preferred
+// full-legal-name change was previously unfixable. This lets the student
+// correct it directly on the certificate that shows the problem.
+function EditableName({ cert, onUpdated }) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(cert.student_name);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const startEdit = () => {
+    setValue(cert.student_name);
+    setError('');
+    setEditing(true);
+  };
+
+  const save = async () => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      setError('Name cannot be empty.');
+      return;
+    }
+    setSaving(true);
+    setError('');
+    try {
+      const { data, error: err } = await supabase.rpc('update_certificate_name', { p_name: trimmed });
+      if (err) throw err;
+      // Applies to every certificate this student holds, not just this one
+      // (see the RPC) — the caller only needs to update what's on screen.
+      const updated = data?.find((c) => c.id === cert.id);
+      onUpdated(updated?.student_name || trimmed);
+      // Keeps the navbar/dashboard greeting in sync immediately, same
+      // pattern Account.jsx uses after writing display_name.
+      await supabase.auth.updateUser({ data: { display_name: trimmed } });
+      setEditing(false);
+    } catch (err) {
+      setError(err.message || 'Could not save your name.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!editing) {
+    return (
+      <span className="inline-flex items-center gap-2 no-print">
+        <span>{cert.student_name}</span>
+        <button
+          onClick={startEdit}
+          aria-label="Edit the name on your certificates"
+          title="Edit name"
+          className="text-gray-400 hover:text-brand transition-colors"
+        >
+          <Pencil className="w-4 h-4" />
+        </button>
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex flex-col items-center gap-2 no-print">
+      <span className="flex items-center gap-2">
+        <input
+          autoFocus
+          type="text"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') save();
+            if (e.key === 'Escape') setEditing(false);
+          }}
+          maxLength={100}
+          className="text-center font-display font-extrabold text-2xl sm:text-3xl text-brand bg-white dark:bg-[#0A090F] border-2 border-brand/40 rounded-lg px-3 py-1 focus:outline-none focus:border-brand"
+        />
+        <button
+          onClick={save}
+          disabled={saving}
+          aria-label="Save name"
+          className="w-8 h-8 flex items-center justify-center rounded-lg bg-brand hover:bg-brand-deep disabled:opacity-50 text-white flex-shrink-0"
+        >
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+        </button>
+        <button
+          onClick={() => setEditing(false)}
+          disabled={saving}
+          aria-label="Cancel"
+          className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#FAF8FF] dark:bg-white/5 hover:bg-[#F3EBFF] dark:hover:bg-white/10 text-body-strong flex-shrink-0"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </span>
+      {error && <span className="text-xs font-semibold text-rose">{error}</span>}
+      <span className="text-[11px] text-gray-400">Updates this name on all of your certificates.</span>
+    </span>
+  );
+}
 
 export default function CertificateView() {
   const { id } = useParams();
@@ -84,7 +181,13 @@ export default function CertificateView() {
           {isProficiency ? 'Certificate of Proficiency' : 'Certificate of Completion'}
         </h1>
         <p className="text-body dark:text-[#5A5473] mt-6 text-sm">This certifies that</p>
-        <p className={`font-display font-extrabold text-2xl sm:text-3xl mt-2 ${isProficiency ? 'text-amber-600' : 'text-brand'}`}>{cert.student_name}</p>
+        <p className={`font-display font-extrabold text-2xl sm:text-3xl mt-2 ${isProficiency ? 'text-amber-600' : 'text-brand'}`}>
+          {/* print-only fallback: EditableName's own visible span is no-print,
+              so this bare text is what actually appears on a printed/PDF
+              certificate — the edit control never should. */}
+          <span className="hidden print:inline">{cert.student_name}</span>
+          <EditableName cert={cert} onUpdated={(name) => setCert((c) => ({ ...c, student_name: name }))} />
+        </p>
         <p className="text-body dark:text-[#5A5473] mt-4 max-w-lg mx-auto leading-relaxed">
           {tier?.body || `has successfully completed the ${cert.tier} track.`}
         </p>
