@@ -265,6 +265,7 @@ export default function Home({ progress, onSelectAgent }) {
                 videoId={YOUTUBE_VIDEO_ID}
                 title="Don't Get Left Behind: Learn AI Automation with Claude"
                 thumbnailSrc="/video-thumbnail.jpg"
+                priority
               />
             </div>
             <motion.div
