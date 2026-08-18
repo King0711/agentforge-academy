@@ -9,6 +9,7 @@ import { useCohortSchedule } from '../hooks/useCohortSchedule';
 import { supabase } from '../lib/supabaseClient';
 import { agents } from '../data/agents';
 import { ANCHOR_PRICE, BUILDER_PRICE, BUILDER_SAVINGS, PRO_PRICE } from '../data/pricing';
+import { usePageSeo } from '../hooks/usePageSeo';
 
 const builder1Count = agents.filter((a) => a.difficulty === 'Builder 1').length;
 const builder2Count = agents.filter((a) => a.difficulty === 'Builder 2').length;
@@ -57,6 +58,12 @@ export default function Pricing() {
 
   const builder1Cohort = formatCohortDate(builder1CohortDate);
   const builder2Cohort = formatCohortDate(builder2CohortDate);
+
+  usePageSeo({
+    title: 'Pricing — Builder 1, Builder 2 & Pro | Social Dev Technologies',
+    description: 'Simple, one-time pricing for Builder 1, Builder 2, or the combined Pro plan — no subscription, 6 months of access to build real AI agents.',
+    canonicalPath: '/pricing',
+  });
 
   const [checkoutLoading, setCheckoutLoading] = useState(null); // 'builder1' | 'builder2' | 'pro' | null
   const [checkoutError, setCheckoutError] = useState('');

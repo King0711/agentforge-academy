@@ -10,6 +10,7 @@ import { useTheme } from '../context/ThemeContext';
 import { setRememberMe } from '../lib/supabaseClient';
 import { agents } from '../data/agents';
 import { isVisibleToPublic } from '../data/departments';
+import { usePageSeo } from '../hooks/usePageSeo';
 
 const publicAgentCount = agents.filter((a) => isVisibleToPublic(a.difficulty)).length;
 
@@ -48,6 +49,12 @@ export default function Welcome() {
   const [error, setError] = useState('');
   const [confirmSent, setConfirmSent] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+
+  usePageSeo({
+    title: 'Log In or Sign Up | Social Dev Technologies',
+    description: 'Create a free account or log in to Social Dev Technologies to start building real AI agents.',
+    canonicalPath: '/welcome',
+  });
 
   useEffect(() => {
     if (user) navigate('/dashboard', { replace: true });

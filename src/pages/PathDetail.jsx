@@ -4,6 +4,7 @@ import { agents } from '../data/agents';
 import { departments, difficultyLevels, publicDifficultyLevels, isVisibleToPublic } from '../data/departments';
 import ProgressBar from '../components/ProgressBar';
 import { usePro } from '../hooks/usePro';
+import { usePageSeo } from '../hooks/usePageSeo';
 
 const tierDescriptions = {
   'Builder 1': 'Start here. Learn core agent concepts — prompting, simple automations, and your first working tools.',
@@ -14,6 +15,12 @@ const tierDescriptions = {
 
 export default function PathDetail({ progress }) {
   const { isAdmin } = usePro();
+
+  usePageSeo({
+    title: 'Learning Paths — A Structured Route Through the Curriculum | Social Dev Technologies',
+    description: 'Follow a structured path through every AI agent course — by skill level or by department — and track your progress as you go.',
+    canonicalPath: '/paths',
+  });
   const visibleDifficulties = isAdmin ? difficultyLevels : publicDifficultyLevels;
   const visibleAgents = isAdmin ? agents : agents.filter((a) => isVisibleToPublic(a.difficulty));
 

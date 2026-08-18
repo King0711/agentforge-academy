@@ -9,9 +9,20 @@ import DifficultyFilter from '../components/DifficultyFilter';
 import SearchBar from '../components/SearchBar';
 import AgentCard from '../components/AgentCard';
 import { usePro } from '../hooks/usePro';
+import { usePageSeo } from '../hooks/usePageSeo';
 
 export default function Catalog({ progress, onSelectAgent }) {
   const { hasBuilder1, hasBuilder2, isAdmin } = usePro();
+
+  // Canonical always points at the bare URL regardless of active filters —
+  // ?q=/?department=/?difficulty= are the same underlying content filtered,
+  // not distinct pages, so they shouldn't compete with each other for
+  // ranking.
+  usePageSeo({
+    title: 'Agent Catalog — Every AI Agent You Can Build | Social Dev Technologies',
+    description: 'Browse every AI agent taught across Builder 1 and Builder 2 — filter by department, difficulty, or search by name.',
+    canonicalPath: '/catalog',
+  });
   const [searchParams] = useSearchParams();
 
   // Advanced/World Class are admin-only now — hidden entirely from the

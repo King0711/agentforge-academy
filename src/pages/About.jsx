@@ -46,9 +46,21 @@ export default function About() {
       );
     }
 
+    let canonicalEl = document.querySelector('link[rel="canonical"]');
+    const hadCanonical = Boolean(canonicalEl);
+    const prevCanonical = canonicalEl?.getAttribute('href');
+    if (!canonicalEl) {
+      canonicalEl = document.createElement('link');
+      canonicalEl.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonicalEl);
+    }
+    canonicalEl.setAttribute('href', 'https://socialdevtechnologies.com/about');
+
     return () => {
       document.title = prevTitle;
       if (metaDesc && prevDesc) metaDesc.setAttribute('content', prevDesc);
+      if (hadCanonical && prevCanonical) canonicalEl.setAttribute('href', prevCanonical);
+      else canonicalEl.remove();
     };
   }, []);
 
