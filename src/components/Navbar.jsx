@@ -22,7 +22,6 @@ const links = [
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [value, setValue] = useState('');
   const menuRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -30,6 +29,18 @@ export default function Navbar() {
   const { user, signOut } = useAuth();
   const { isPro, isAdmin } = usePro();
   const { theme, toggleTheme } = useTheme();
+
+  // Keep the search box in sync with ?q= while on /catalog: seeded from the
+  // URL on mount, then re-synced during render whenever the query changes.
+  // Doing it during render rather than in an effect avoids a second render
+  // pass per change — see react.dev "You Might Not Need an Effect".
+  const catalogQuery = location.pathname === '/catalog' ? searchParams.get('q') || '' : null;
+  const [value, setValue] = useState(catalogQuery || '');
+  const [syncedQuery, setSyncedQuery] = useState(catalogQuery);
+  if (catalogQuery !== null && catalogQuery !== syncedQuery) {
+    setSyncedQuery(catalogQuery);
+    setValue(catalogQuery);
+  }
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -44,12 +55,6 @@ export default function Navbar() {
     await signOut();
     navigate('/');
   };
-
-  useEffect(() => {
-    if (location.pathname === '/catalog') {
-      setValue(searchParams.get('q') || '');
-    }
-  }, [location.pathname, searchParams]);
 
   const handleChange = (v) => {
     setValue(v);

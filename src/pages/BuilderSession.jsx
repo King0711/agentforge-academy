@@ -23,6 +23,15 @@ export default function BuilderSession({ progress, tier }) {
   const [reachedEnd, setReachedEnd] = useState(false);
   const endRef = useRef(null);
 
+  // Reset the scroll gate when switching sessions. Done during render rather
+  // than inside the observer effect below, so changing session doesn't render
+  // once with the previous session's reachedEnd before clearing it.
+  const [observedSlug, setObservedSlug] = useState(slug);
+  if (observedSlug !== slug) {
+    setObservedSlug(slug);
+    setReachedEnd(false);
+  }
+
   const tierAgents = getAgentsByDifficulty(tier);
   const index = tierAgents.findIndex((a) => a.slug === slug);
   const agent = index !== -1 ? tierAgents[index] : null;
@@ -125,10 +134,9 @@ export default function BuilderSession({ progress, tier }) {
   }, [slug]);
 
   // Gate "Mark Complete" behind having actually scrolled through the
-  // session — resets per slug, and re-observes the sentinel at the bottom
-  // of the page content.
+  // session — re-observes the sentinel at the bottom of the page content
+  // whenever the session changes.
   useEffect(() => {
-    setReachedEnd(false);
     const node = endRef.current;
     if (!node) return;
     const observer = new IntersectionObserver(
