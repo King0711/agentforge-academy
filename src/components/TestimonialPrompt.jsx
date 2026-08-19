@@ -7,27 +7,34 @@ const MIN_COMPLETED_TO_PROMPT = 3;
 
 export default function TestimonialPrompt({ completedCount }) {
   const { user } = useAuth();
-  const [status, setStatus] = useState('loading'); // loading | eligible | dismissed | already_submitted | ineligible
+  // Derived during render (not stored via setState-in-effect) so the
+  // ineligible case doesn't need an extra render pass — see react.dev
+  // "You Might Not Need an Effect".
+  const eligible = Boolean(user) && isSupabaseConfigured && completedCount >= MIN_COMPLETED_TO_PROMPT;
+  const dismissKey = user ? `sdt_testimonial_dismissed_${user.id}` : null;
+
+  const [status, setStatus] = useState('loading'); // loading | eligible | already_submitted
   const [open, setOpen] = useState(false);
   const [rating, setRating] = useState(5);
   const [body, setBody] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [dismissedByUser, setDismissedByUser] = useState(false);
+  // Read directly during render rather than mirroring into state via an
+  // effect — it's a cheap synchronous lookup, not an async external event.
+  const dismissed = dismissedByUser || (dismissKey ? localStorage.getItem(dismissKey) === 'true' : false);
+
+  // Seed the editable display-name field from the user record during render
+  // (adjusted whenever the signed-in user changes) instead of an effect.
+  const [displayNameSyncedFor, setDisplayNameSyncedFor] = useState(null);
+  if (user && displayNameSyncedFor !== user.id) {
+    setDisplayNameSyncedFor(user.id);
+    setDisplayName(user.user_metadata?.display_name || user.email?.split('@')[0] || '');
+  }
 
   useEffect(() => {
-    if (!user || !isSupabaseConfigured || completedCount < MIN_COMPLETED_TO_PROMPT) {
-      setStatus('ineligible');
-      return;
-    }
-
-    const dismissKey = `sdt_testimonial_dismissed_${user.id}`;
-    if (localStorage.getItem(dismissKey) === 'true') {
-      setStatus('dismissed');
-      return;
-    }
-
-    setDisplayName(user.user_metadata?.display_name || user.email?.split('@')[0] || '');
+    if (!eligible || dismissed) return;
 
     let cancelled = false;
     supabase
@@ -42,11 +49,11 @@ export default function TestimonialPrompt({ completedCount }) {
     return () => {
       cancelled = true;
     };
-  }, [user, completedCount]);
+  }, [eligible, dismissed, user, completedCount]);
 
   const dismiss = () => {
-    if (user) localStorage.setItem(`sdt_testimonial_dismissed_${user.id}`, 'true');
-    setStatus('dismissed');
+    if (dismissKey) localStorage.setItem(dismissKey, 'true');
+    setDismissedByUser(true);
   };
 
   const handleSubmit = async (e) => {
@@ -73,7 +80,7 @@ export default function TestimonialPrompt({ completedCount }) {
     setStatus('already_submitted');
   };
 
-  if (status === 'loading' || status === 'ineligible' || status === 'dismissed') return null;
+  if (!eligible || dismissed || status === 'loading') return null;
 
   if (status === 'already_submitted') {
     return (
