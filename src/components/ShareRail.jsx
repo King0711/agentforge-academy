@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link2, Check } from 'lucide-react';
-import { shareUrl } from '../utils/generateArticleShareText';
+import { shareUrl } from '../utils/shareText';
 import { TARGETS, copyShareLink } from './shareTargets';
 
 // Floating vertical share rail, pinned to the left gutter.

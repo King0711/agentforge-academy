@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import { Copy, Check, AlertTriangle } from 'lucide-react';
-import { generateArticleShareText } from '../../utils/generateArticleShareText';
+import { generateArticleShareText, generateGuideShareText } from '../../utils/shareText';
 import { getAgentBySlug } from '../../data/agents';
 
-// Ready-to-paste social copy for an approved article, so posting is a
-// copy/paste rather than a writing job every time. Same template-not-LLM
-// approach as src/utils/generateShareText.js — see that file's note.
+// Ready-to-paste social copy for a published article or guide, so posting
+// is a copy/paste rather than a writing job every time. Same
+// template-not-LLM approach as src/utils/generateShareText.js — see that
+// file's note.
+//
+// Takes the raw row and picks the generator itself, so each admin screen
+// mounts it with one line and neither has to know which template applies.
 
 function CopyBlock({ label, text, hint }) {
   const [copied, setCopied] = useState(false);
@@ -33,9 +37,11 @@ function CopyBlock({ label, text, hint }) {
   );
 }
 
-export default function NewsSharePanel({ article }) {
-  const relatedAgent = article.related_agent_slug ? getAgentBySlug(article.related_agent_slug) : null;
-  const share = generateArticleShareText({ article, relatedAgent });
+export default function SharePanel({ section, record }) {
+  const relatedAgent = record.related_agent_slug ? getAgentBySlug(record.related_agent_slug) : null;
+  const share = section === 'guides'
+    ? generateGuideShareText({ guide: record, relatedAgent })
+    : generateArticleShareText({ article: record, relatedAgent });
 
   return (
     <div className="px-5 py-4 bg-[#FAF8FF] dark:bg-white/5 space-y-3">
@@ -47,7 +53,7 @@ export default function NewsSharePanel({ article }) {
         <div className="flex items-start gap-2 text-[12px] text-amber bg-amber/10 border border-amber/30 rounded-lg px-3 py-2">
           <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
           <span>
-            No related session linked. Posts that end with something to build convert; posts that just report news don&apos;t.
+            No related session linked. Posts that end with something to build convert; posts that only inform don&apos;t.
             Add one via Edit if any session genuinely fits.
           </span>
         </div>

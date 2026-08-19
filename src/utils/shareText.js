@@ -1,4 +1,4 @@
-// Share copy for a news article — the article-side twin of
+// Share copy for a news article or a guide — the publishing-side twin of
 // generateShareText.js (which does the same job for a student's finished
 // build). Template-based for the same reasons stated there: no API cost, no
 // new secret, instant.
@@ -105,6 +105,67 @@ export function generateArticleShareText({ article, relatedAgent }) {
     buildLine,
     '',
     articleUrl(slug, 'facebook'),
+  ].join('\n');
+
+  return { linkedin, linkedinComment, x, whatsapp, facebook };
+}
+
+/**
+ * Share copy for a guide.
+ *
+ * Separate from generateArticleShareText because guides are a different
+ * kind of post, not a different topic. News is "this happened, here's what
+ * it means for you"; a guide is evergreen and answers a question the reader
+ * already has ("What is an AI agent?"). Reusing the news template would
+ * open every guide post with a news hook for something that isn't news —
+ * and guides carry no source_name or department_ids to build one from
+ * anyway.
+ *
+ * @param {object} guide  guides row (title, dek, slug, category)
+ * @param {object|null} relatedAgent  catalog agent from related_agent_slug
+ */
+export function generateGuideShareText({ guide, relatedAgent }) {
+  const { title, dek, slug, category } = guide;
+
+  // The two categories are genuinely different promises: an agent-guide
+  // explains a thing you could build, a how-to walks you through doing
+  // something. Opening both the same way undersells one of them.
+  const hook = category === 'how-to'
+    ? 'A practical walkthrough, written for people with no technical background:'
+    : 'Plain English, no jargon, no hype:';
+
+  const buildLine = relatedAgent
+    ? `And if you'd rather build one than read about one — that's exactly what our ${relatedAgent.title} session walks you through, step by step.`
+    : 'Everything we publish assumes you have no coding background. That is deliberate.';
+
+  const linkedin = [
+    hook,
+    '',
+    title,
+    '',
+    dek,
+    '',
+    buildLine,
+    '',
+    'Full guide in the comments 👇',
+    '',
+    '#AI #ArtificialIntelligence #AIAgents #Africa #SocialDevTechnologies',
+  ].join('\n');
+
+  const linkedinComment = `Read the full guide here: ${shareUrl('guides', slug, 'linkedin')}`;
+
+  const x = [title, '', dek, '', shareUrl('guides', slug, 'twitter')].join('\n');
+
+  const whatsapp = [`*${title}*`, '', dek, '', shareUrl('guides', slug, 'whatsapp')].join('\n');
+
+  const facebook = [
+    title,
+    '',
+    dek,
+    '',
+    buildLine,
+    '',
+    shareUrl('guides', slug, 'facebook'),
   ].join('\n');
 
   return { linkedin, linkedinComment, x, whatsapp, facebook };

@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { departments } from '../../data/departments';
-import NewsSharePanel from '../../components/admin/NewsSharePanel';
+import SharePanel from '../../components/admin/SharePanel';
 
 // body_blocks <-> plain text, same spirit as AdminEmails.jsx's
 // plainTextToHtml — admins edit plain text, not a raw block-JSON editor.
@@ -222,7 +222,7 @@ function DraftRow({ draft, actionLoading, editingId, onEdit, onCancelEdit, onSav
       {isEditing && (
         <EditForm draft={draft} onCancel={onCancelEdit} onSave={(fields) => onSave(draft.id, fields)} saving={actionLoading === draft.id + '_save'} />
       )}
-      {showShare && !isEditing && <NewsSharePanel article={draft} />}
+      {showShare && !isEditing && <SharePanel section="news" record={draft} />}
     </div>
   );
 }
