@@ -463,16 +463,29 @@ export default function Welcome() {
                     <label className="block text-sm font-medium text-body-strong mb-1.5">Password</label>
                     <div className="relative">
                       <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      {/* minLength is signup-only on purpose: accounts created
+                          before the password rules were tightened still have
+                          shorter passwords, and constraining this shared field
+                          would stop those users typing their real one to log in. */}
                       <input
                         type="password"
                         required
-                        minLength={6}
+                        minLength={mode === 'signup' ? 12 : undefined}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="At least 6 characters"
+                        placeholder={mode === 'signup' ? 'At least 12 characters' : 'Your password'}
                         className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white dark:bg-[#0A090F] border border-border dark:border-[#353539] text-sm text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
                       />
                     </div>
+                    {/* Supabase Auth rejects weak passwords server-side (12 chars,
+                        all four character classes — confirmed against the live
+                        endpoint). Stating the rules up front beats letting someone
+                        fill the form and get a 422 back with no explanation. */}
+                    {mode === 'signup' && (
+                      <p className="text-[11.5px] text-body leading-relaxed mt-1.5">
+                        Use at least 12 characters, including an uppercase letter, a lowercase letter, a number, and a symbol.
+                      </p>
+                    )}
                   </div>
 
                   {mode === 'login' && (
