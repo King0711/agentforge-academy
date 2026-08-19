@@ -4,6 +4,7 @@ import { ArrowLeft, Loader2, BookOpen } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { usePageSeo } from '../../hooks/usePageSeo';
 import GuideBody from '../../components/guides/GuideBody';
+import ShareRow from '../../components/ShareRow';
 import NotFound from '../NotFound';
 
 const CATEGORY_LABEL = {
@@ -144,6 +145,12 @@ export default function GuidePage() {
           </div>
         </div>
       )}
+
+      {/* Placed after the FAQs but before "Keep reading": the moment the
+          reader has finished the guide is when they'd share it, and putting
+          it after the related-links grid buries it under a second call to
+          action. */}
+      <ShareRow section="guides" slug={guide.slug} title={guide.title} />
 
       {related.length > 0 && (
         <div className="mt-10 pt-8 border-t border-border-soft">

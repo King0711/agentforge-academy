@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link2, Check } from 'lucide-react';
-import { articleUrl } from '../../utils/generateArticleShareText';
+import { shareUrl } from '../utils/generateArticleShareText';
 
 // Brand glyphs as inline SVG: lucide-react v1 dropped every brand icon
 // (no Linkedin/Facebook/Twitter export — confirmed against the installed
@@ -19,9 +19,11 @@ const LinkedInIcon = brandIcon('M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.
 const FacebookIcon = brandIcon('M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.09 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.24 2.68.24v2.97h-1.51c-1.49 0-1.96.93-1.96 1.89v2.25h3.33l-.53 3.49h-2.8V24C19.61 23.09 24 18.1 24 12.07z');
 const WhatsAppIcon = brandIcon('M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.64.07-.3-.15-1.25-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.61-.92-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.22 3.08c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.22 1.36.19 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.7.25-1.29.17-1.42-.07-.13-.27-.2-.57-.35M12.05 21.79h-.01a9.87 9.87 0 0 1-5.03-1.38l-.36-.21-3.74.98 1-3.65-.24-.37a9.86 9.86 0 0 1-1.51-5.26c0-5.45 4.44-9.88 9.9-9.88a9.82 9.82 0 0 1 6.99 2.9 9.82 9.82 0 0 1 2.9 6.99c0 5.45-4.44 9.88-9.9 9.88M20.5 3.49A11.82 11.82 0 0 0 12.05 0C5.5 0 .16 5.33.16 11.88c0 2.09.55 4.14 1.59 5.94L.06 24l6.33-1.66a11.87 11.87 0 0 0 5.66 1.44h.01c6.55 0 11.89-5.33 11.89-11.88 0-3.17-1.24-6.15-3.48-8.39');
 
-// Reader-facing share row. Every destination gets its own utm_source (see
-// articleUrl) so GA4 can tell which platform actually drives catalog and
-// pricing visits, instead of filing all of it under "direct".
+// Reader-facing share row, shared by /news/:slug and /guides/:slug. Every
+// destination gets its own utm_source, and each section its own
+// utm_campaign (see shareUrl), so GA4 can tell which platform AND which
+// kind of content actually drives catalog and pricing visits, instead of
+// filing all of it under "direct".
 //
 // X is deliberately absent: its share intent is the one that most often
 // gets flagged, and the audience that matters for this business is on
@@ -52,18 +54,18 @@ const TARGETS = [
   },
 ];
 
-export default function ArticleShare({ slug, title }) {
+export default function ShareRow({ section, slug, title }) {
   const [copied, setCopied] = useState(false);
 
   const copyLink = async () => {
     // Clipboard API is unavailable on insecure origins and in some in-app
     // browsers; silently doing nothing would look like a broken button.
     try {
-      await navigator.clipboard.writeText(articleUrl(slug, 'copy'));
+      await navigator.clipboard.writeText(shareUrl(section, slug, 'copy'));
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {
-      window.prompt('Copy this link:', articleUrl(slug, 'copy'));
+      window.prompt('Copy this link:', shareUrl(section, slug, 'copy'));
     }
   };
 
@@ -74,7 +76,7 @@ export default function ArticleShare({ slug, title }) {
       {TARGETS.map(({ id, label, Icon, href }) => (
         <a
           key={id}
-          href={href(articleUrl(slug, id), title)}
+          href={href(shareUrl(section, slug, id), title)}
           target="_blank"
           rel="noreferrer"
           aria-label={`Share on ${label}`}
