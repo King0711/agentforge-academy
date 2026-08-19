@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import {
-  BookOpen, Loader2, AlertCircle, Pencil, Trash2, Plus, X, Save, Eye, EyeOff, ExternalLink,
+  BookOpen, Loader2, AlertCircle, Pencil, Trash2, Plus, X, Save, Eye, EyeOff, ExternalLink, Share2,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import SharePanel from '../../components/admin/SharePanel';
 
 // Admins write guides in a plain-text block syntax rather than a raw JSON
 // editor — same idea as AdminNews.jsx's blocksToText/textToBlocks, extended
@@ -148,6 +149,10 @@ export default function AdminGuides() {
   const [saving, setSaving] = useState(false);
   const [actionLoading, setActionLoading] = useState(null);
   const [error, setError] = useState('');
+  // Which guide's share panel is open. Held here rather than per row because
+  // the rows are mapped inline with no component to own the state -- and one
+  // panel open at a time is the behaviour we want anyway.
+  const [shareId, setShareId] = useState(null);
 
   const fetchGuides = useCallback(async () => {
     setLoading(true);
@@ -371,44 +376,55 @@ export default function AdminGuides() {
           <div className="px-5 py-12 text-center text-gray-400 text-sm">No guides yet.</div>
         ) : (
           guides.map((g) => (
-            <div key={g.id} className="flex items-start justify-between gap-3 px-5 py-4 border-b border-border-soft last:border-b-0 flex-wrap">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <span className="text-lg">{g.emoji}</span>
-                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${g.status === 'published' ? 'text-green bg-[#EAFAF1] dark:bg-green/10' : 'text-gray-500 bg-gray-100 dark:bg-white/5'}`}>
-                    {g.status === 'published' ? 'Published' : 'Draft'}
-                  </span>
-                  <span className="text-[11px] font-bold text-brand bg-[#F3EBFF] dark:bg-brand/15 px-2 py-0.5 rounded-full">
-                    {g.category === 'how-to' ? 'How-to' : 'Agent guide'}
-                  </span>
-                  {g.is_hub && <span className="text-[11px] font-bold text-amber-700 bg-amber-100 dark:bg-amber-500/15 px-2 py-0.5 rounded-full">Hub</span>}
+            <div key={g.id} className="border-b border-border-soft last:border-b-0">
+              <div className="flex items-start justify-between gap-3 px-5 py-4 flex-wrap">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <span className="text-lg">{g.emoji}</span>
+                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${g.status === 'published' ? 'text-green bg-[#EAFAF1] dark:bg-green/10' : 'text-gray-500 bg-gray-100 dark:bg-white/5'}`}>
+                      {g.status === 'published' ? 'Published' : 'Draft'}
+                    </span>
+                    <span className="text-[11px] font-bold text-brand bg-[#F3EBFF] dark:bg-brand/15 px-2 py-0.5 rounded-full">
+                      {g.category === 'how-to' ? 'How-to' : 'Agent guide'}
+                    </span>
+                    {g.is_hub && <span className="text-[11px] font-bold text-amber-700 bg-amber-100 dark:bg-amber-500/15 px-2 py-0.5 rounded-full">Hub</span>}
+                  </div>
+                  <p className="font-semibold text-ink text-sm">{g.title}</p>
+                  <p className="text-xs text-body mt-0.5 line-clamp-2">{g.dek}</p>
+                  <a href={`/guides/${g.slug}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-gray-400 hover:text-brand mt-1.5">
+                    <ExternalLink className="w-3 h-3" /> /guides/{g.slug}
+                  </a>
                 </div>
-                <p className="font-semibold text-ink text-sm">{g.title}</p>
-                <p className="text-xs text-body mt-0.5 line-clamp-2">{g.dek}</p>
-                <a href={`/guides/${g.slug}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-gray-400 hover:text-brand mt-1.5">
-                  <ExternalLink className="w-3 h-3" /> /guides/{g.slug}
-                </a>
+                <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+                  <button onClick={() => startEdit(g)} className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-[#FAF8FF] dark:bg-white/5 text-body-strong hover:bg-[#F3EBFF] dark:hover:bg-brand/15 hover:text-brand transition-colors">
+                    <Pencil className="w-3 h-3" /> Edit
+                  </button>
+                  {g.status === 'published' && (
+                    <button
+                      onClick={() => setShareId((cur) => (cur === g.id ? null : g.id))}
+                      className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors ${shareId === g.id ? 'bg-brand text-white' : 'bg-[#FAF8FF] dark:bg-white/5 text-body-strong hover:bg-[#F3EBFF] dark:hover:bg-brand/15 hover:text-brand'}`}
+                    >
+                      <Share2 className="w-3 h-3" /> Post
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setStatus(g.id, g.status === 'published' ? 'draft' : 'published')}
+                    disabled={!!actionLoading}
+                    className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-[#FAF8FF] dark:bg-white/5 text-body-strong hover:bg-[#F3EBFF] dark:hover:bg-brand/15 hover:text-brand transition-colors disabled:opacity-40"
+                  >
+                    {g.status === 'published' ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                    {g.status === 'published' ? 'Unpublish' : 'Publish'}
+                  </button>
+                  <button
+                    onClick={() => remove(g.id)}
+                    disabled={!!actionLoading}
+                    className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-[#FAF8FF] dark:bg-white/5 text-body-strong hover:bg-[#FDEEF4] dark:hover:bg-rose/10 hover:text-rose transition-colors disabled:opacity-40"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                  </div>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
-                <button onClick={() => startEdit(g)} className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-[#FAF8FF] dark:bg-white/5 text-body-strong hover:bg-[#F3EBFF] dark:hover:bg-brand/15 hover:text-brand transition-colors">
-                  <Pencil className="w-3 h-3" /> Edit
-                </button>
-                <button
-                  onClick={() => setStatus(g.id, g.status === 'published' ? 'draft' : 'published')}
-                  disabled={!!actionLoading}
-                  className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-[#FAF8FF] dark:bg-white/5 text-body-strong hover:bg-[#F3EBFF] dark:hover:bg-brand/15 hover:text-brand transition-colors disabled:opacity-40"
-                >
-                  {g.status === 'published' ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                  {g.status === 'published' ? 'Unpublish' : 'Publish'}
-                </button>
-                <button
-                  onClick={() => remove(g.id)}
-                  disabled={!!actionLoading}
-                  className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-[#FAF8FF] dark:bg-white/5 text-body-strong hover:bg-[#FDEEF4] dark:hover:bg-rose/10 hover:text-rose transition-colors disabled:opacity-40"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </button>
-              </div>
+              {shareId === g.id && <SharePanel section="guides" record={g} />}
             </div>
           ))
         )}

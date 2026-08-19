@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link2, Check } from 'lucide-react';
-import { shareUrl } from '../utils/generateArticleShareText';
+import { shareUrl } from '../utils/shareText';
 import { TARGETS, copyShareLink } from './shareTargets';
 
 // Inline share row at the end of the content, shared by /news/:slug and
