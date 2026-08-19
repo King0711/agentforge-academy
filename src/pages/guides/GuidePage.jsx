@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { usePageSeo } from '../../hooks/usePageSeo';
 import GuideBody from '../../components/guides/GuideBody';
 import ShareRow from '../../components/ShareRow';
+import ShareRail from '../../components/ShareRail';
 import NotFound from '../NotFound';
 
 const CATEGORY_LABEL = {
@@ -99,6 +100,8 @@ export default function GuidePage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <ShareRail section="guides" slug={guide.slug} title={guide.title} />
+
       <Link
         to="/guides"
         className="inline-flex items-center gap-1.5 text-sm font-semibold text-body hover:text-brand transition-colors mb-7"
