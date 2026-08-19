@@ -104,6 +104,14 @@ async function fetchSource(source) {
   }
 }
 
+// Must stay in step with the same expression inside
+// service_insert_news_draft (supabase/news-dedupe-guard.sql) — the two are
+// the same duplicate check at two layers, and they should agree on what
+// counts as the same headline.
+function normalizeTitle(title) {
+  return (title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
 function slugify(title) {
   const base = title
     .toLowerCase()
@@ -123,8 +131,9 @@ Voice: casual and conversational, like a knowledgeable friend explaining what ha
 
 Plain language: assume the reader has no coding or AI background — many students join with zero technical experience. Whenever you use a term they might not know (inference, fine-tuning, context window, API, agentic, RAG, tokens, latency, parameters, etc.), define it in a short plain-language clause the first time it appears in that article, right where it's used — not a glossary, not a whole paragraph, just enough that a beginner isn't lost.
 
-You will receive raw items (titles/snippets from RSS feeds, or raw HTML excerpts from pages with no feed) pulled from several AI news outlets. Your job:
+You will receive raw items (titles/snippets from RSS feeds, or raw HTML excerpts from pages with no feed) pulled from several AI news outlets, plus a list of stories already covered in the last 14 days. Your job:
 1. Dedupe near-identical stories covered by multiple outlets — pick the best single version, don't draft the same story twice.
+1b. SKIP anything in the "already covered" list — match on the underlying story, not the wording. Feeds keep returning the same item for days, so a story covered yesterday will usually still be in today's raw items, and re-drafting it under a fresh headline publishes the same news twice as two separate articles. That is the single most common failure in this job. Only revisit a covered story if today's items carry a genuinely new development, and then lead with what actually changed.
 2. From the deduped set, decide which stories are genuinely notable (worth a full article) versus minor (digest-blurb only). Most days should have a handful of full articles and a longer tail of blurbs, not one or the other exclusively. Skip anything that's not really AI-relevant, pure stock-price/corporate-reshuffling news with no build-relevant substance, or too thin to say anything useful about.
 3. For each item, write:
    - "title": punchy, specific, no clickbait
@@ -145,7 +154,7 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function draftWithGemini(rawItems) {
+async function draftWithGemini(rawItems, recentlyCovered) {
   // gemini-3.7-flash: current stable/GA flash model, free-tier eligible —
   // this is a repetitive daily curation/drafting job (dedupe, pick notable
   // stories, write in a fixed voice), well within its capability.
@@ -153,7 +162,12 @@ async function draftWithGemini(rawItems) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
   const body = JSON.stringify({
     systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-    contents: [{ role: 'user', parts: [{ text: `Here are today's raw items:\n\n${JSON.stringify(rawItems)}` }] }],
+    contents: [{
+      role: 'user',
+      parts: [{
+        text: `Already covered in the last 14 days — do NOT draft any of these again:\n\n${JSON.stringify(recentlyCovered)}\n\nHere are today's raw items:\n\n${JSON.stringify(rawItems)}`,
+      }],
+    }],
     generationConfig: { maxOutputTokens: 8000, responseMimeType: 'application/json' },
   });
 
@@ -179,7 +193,13 @@ async function draftWithGemini(rawItems) {
 // key or a failed generation never blocks the article itself from
 // publishing without one.
 async function generateImage(prompt, serviceClient, slug) {
-  if (!OPENAI_API_KEY) return null;
+  // Logged rather than silent: the news-images bucket sat empty for weeks
+  // because this key was never set, and nothing anywhere said so -- every
+  // article quietly fell back to a generic share card.
+  if (!OPENAI_API_KEY) {
+    console.warn(`OPENAI_API_KEY not set — no illustration for "${slug}"; the article falls back to a generated brand card (see src/lib/ogCards.js).`);
+    return null;
+  }
   try {
     const res = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
@@ -187,7 +207,10 @@ async function generateImage(prompt, serviceClient, slug) {
         Authorization: `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ model: 'gpt-image-1', prompt, size: '1024x1024' }),
+      // 1536x1024, NOT the square 1024x1024: this image becomes the
+      // article's og:image, and social platforms want a ~1.91:1 landscape
+      // card. A square gets letterboxed or cropped in the feed.
+      body: JSON.stringify({ model: 'gpt-image-1', prompt, size: '1536x1024' }),
     });
     if (!res.ok) {
       console.error(`Image generation failed for "${slug}": ${res.status}`);
@@ -247,9 +270,32 @@ serve(async (req) => {
   const rawItems = fetched.flat();
   if (rawItems.length === 0) return jsonResponse({ ok: true, drafted: 0, reason: 'No items fetched from any source' });
 
+  // What the bot already published, so it doesn't re-draft a story that's
+  // still sitting near the top of a feed. Without this the run has no
+  // memory at all: as of 2026-08-19, 20 of 28 rows were re-drafts of just 8
+  // stories, each under a slightly different headline. Best-effort — a
+  // failure here costs deduplication, not the run, and
+  // service_insert_news_draft still backstops it.
+  const since = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: covered } = await serviceClient
+    .from('news_articles')
+    .select('title, source_url')
+    .gte('created_at', since)
+    .order('created_at', { ascending: false })
+    .limit(120);
+  const recentlyCovered = covered || [];
+
+  // HTML sources have no per-item permalink — fetchSource falls back to the
+  // source's own feed_url, so every story from one carries the same
+  // source_url. Deduping those on url would block the source after its
+  // first story ever, so they're matched on title only.
+  const indexUrls = new Set(
+    (sources || []).filter((s) => s.source_type === 'html').map((s) => s.feed_url),
+  );
+
   let drafts;
   try {
-    drafts = await draftWithGemini(rawItems);
+    drafts = await draftWithGemini(rawItems, recentlyCovered);
   } catch (err) {
     console.error('Drafting failed:', err.message);
     return jsonResponse({ error: 'Drafting failed', detail: err.message }, 500);
@@ -257,15 +303,30 @@ serve(async (req) => {
 
   const today = new Date().toISOString().slice(0, 10);
   let inserted = 0;
+  let skippedDuplicates = 0;
   for (const draft of drafts) {
     try {
       const slug = slugify(draft.title || 'untitled');
+
+      // Cheap duplicate check BEFORE generating an image: the guard inside
+      // service_insert_news_draft would reject this draft anyway, and image
+      // generation is the one genuinely expensive step in the loop.
+      // Mirrors that guard's logic, including the index-url exception.
+      const isDuplicate = recentlyCovered.some(
+        (c) => (!indexUrls.has(draft.source_url) && c.source_url === draft.source_url)
+          || normalizeTitle(c.title) === normalizeTitle(draft.title || ''),
+      );
+      if (isDuplicate) {
+        skippedDuplicates += 1;
+        continue;
+      }
+
       let imageUrl = null;
       if (draft.is_full_article && draft.image_prompt) {
         imageUrl = await generateImage(draft.image_prompt, serviceClient, slug);
       }
 
-      const { error: insertError } = await serviceClient.rpc('service_insert_news_draft', {
+      const { data: insertedId, error: insertError } = await serviceClient.rpc('service_insert_news_draft', {
         p_slug: slug,
         p_title: draft.title,
         p_dek: draft.dek,
@@ -283,11 +344,24 @@ serve(async (req) => {
         console.error(`Insert failed for "${draft.title}":`, insertError.message);
         continue;
       }
+      // A null id is the guard in service_insert_news_draft rejecting a
+      // duplicate the checks above missed — an expected outcome, not an
+      // error. Counted so a run that drafts nothing new is legible in the
+      // response rather than looking like a broken fetch.
+      if (insertedId === null) {
+        skippedDuplicates += 1;
+        continue;
+      }
       inserted += 1;
     } catch (err) {
       console.error(`Failed to process draft "${draft?.title}":`, err.message);
     }
   }
 
-  return jsonResponse({ ok: true, fetched: rawItems.length, drafted: inserted });
+  return jsonResponse({
+    ok: true,
+    fetched: rawItems.length,
+    drafted: inserted,
+    skippedDuplicates,
+  });
 });

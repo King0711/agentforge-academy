@@ -1,4 +1,5 @@
 import { escapeHtml } from '../src/lib/newsBlocks.js';
+import { applyOgImage } from '../src/lib/ogCards.js';
 
 // Server-renders /webinar (routed here via the vercel.json rewrite) — same
 // no-SSR problem as /news: this route is otherwise only ever titled via a
@@ -30,6 +31,11 @@ export default async function handler(req, res) {
     .replace(/(<meta property="og:description" content=")[^"]*(")/, `$1${escapeHtml(description)}$2`)
     .replace(/(<meta name="twitter:title" content=")[^"]*(")/, `$1${escapeHtml(pageTitle)}$2`)
     .replace(/(<meta name="twitter:description" content=")[^"]*(")/, `$1${escapeHtml(description)}$2`);
+  // The real workshop promo graphic (1593x854) rather than a generated
+  // brand card — this is the one page where a purpose-made image already
+  // exists. isCard:false because it isn't 1200x630, so applyOgImage drops
+  // the shell's dimension tags instead of asserting the wrong size.
+  html = applyOgImage(html, { url: `${siteUrl}/ai-webinar.png`, isCard: false });
 
   const headExtra = `
     <link rel="canonical" href="${canonicalUrl}" />

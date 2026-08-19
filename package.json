@@ -8,7 +8,8 @@
     "build": "vite build && node scripts/inline-css.mjs && node scripts/inject-home.mjs",
     "prerender": "node scripts/prerender.mjs",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "og-cards": "node scripts/generate-og-cards.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.1",
