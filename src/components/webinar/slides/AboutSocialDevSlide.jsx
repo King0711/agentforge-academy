@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { GraduationCap, Wrench, TrendingUp } from 'lucide-react';
 import SlideShell from '../SlideShell';
 
@@ -20,7 +20,7 @@ export default function AboutSocialDevSlide() {
 
       <div className="grid sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
         {OFFERINGS.map((o, i) => (
-          <motion.div
+          <m.div
             key={o.title}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -32,7 +32,7 @@ export default function AboutSocialDevSlide() {
             </div>
             <h3 className="font-display font-bold text-[15px] text-ink mb-1.5">{o.title}</h3>
             <p className="text-[13px] text-body leading-relaxed m-0">{o.text}</p>
-          </motion.div>
+          </m.div>
         ))}
       </div>
     </SlideShell>

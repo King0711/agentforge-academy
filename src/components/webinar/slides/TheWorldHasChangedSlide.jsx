@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import SlideShell from '../SlideShell';
 
 const WANTS = ['More money', 'More time', 'A better job', 'A growing business', 'To stay ahead'];
@@ -17,7 +17,7 @@ const SCENES = [
 export default function TheWorldHasChangedSlide() {
   return (
     <SlideShell background="#1A1333" contentClassName="text-center flex flex-col items-center">
-      <motion.span
+      <m.span
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
@@ -25,27 +25,27 @@ export default function TheWorldHasChangedSlide() {
         style={{ color: '#B39DFF' }}
       >
         Why this matters now
-      </motion.span>
+      </m.span>
 
-      <motion.h2
+      <m.h2
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.1 }}
         className="font-display font-extrabold text-[28px] sm:text-[42px] leading-[1.15] tracking-[-1px] max-w-2xl text-white"
       >
         The opportunity has changed.
-      </motion.h2>
+      </m.h2>
 
-      <motion.p
+      <m.p
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.22 }}
         className="text-[#E5DEF7] text-[15px] leading-relaxed max-w-lg mt-3"
       >
         The people getting ahead aren't necessarily the smartest. They're the ones learning how to work differently.
-      </motion.p>
+      </m.p>
 
-      <motion.div
+      <m.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.35 }}
@@ -56,14 +56,14 @@ export default function TheWorldHasChangedSlide() {
             {w}
           </span>
         ))}
-      </motion.div>
+      </m.div>
 
       {/* First scene carries a touch more visual weight than the other two
           — three equal-weight rows read as flat; this gives the eye a clear
           entry point without dropping the other two audiences. */}
       <div className="flex flex-col gap-2.5 w-full max-w-xl">
         {SCENES.map((scene, i) => (
-          <motion.div
+          <m.div
             key={scene.text}
             initial={{ opacity: 0, x: -16 }}
             animate={{ opacity: 1, x: 0 }}
@@ -76,18 +76,18 @@ export default function TheWorldHasChangedSlide() {
           >
             <span className={i === 0 ? 'text-2xl flex-shrink-0' : 'text-xl flex-shrink-0'}>{scene.icon}</span>
             <span className={`text-[#E5DEF7] leading-relaxed ${i === 0 ? 'text-[14.5px] font-medium' : 'text-[13px]'}`}>{scene.text}</span>
-          </motion.div>
+          </m.div>
         ))}
       </div>
 
-      <motion.p
+      <m.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.05 }}
         className="text-[#C9BFE8] text-[14px] mt-7 max-w-md"
       >
         The vehicle behind all of it? <span className="text-yellow font-bold">AI</span> — now cheap and simple enough that anyone can pick it up.
-      </motion.p>
+      </m.p>
     </SlideShell>
   );
 }

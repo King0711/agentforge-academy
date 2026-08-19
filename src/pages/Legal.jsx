@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { usePageSeo } from '../hooks/usePageSeo';
 
 const PAGES = {
@@ -107,7 +107,7 @@ export default function Legal() {
   return (
     <div className="min-h-screen">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+        <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
           <div className="flex gap-4 mb-8 text-sm">
             <Link to="/legal/terms" className={`font-semibold transition-colors ${page === 'terms' ? 'text-ink border-b-2 border-brand pb-1' : 'text-body hover:text-ink'}`}>Terms of Service</Link>
             <Link to="/legal/privacy" className={`font-semibold transition-colors ${page === 'privacy' ? 'text-ink border-b-2 border-brand pb-1' : 'text-body hover:text-ink'}`}>Privacy Policy</Link>
@@ -128,7 +128,7 @@ export default function Legal() {
           <div className="mt-12 pt-8 border-t border-border-soft text-center">
             <Link to="/" className="text-sm text-brand hover:underline">← Back to Social Dev Technologies</Link>
           </div>
-        </motion.div>
+        </m.div>
       </div>
     </div>
   );

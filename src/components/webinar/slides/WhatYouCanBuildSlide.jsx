@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import SlideShell from '../SlideShell';
 import { agentsBeginner } from '../../../data/agentsBeginner';
 
@@ -34,14 +34,14 @@ export default function WhatYouCanBuildSlide() {
         <h2 className="font-display font-extrabold text-[26px] sm:text-[38px] text-ink tracking-[-.8px]">Your first 12 AI agents</h2>
       </div>
 
-      <motion.p
+      <m.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
         className="text-center text-body text-[13.5px] mb-6 max-w-lg mx-auto"
       >
         Everything you just saw came from exactly the same thinking process Samuel used.
-      </motion.p>
+      </m.p>
 
       {/* Grouped by row (of 4, matching sm:grid-cols-4) rather than one
           smooth per-card cascade — the point is for each row to visibly
@@ -51,7 +51,7 @@ export default function WhatYouCanBuildSlide() {
         {wall.map((agent, i) => {
           const row = Math.floor(i / 4);
           return (
-            <motion.div
+            <m.div
               key={agent.slug}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -65,19 +65,19 @@ export default function WhatYouCanBuildSlide() {
               )}
               <span className="text-xl">{agent.emoji}</span>
               <span className="text-[10.5px] font-bold text-body-strong leading-tight">{agent.title}</span>
-            </motion.div>
+            </m.div>
           );
         })}
       </div>
 
-      <motion.p
+      <m.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.9 }}
         className="text-center font-display font-bold text-[15px] sm:text-lg text-ink mt-7 max-w-lg mx-auto"
       >
         By the end of Builder 1, you won't just understand AI — <span className="text-brand">you'll have built 12 real AI agents solving real business problems.</span>
-      </motion.p>
+      </m.p>
     </SlideShell>
   );
 }

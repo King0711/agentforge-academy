@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import { ChevronRight, Maximize, Minimize, NotebookText } from 'lucide-react';
 import { webinarSlides } from '../../data/webinarSlides';
 import SlideNav from './SlideNav';
@@ -168,7 +168,7 @@ export default function WebinarDeck() {
   return (
     <div ref={containerRef} className="fixed inset-0 bg-bg text-ink flex flex-col z-50">
       <div className="h-1 w-full bg-border-soft flex-shrink-0">
-        <motion.div
+        <m.div
           className="h-full bg-brand"
           animate={{ width: `${((index + 1) / TOTAL) * 100}%` }}
           transition={{ duration: reducedMotion ? 0 : 0.4, ease: 'easeOut' }}
@@ -228,7 +228,7 @@ export default function WebinarDeck() {
             the previous slide even though the index has already advanced,
             which is a real risk mid-presentation. */}
         <AnimatePresence custom={direction}>
-          <motion.div
+          <m.div
             key={meta.id}
             custom={direction}
             variants={variants}
@@ -239,18 +239,18 @@ export default function WebinarDeck() {
             className="absolute inset-0 overflow-y-auto"
           >
             <CurrentSlide />
-          </motion.div>
+          </m.div>
         </AnimatePresence>
 
         {!hasInteracted && index === 0 && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.2 }}
             className="absolute bottom-6 left-1/2 -translate-x-1/2 text-[12.5px] font-semibold text-body flex items-center gap-1.5 pointer-events-none"
           >
             Press → or tap to continue <ChevronRight className="w-3.5 h-3.5" />
-          </motion.div>
+          </m.div>
         )}
       </div>
 

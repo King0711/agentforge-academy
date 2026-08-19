@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { MessageCircle, Hammer, X, Check, Building2, Briefcase, GraduationCap, BookOpen, Rocket, Headphones, Church } from 'lucide-react';
 import SlideShell from '../SlideShell';
 
@@ -27,7 +27,7 @@ export default function AIUsersVsBuildersSlide() {
       </h2>
 
       <div className="grid sm:grid-cols-2 gap-4 mb-8">
-        <motion.div
+        <m.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
@@ -46,9 +46,9 @@ export default function AIUsersVsBuildersSlide() {
               </li>
             ))}
           </ul>
-        </motion.div>
+        </m.div>
 
-        <motion.div
+        <m.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
@@ -67,16 +67,16 @@ export default function AIUsersVsBuildersSlide() {
               </li>
             ))}
           </ul>
-        </motion.div>
+        </m.div>
       </div>
 
-      <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="text-center text-[13px] text-body font-semibold mb-4">
+      <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="text-center text-[13px] text-body font-semibold mb-4">
         What does that mean for you?
-      </motion.p>
+      </m.p>
 
       <div className="flex flex-wrap justify-center gap-2.5">
         {ROLES.map((r, i) => (
-          <motion.span
+          <m.span
             key={r.label}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -87,18 +87,18 @@ export default function AIUsersVsBuildersSlide() {
               <r.icon className="w-3.5 h-3.5" />
             </span>
             {r.label}
-          </motion.span>
+          </m.span>
         ))}
       </div>
 
-      <motion.p
+      <m.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.9 }}
         className="text-center font-display font-bold text-base sm:text-lg text-ink mt-8"
       >
         People who build with AI become <span className="text-brand">AI Builders.</span>
-      </motion.p>
+      </m.p>
     </SlideShell>
   );
 }

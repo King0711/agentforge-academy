@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { LazyMotion, domAnimation } from 'framer-motion';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProfileInfoModal from './components/ProfileInfoModal';
@@ -77,6 +78,20 @@ function AppShell() {
   const hideChrome = isWebinar || isDashboard;
 
   return (
+    // LazyMotion + the `m` components (rather than `motion`) keep framer-
+    // motion's DOM feature set out of the entry bundle's critical path.
+    // Every animated component in the app renders under this provider, and
+    // `m` only works inside one — a bare <m.div> outside renders unanimated.
+    //
+    // `domAnimation` is imported statically, NOT as `features={() => import(
+    // ...)}`. The async form is smaller still, but it swaps the feature
+    // bundle in a tick after mount, which means the prerendered routes would
+    // hydrate against markup whose animated elements haven't initialised —
+    // the same class of mismatch the eager-import rule above exists to
+    // avoid. domAnimation covers everything used here: there is no `layout`,
+    // `layoutId` or `drag` prop anywhere in src/, which is all `domMax`
+    // would add.
+    <LazyMotion features={domAnimation}>
     <ProfileInfoProvider>
       <div className="min-h-screen flex flex-col bg-bg">
         {!hideChrome && <Navbar />}
@@ -179,6 +194,7 @@ function AppShell() {
         <ProfileInfoModal />
       </div>
     </ProfileInfoProvider>
+    </LazyMotion>
   );
 }
 

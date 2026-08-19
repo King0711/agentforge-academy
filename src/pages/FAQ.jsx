@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 
 const FAQS = [
@@ -99,7 +99,7 @@ export default function FAQ() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+      <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
         <span className="inline-flex items-center gap-2 text-[13px] font-bold px-4 py-1.5 rounded-full bg-[#F3EBFF] dark:bg-brand/15 text-brand">
           FAQ
         </span>
@@ -139,7 +139,7 @@ export default function FAQ() {
             <Link to="/" className="text-brand hover:underline">← Back to home</Link>
           </div>
         </div>
-      </motion.div>
+      </m.div>
     </div>
   );
 }

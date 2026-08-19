@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import QRCode from 'qrcode';
 import SlideShell from '../SlideShell';
 
@@ -17,60 +17,60 @@ export default function FinalCtaSlide() {
   return (
     <SlideShell background="linear-gradient(135deg, #7C3AED, #5B21B6)" contentClassName="text-center flex flex-col items-center">
       <div className="max-w-xl">
-        <motion.p
+        <m.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="text-[#EDE4FF] text-base sm:text-lg font-semibold"
         >
           Six months from now —
-        </motion.p>
-        <motion.p
+        </m.p>
+        <m.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
           className="text-white/70 text-base sm:text-lg mt-1.5"
         >
           someone asks, "Can anyone build something that solves this?"
-        </motion.p>
+        </m.p>
 
-        <motion.p
+        <m.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 1.2 }}
           className="text-[#EDE4FF] text-base sm:text-lg font-semibold mt-6"
         >
           Instead of saying "I don't know..." —
-        </motion.p>
-        <motion.h2
+        </m.p>
+        <m.h2
           initial={{ opacity: 0, y: 12, scale: 0.96 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.55, delay: 1.7 }}
           className="font-display font-extrabold text-[28px] sm:text-[42px] text-yellow leading-tight mt-2"
         >
           you say "I can build that."
-        </motion.h2>
+        </m.h2>
 
-        <motion.p
+        <m.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 2.3 }}
           className="text-white text-lg sm:text-xl font-display font-bold mt-6"
         >
           That is what becoming an AI Builder looks like.
-        </motion.p>
+        </m.p>
       </div>
 
-      <motion.p
+      <m.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 2.6 }}
         className="text-[#C9BFE8] text-[13px] mt-3"
       >
         Builder 1 is simply where that journey begins.
-      </motion.p>
+      </m.p>
 
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 3.15 }}
@@ -89,9 +89,9 @@ export default function FinalCtaSlide() {
             <div className="text-[10px] font-bold text-ink text-center mt-1 uppercase tracking-wide">Scan to enroll</div>
           </div>
         )}
-      </motion.div>
+      </m.div>
 
-      <motion.div
+      <m.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 3.35 }}
@@ -102,11 +102,11 @@ export default function FinalCtaSlide() {
         <span>2. Sign up &amp; pay</span>
         <span className="opacity-50">→</span>
         <span>3. Start Session 1</span>
-      </motion.div>
+      </m.div>
 
-      <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 3.5 }} className="text-[#C9BFE8] text-xs mt-3">
+      <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 3.5 }} className="text-[#C9BFE8] text-xs mt-3">
         One-time payment · 6 months of access · No subscription
-      </motion.p>
+      </m.p>
     </SlideShell>
   );
 }

@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { CircleHelp } from 'lucide-react';
 import SlideShell from '../SlideShell';
 
@@ -27,7 +27,7 @@ export default function FAQSlide() {
 
       <div className="grid sm:grid-cols-2 gap-3.5 max-w-3xl mx-auto">
         {FAQS.map((item, i) => (
-          <motion.div
+          <m.div
             key={item.q}
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
@@ -39,7 +39,7 @@ export default function FAQSlide() {
               <span className="font-display font-bold text-[14px] text-ink">{item.q}</span>
             </div>
             <p className="text-[13px] text-body leading-relaxed m-0 pl-6.5">{item.a}</p>
-          </motion.div>
+          </m.div>
         ))}
       </div>
     </SlideShell>

@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Briefcase, Repeat, Building2 } from 'lucide-react';
 import SlideShell from '../SlideShell';
 
@@ -34,7 +34,7 @@ export default function MakeMoneyFromThisSlide() {
         </p>
       </div>
 
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col sm:flex-row items-center sm:items-start gap-5 bg-white dark:bg-[#181818] border-[1.5px] border-border-soft rounded-2xl p-5 max-w-2xl mx-auto mb-7"
@@ -51,11 +51,11 @@ export default function MakeMoneyFromThisSlide() {
           </span>
           <p className="text-[13.5px] text-body-strong leading-relaxed m-0">{CLIENT_STORY.summary}</p>
         </div>
-      </motion.div>
+      </m.div>
 
       <div className="grid sm:grid-cols-3 gap-3 max-w-3xl mx-auto">
         {PATHS.map((p, i) => (
-          <motion.div
+          <m.div
             key={p.label}
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
@@ -67,7 +67,7 @@ export default function MakeMoneyFromThisSlide() {
             </div>
             <h3 className="font-display font-bold text-[13.5px] text-ink mb-1">{p.label}</h3>
             <p className="text-[12px] text-body leading-relaxed m-0">{p.text}</p>
-          </motion.div>
+          </m.div>
         ))}
       </div>
     </SlideShell>

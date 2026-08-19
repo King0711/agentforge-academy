@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { CheckCircle2, Circle, ChevronDown, Flag } from 'lucide-react';
 import { getBuilderPagePath, groupAgentsByWeek } from '../data/agents';
 import ProgressBar from './ProgressBar';
@@ -151,7 +151,7 @@ export default function CourseSidebar({ tier, tierAgents, currentSlug, progress 
         </button>
         <AnimatePresence>
           {mobileOpen && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
@@ -167,7 +167,7 @@ export default function CourseSidebar({ tier, tierAgents, currentSlug, progress 
                   onNavigate={() => setMobileOpen(false)}
                 />
               </div>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
       </div>

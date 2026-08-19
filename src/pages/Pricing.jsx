@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { CheckCircle2, AlertCircle, Tag, Loader2, Zap, CalendarDays, Info } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -119,7 +119,7 @@ export default function Pricing() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 text-center">
 
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mb-12">
+      <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mb-12">
         <span className="inline-flex items-center gap-2 text-[13px] font-bold px-4 py-1.5 rounded-full bg-[#F3EBFF] dark:bg-brand/15 text-brand">
           Simple, one-time pricing
         </span>
@@ -133,7 +133,7 @@ export default function Pricing() {
           <Info className="w-4 h-4 flex-shrink-0" />
           You'll need your own paid Claude account (Claude Pro or higher) to complete the builds — that's billed separately by Anthropic.
         </div>
-      </motion.div>
+      </m.div>
 
       {checkoutError && (
         <div className="max-w-md mx-auto mb-6 flex items-start gap-2 text-sm text-rose bg-[#FDEEF4] dark:bg-rose/10 border border-rose/20 rounded-lg px-3 py-2.5 text-left">
@@ -146,7 +146,7 @@ export default function Pricing() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 text-left">
 
         {/* Builder 1 */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -193,10 +193,10 @@ export default function Pricing() {
               {!user && <p className="text-center text-xs text-gray-400 mt-1">Sign up first — then come back to pay.</p>}
             </div>
           )}
-        </motion.div>
+        </m.div>
 
         {/* Builder 2 */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
@@ -243,10 +243,10 @@ export default function Pricing() {
               {!user && <p className="text-center text-xs text-gray-400 mt-1">Sign up first — then come back to pay.</p>}
             </div>
           )}
-        </motion.div>
+        </m.div>
 
         {/* Pro (bundle) */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
@@ -290,11 +290,11 @@ export default function Pricing() {
               {!user && <p className="text-center text-xs text-gray-400 mt-1">Sign up first — then come back to pay.</p>}
             </div>
           )}
-        </motion.div>
+        </m.div>
       </div>
 
       {/* Payment methods */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-9 text-center">
+      <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-9 text-center">
         <p className="text-[13.5px] text-gray-400 mb-3">
           Payments processed securely by Paystack — cards accepted worldwide
         </p>
@@ -308,7 +308,7 @@ export default function Pricing() {
         <p className="text-xs text-gray-400 mt-6">
           Every plan is a one-time payment for 6 months of access — no auto-renewal. For billing questions email support@socialdevtechnologies.com
         </p>
-      </motion.div>
+      </m.div>
     </div>
   );
 }

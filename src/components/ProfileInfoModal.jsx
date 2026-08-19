@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { Briefcase, X, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { industries } from '../data/industries';
@@ -70,14 +70,14 @@ export default function ProfileInfoModal() {
   return (
     <AnimatePresence>
       {modalOpen && (
-        <motion.div
+        <m.div
           className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-[#1A1333]/55 backdrop-blur-sm p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={() => closeModal({ skip: true })}
         >
-          <motion.div
+          <m.div
             className="relative w-full sm:max-w-md rounded-2xl overflow-hidden bg-white dark:bg-[#181818] border border-border-soft mt-16 sm:mt-0"
             initial={{ opacity: 0, y: 40, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -157,8 +157,8 @@ export default function ProfileInfoModal() {
                 </button>
               </div>
             </form>
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

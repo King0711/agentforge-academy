@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { ChevronRight, CheckCircle2 } from 'lucide-react';
 import SlideShell from '../SlideShell';
 import { agents } from '../../../data/agents';
@@ -51,7 +51,7 @@ export default function LearningTrackSlide() {
       <div className="flex flex-col lg:flex-row items-stretch justify-center gap-3 mb-9">
         {TRACKS.map((track, i) => (
           <div key={track.title} className="flex items-center gap-3 flex-1">
-            <motion.div
+            <m.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1 + i * 0.15 }}
@@ -62,24 +62,24 @@ export default function LearningTrackSlide() {
               </span>
               <h3 className="font-display font-extrabold text-base text-ink mb-1.5">{track.title}</h3>
               <p className="text-[12.5px] text-body leading-relaxed">{track.text}</p>
-            </motion.div>
+            </m.div>
             {i < TRACKS.length - 1 && <ChevronRight className="hidden lg:block w-5 h-5 text-gray-300 flex-shrink-0" />}
           </div>
         ))}
       </div>
 
-      <motion.p
+      <m.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6 }}
         className="text-[12.5px] font-bold uppercase tracking-wide text-body mb-4"
       >
         After Builder 1, you'll be able to
-      </motion.p>
+      </m.p>
 
       <div className="grid sm:grid-cols-2 gap-2.5 max-w-2xl mx-auto text-left">
         {CAPABILITIES.map((c, i) => (
-          <motion.div
+          <m.div
             key={c}
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
@@ -88,7 +88,7 @@ export default function LearningTrackSlide() {
           >
             <CheckCircle2 className="w-4 h-4 text-green flex-shrink-0" />
             {c}
-          </motion.div>
+          </m.div>
         ))}
       </div>
     </SlideShell>
