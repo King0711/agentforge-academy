@@ -15,14 +15,19 @@ Supabase project ref: `qkrfpuckvymjpewcszgs`. Two other webhook functions exist 
 
 Admin panel (`/admin`, `src/pages/Admin.jsx`) uses SECURITY DEFINER RPCs in `supabase/admin-setup.sql` (`admin_get_all_profiles`, `admin_set_user_pro`, `admin_set_user_admin`) — self-check inside each function, only callable by an existing admin.
 
-**Every new `admin_*` RPC needs two things, not one.** The internal `is_admin()` guard is necessary but isn't the whole job: Postgres grants `EXECUTE` to `PUBLIC` by default on `CREATE FUNCTION`, and `anon` inherits from `PUBLIC` — so a new function is reachable anonymously over `/rest/v1/rpc/<name>` unless you revoke it. Ship every admin RPC with:
+**Every new `admin_*` RPC needs three revokes, not one.** The internal `is_admin()` guard is necessary but isn't the whole job — two separate default-grant mechanisms make a fresh function reachable anonymously over `/rest/v1/rpc/<name>` unless both are revoked:
+1. Postgres grants `EXECUTE` to `PUBLIC` by default on `CREATE FUNCTION`, and `anon`/`authenticated` inherit from `PUBLIC`.
+2. This Supabase project's `ALTER DEFAULT PRIVILEGES` on the `public` schema *also* grants `EXECUTE` directly to `anon` (and `authenticated`), independent of `PUBLIC` — confirmed 2026-08-19 when `admin_update_testimonial` came out of `CREATE FUNCTION` with `anon` already in its ACL despite no explicit grant statement. Revoking only `FROM PUBLIC` leaves this direct grant untouched.
+
+Ship every admin RPC with all three statements:
 
 ```sql
 REVOKE EXECUTE ON FUNCTION public.<name>(<arg types>) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.<name>(<arg types>) FROM anon;
 GRANT  EXECUTE ON FUNCTION public.<name>(<arg types>) TO authenticated;
 ```
 
-Revoking `FROM anon` does nothing — the grant is held by `PUBLIC`, so it has to be revoked there. A correctly-locked function's ACL reads `postgres=X, authenticated=X, service_role=X` with no leading `=X/postgres` entry (that empty grantee is `PUBLIC`). The guides-CMS and live-session RPCs shipped without this and were anonymously callable until 2026-08-19; the `is_admin()` guard did hold, so nothing was exposed, but they were relying on a single layer. Check with `get_advisors(type: "security")`.
+A correctly-locked function's ACL reads `postgres=X, authenticated=X, service_role=X` with no leading `=X/postgres` entry (that empty grantee is `PUBLIC`) and no `anon` entry — check by querying `aclexplode(proacl)`, not just by eyeballing `REVOKE ... FROM PUBLIC` in the migration. The guides-CMS and live-session RPCs shipped without any of this and were anonymously callable until 2026-08-19; the `is_admin()` guard did hold, so nothing was exposed, but they were relying on a single layer. Check with `get_advisors(type: "security")`.
 
 `get_certificate_by_id` is deliberately left callable by `anon` — the public `/verify/:id` page depends on it.
 
