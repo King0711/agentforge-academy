@@ -278,7 +278,7 @@ export default function AIBuilder() {
             </div>
             <ul className="space-y-2">
               {USING.map((t) => (
-                <li key={t} className="flex items-start gap-2 text-[12.5px] text-body"><X className="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0" /> {t}</li>
+                <li key={t} className="flex items-start gap-2 text-[12.5px] text-body"><X className="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0" /> <span>{t}</span></li>
               ))}
             </ul>
           </div>
@@ -289,7 +289,7 @@ export default function AIBuilder() {
             </div>
             <ul className="space-y-2">
               {BUILDING.map((t) => (
-                <li key={t} className="flex items-start gap-2 text-[12.5px] text-body-strong font-medium"><CheckCircle2 className="w-3.5 h-3.5 text-green mt-0.5 flex-shrink-0" /> {t}</li>
+                <li key={t} className="flex items-start gap-2 text-[12.5px] text-body-strong font-medium"><CheckCircle2 className="w-3.5 h-3.5 text-green mt-0.5 flex-shrink-0" /> <span>{t}</span></li>
               ))}
             </ul>
           </div>
@@ -362,7 +362,7 @@ export default function AIBuilder() {
         <div className="grid sm:grid-cols-2 gap-2.5 max-w-2xl mx-auto text-left">
           {CAPABILITIES.map((c) => (
             <div key={c} className="flex items-center gap-2.5 text-[13px] font-semibold text-body-strong">
-              <CheckCircle2 className="w-4 h-4 text-green flex-shrink-0" /> {c}
+              <CheckCircle2 className="w-4 h-4 text-green flex-shrink-0" /> <span>{c}</span>
             </div>
           ))}
         </div>
@@ -448,7 +448,7 @@ export default function AIBuilder() {
             <h3 className="font-display font-bold text-base text-ink mb-4">This is for you if…</h3>
             <ul className="flex flex-col gap-2.5">
               {FOR_YOU.map((item) => (
-                <li key={item} className="flex items-start gap-2.5 text-[13px] text-body-strong font-medium"><CheckCircle2 className="w-4 h-4 text-green mt-0.5 flex-shrink-0" /> {item}</li>
+                <li key={item} className="flex items-start gap-2.5 text-[13px] text-body-strong font-medium"><CheckCircle2 className="w-4 h-4 text-green mt-0.5 flex-shrink-0" /> <span>{item}</span></li>
               ))}
             </ul>
           </div>
@@ -456,7 +456,7 @@ export default function AIBuilder() {
             <h3 className="font-display font-bold text-base text-ink mb-4">This might not be for you if…</h3>
             <ul className="flex flex-col gap-2.5">
               {NOT_FOR_YOU.map((item) => (
-                <li key={item} className="flex items-start gap-2.5 text-[13px] text-body"><X className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" /> {item}</li>
+                <li key={item} className="flex items-start gap-2.5 text-[13px] text-body"><X className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" /> <span>{item}</span></li>
               ))}
             </ul>
           </div>
@@ -484,7 +484,7 @@ export default function AIBuilder() {
           </div>
           <ul className="flex flex-col gap-2.5 mb-6">
             {BUILDER1_FEATURES.map((f) => (
-              <li key={f} className="flex items-start gap-2.5 text-[13.5px] text-body-strong"><CheckCircle2 className="w-4 h-4 text-green mt-0.5 flex-shrink-0" /> {f}</li>
+              <li key={f} className="flex items-start gap-2.5 text-[13.5px] text-body-strong"><CheckCircle2 className="w-4 h-4 text-green mt-0.5 flex-shrink-0" /> <span>{f}</span></li>
             ))}
           </ul>
           <Link

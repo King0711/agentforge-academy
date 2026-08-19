@@ -27,6 +27,9 @@ const publicDir = path.join(__dirname, '..', 'public');
 const PORT = 4173;
 const BASE_URL = `http://localhost:${PORT}`;
 
+// Builder session guides — see the data-ssr-stub note in the route loop.
+const SSR_STUB_ROUTE = /^\/builder-[12]\//;
+
 function waitForServer(url, timeoutMs = 30000) {
   const start = Date.now();
   return new Promise((resolve, reject) => {
@@ -88,6 +91,27 @@ async function main() {
         await page.evaluate(() => {
           document.querySelectorAll('[data-runtime-injected]').forEach((el) => el.remove());
         });
+
+        // Routes whose markup settles on data this snapshot can't carry
+        // forward opt out of hydration (see src/main.jsx). Builder session
+        // pages gate on `course_content`, and useCourseContent starts at
+        // `loading: true` while Puppeteer captures the *resolved* state —
+        // anonymous, so the locked panel. Hydration therefore compares the
+        // client's loading UI against the snapshot's locked UI and throws
+        // React #418 on every visit.
+        //
+        // The embed trick the testimonial/cohort hooks use (stash the fetched
+        // JSON in the DOM so the next snapshot carries it) is deliberately
+        // NOT an option here: that content is paywalled, and embedding it
+        // would publish it in a committed, publicly-served file. Rendering
+        // the locked panel first instead would flash "you need to buy this"
+        // at paying customers. So these render client-side via createRoot —
+        // crawlers still get the full static HTML above the gate.
+        if (SSR_STUB_ROUTE.test(route)) {
+          await page.evaluate(() => {
+            document.getElementById('root')?.setAttribute('data-ssr-stub', '1');
+          });
+        }
 
         const html = await page.content();
         await page.close();
