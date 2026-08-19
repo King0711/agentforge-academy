@@ -12,12 +12,23 @@
 const SITE_URL = 'https://socialdevtechnologies.com';
 
 /**
- * Article URL with UTM tags, so GA4 can attribute catalog/pricing visits
+ * Shareable URL with UTM tags, so GA4 can attribute catalog/pricing visits
  * back to the platform that drove them instead of lumping it all into
  * "direct". Every share path should use this rather than a bare url.
+ *
+ * utm_campaign is the section, not a constant: news and guides pull
+ * different audiences and convert differently, and one shared campaign name
+ * would average the two into a number that describes neither.
+ *
+ * @param {'news'|'guides'} section
  */
+export function shareUrl(section, slug, source) {
+  return `${SITE_URL}/${section}/${slug}?utm_source=${source}&utm_medium=social&utm_campaign=${section}`;
+}
+
+/** News-specific shorthand — the copy templates below are news-only. */
 export function articleUrl(slug, source) {
-  return `${SITE_URL}/news/${slug}?utm_source=${source}&utm_medium=social&utm_campaign=news`;
+  return shareUrl('news', slug, source);
 }
 
 // Departments are business functions, not audiences — "what this means for

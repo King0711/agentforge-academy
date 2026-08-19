@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabaseClient';
 import { departments } from '../data/departments';
 import { getAgentBySlug, getBuilderPagePath } from '../data/agents';
 import ArticleBody from '../components/news/ArticleBody';
-import ArticleShare from '../components/news/ArticleShare';
+import ShareRow from '../components/ShareRow';
 import NotFound from './NotFound';
 
 const TIER_LABEL = { builder1: 'Builder 1', builder2: 'Builder 2' };
@@ -142,7 +142,7 @@ export default function NewsArticle() {
         </Link>
       )}
 
-      <ArticleShare slug={article.slug} title={article.title} />
+      <ShareRow section="news" slug={article.slug} title={article.title} />
 
       <a
         href={article.source_url}
