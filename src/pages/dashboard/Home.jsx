@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 import Dashboard from '../../components/Dashboard';
 import ProgressBar from '../../components/ProgressBar';
+import TestimonialPrompt from '../../components/TestimonialPrompt';
 
 function formatSessionTime(dateStr) {
   return new Date(dateStr).toLocaleString('en-GB', {
@@ -143,6 +144,8 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      <TestimonialPrompt completedCount={progress.completed.length} />
 
       <Dashboard progress={progress} onSelectAgent={onSelectAgent} />
     </div>
