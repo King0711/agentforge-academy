@@ -47,36 +47,6 @@ A correctly-locked function's ACL reads `postgres=X, authenticated=X, service_ro
 - [ ] Decide whether to also turn off "customer bears the fee" in Paystack Dashboard → Settings → Preferences (optional now that the webhook tolerates it, but affects what customers see at checkout).
 - [ ] Re-run `backfill-fee-flagged-payments.sql` periodically or after the redeploy to confirm no new flagged rows accumulate.
 
-## Prerendering never supported hydration — don't reintroduce `hydrateRoot`
-
-`scripts/prerender.mjs` serializes a **live, animating** page. framer-motion
-writes inline styles continuously, so whatever frame Puppeteer happened to
-catch gets baked into the committed snapshot. `public/prerendered-home.html`
-contained, verifiably:
-
-```
-style="opacity: 0; transform: translateX(0.55724px) translateY(0.222896px);"
-```
-
-That is a mid-flight animation frame. React's first client render emits the
-component's `initial` styles instead, which can never match those sub-pixel
-numbers — so `hydrateRoot` failed with **React #418 on every single visit to
-the homepage**, and React responded by discarding the entire prerendered tree
-and rebuilding it client-side. The prerendering was still doing its real job
-(crawlers read the served HTML before any JS runs), but for human visitors it
-was pure overhead: a failed hydration pass on top of the client render it fell
-back to.
-
-Fixed 2026-08-19 by making `src/main.jsx` always use `createRoot`. Measured on
-the production build, same machine: LCP 532→400ms, TBT ~218→151ms, long-task
-total 418→351ms, and the console error gone.
-
-**Re-running `npm run prerender` does not fix this** — it just bakes a
-different random animation frame. `hydrateRoot` only becomes viable again if
-mount animations are removed from the prerendered routes so the first client
-render is deterministic. Until then, `createRoot` is correct, not a
-workaround.
-
 ## Workflow preferences (confirmed with project owner)
 
 - **Git:** push to a feature branch and open a PR — do not push straight to `main`. This repo has live payment/auth logic; changes should go through a review step before production.
