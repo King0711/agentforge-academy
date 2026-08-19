@@ -1,6 +1,8 @@
 # Agent Forge / Social Dev Technologies — Project Context
 
-React 19 + Vite frontend, Supabase (Postgres + Auth + Edge Functions, Deno) backend, Paystack payments, deployed on Vercel (GitHub `main` branch = production).
+React 19 + Vite frontend, Supabase (Postgres + Auth + Edge Functions, Deno) backend, Paystack payments, deployed on Vercel (GitHub `master` branch = production — there is no `main` branch; check with `git ls-remote --heads origin` before assuming).
+
+**Deploy pipeline ownership:** the GitHub repo is `King0711/agentforge-academy`, and the Vercel project that serves `socialdevtechnologies.com` lives in a *separate person's* Vercel account (team `AGENTFROGE`, Hobby plan). Anything that requires installing/authorizing the Vercel GitHub App, or reconnecting the Git integration, has to be done by the repo owner — collaborator access is not sufficient, since GitHub App installation is an ownership-level permission. If merges stop deploying, check the project's Settings → Git (repo still connected?) and Settings → Environments → Production (Branch Tracking still `master`?) before assuming the build is broken. Note that Vercel does *not* retroactively build commits that landed before a Git reconnection — it needs a fresh push.
 
 Supabase project ref: `qkrfpuckvymjpewcszgs`. Two other webhook functions exist (`flutterwave-webhook`, `lemonsqueezy-webhook`) but Paystack is the live payment provider.
 
