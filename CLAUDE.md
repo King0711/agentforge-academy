@@ -15,6 +15,17 @@ Supabase project ref: `qkrfpuckvymjpewcszgs`. Two other webhook functions exist 
 
 Admin panel (`/admin`, `src/pages/Admin.jsx`) uses SECURITY DEFINER RPCs in `supabase/admin-setup.sql` (`admin_get_all_profiles`, `admin_set_user_pro`, `admin_set_user_admin`) — self-check inside each function, only callable by an existing admin.
 
+**Every new `admin_*` RPC needs two things, not one.** The internal `is_admin()` guard is necessary but isn't the whole job: Postgres grants `EXECUTE` to `PUBLIC` by default on `CREATE FUNCTION`, and `anon` inherits from `PUBLIC` — so a new function is reachable anonymously over `/rest/v1/rpc/<name>` unless you revoke it. Ship every admin RPC with:
+
+```sql
+REVOKE EXECUTE ON FUNCTION public.<name>(<arg types>) FROM PUBLIC;
+GRANT  EXECUTE ON FUNCTION public.<name>(<arg types>) TO authenticated;
+```
+
+Revoking `FROM anon` does nothing — the grant is held by `PUBLIC`, so it has to be revoked there. A correctly-locked function's ACL reads `postgres=X, authenticated=X, service_role=X` with no leading `=X/postgres` entry (that empty grantee is `PUBLIC`). The guides-CMS and live-session RPCs shipped without this and were anonymously callable until 2026-08-19; the `is_admin()` guard did hold, so nothing was exposed, but they were relying on a single layer. Check with `get_advisors(type: "security")`.
+
+`get_certificate_by_id` is deliberately left callable by `anon` — the public `/verify/:id` page depends on it.
+
 ## Recent incident — resolved 2026-08-05
 
 **Bug:** `paystack-webhook` (`supabase/functions/paystack-webhook/index.ts`) required the charged amount to match the listed plan price within ±₦1. When a customer's card is charged with Paystack's transaction fee passed through (Paystack Dashboard → Settings → Preferences → "Transaction fees" toggle), the actual `charge.success` amount is price + fee, so `resolvePlan()` returned `null` and the payment got logged to `payments` as `flagged_unrecognized_amount` (with `user_id: null`) instead of granting the entitlement. Real, successful payments were silently not granting access — affected at least one confirmed user (`ezinwajohn@gmail.com`, Builder 1, charged ₦50,862.95 against a ₦50,000 price).
@@ -25,7 +36,7 @@ Admin panel (`/admin`, `src/pages/Admin.jsx`) uses SECURITY DEFINER RPCs in `sup
 - Already run once against production data; `ezinwajohn@gmail.com` is fixed.
 
 **Still open / TODO:**
-- [ ] Redeploy `paystack-webhook` (`supabase functions deploy paystack-webhook`) — the amount-tolerance fix is local-only so far.
+- [x] ~~Redeploy `paystack-webhook`~~ — done. The deployed function is at version 16 and contains `FEE_CEILING_MULTIPLIER = 1.06`; verified 2026-08-19 by reading it back with the Supabase MCP. This entry sat here stale for a while and read like an active revenue-losing bug, so check the deployed version before trusting a TODO here.
 - [ ] Decide whether to also turn off "customer bears the fee" in Paystack Dashboard → Settings → Preferences (optional now that the webhook tolerates it, but affects what customers see at checkout).
 - [ ] Re-run `backfill-fee-flagged-payments.sql` periodically or after the redeploy to confirm no new flagged rows accumulate.
 
