@@ -8,7 +8,9 @@
       "PowerShell(npm -v)",
       "mcp__ee2171dd-f460-4788-89d4-a7237cdba43a__execute_sql",
       "Bash(git merge*)",
-"Bash(git push origin master*)"
+      "Bash(git push origin master*)",
+      "Bash(git checkout *)",
+      "Bash(git fetch *)","Bash(gh pr merge:*)", "Bash(gh pr view:*)"
     ]
   }
 }
