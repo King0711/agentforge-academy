@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useTheme } from '../../../context/ThemeContext';
 import SlideShell from '../SlideShell';
 
@@ -14,43 +14,43 @@ export default function WelcomeSlide() {
 
   return (
     <SlideShell background={bg} decorations contentClassName="text-center flex flex-col items-center">
-      <motion.span
+      <m.span
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="inline-flex items-center gap-2 bg-white dark:bg-[#181818] border-[1.5px] border-border text-brand font-bold text-[12.5px] px-4 py-2 rounded-full shadow-[0_3px_10px_rgba(124,58,237,.1)] mb-7"
       >
         🎥 Live session
-      </motion.span>
+      </m.span>
 
-      <motion.h1
+      <m.h1
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.15 }}
         className="font-display font-extrabold text-[32px] sm:text-[46px] leading-[1.12] text-ink tracking-[-1px] sm:tracking-[-1.5px] max-w-2xl"
       >
         Welcome to <span className="text-brand">The AI Builder Workshop.</span>
-      </motion.h1>
+      </m.h1>
 
-      <motion.p
+      <m.p
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.3 }}
         className="text-body-strong text-lg leading-relaxed mt-5 max-w-lg font-medium"
       >
         Thank you for investing your time in yourself today.
-      </motion.p>
+      </m.p>
 
-      <motion.p
+      <m.p
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.42 }}
         className="text-body text-base leading-relaxed mt-4 max-w-lg"
       >
         Before we start — tell us who you are in the chat.
-      </motion.p>
+      </m.p>
 
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.45 }}
@@ -64,25 +64,25 @@ export default function WelcomeSlide() {
             {a}
           </span>
         ))}
-      </motion.div>
+      </m.div>
 
-      <motion.p
+      <m.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.7 }}
         className="text-body text-sm mt-8 max-w-md"
       >
         Whoever you are — there's a reason this hour matters for you specifically.
-      </motion.p>
+      </m.p>
 
-      <motion.p
+      <m.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.9 }}
         className="text-body-strong font-semibold text-sm mt-3 max-w-md"
       >
         By the end of today, you'll understand how ordinary people are building AI systems — and you'll know how you can too.
-      </motion.p>
+      </m.p>
     </SlideShell>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import {
   Users, Shield, Zap, GraduationCap, Search, RefreshCw, Download,
   CheckCircle2, XCircle, Crown, AlertCircle, Loader2, Mail, ChevronDown, Sparkles,
@@ -144,7 +144,7 @@ function UserRow({
   const userIsPro = hasB1 && hasB2;
   return (
     <>
-      <motion.tr
+      <m.tr
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: index * 0.02 }}
@@ -294,7 +294,7 @@ function UserRow({
             </button>
           </div>
         </td>
-      </motion.tr>
+      </m.tr>
       {expanded && (
         <tr className="bg-[#FAF8FF] dark:bg-white/5">
           <td colSpan={6} className="px-5 py-4">

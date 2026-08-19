@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import {
   Folder, MessageSquareText, Save, Settings, Terminal, Smartphone, PartyPopper,
   AlertTriangle, Lightbulb, CheckCircle2, Zap, UserCircle2, GraduationCap, Lock,
@@ -200,24 +200,24 @@ export default function WhatsAppBotGuide() {
           style={{ borderRadius: '38% 62% 63% 37% / 41% 44% 56% 59%' }}
         />
         <div className="relative max-w-3xl mx-auto">
-          <motion.span
+          <m.span
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             className="inline-flex items-center gap-2 bg-white dark:bg-[#181818] border-[1.5px] border-border text-brand font-bold text-[12.5px] px-4 py-2 rounded-full shadow-[0_3px_10px_rgba(124,58,237,.1)]"
           >
             📁 Free guide · Mostly file explorer, minimal typing
-          </motion.span>
+          </m.span>
 
-          <motion.h1
+          <m.h1
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             className="font-display font-extrabold text-[34px] sm:text-[46px] leading-[1.08] text-ink tracking-[-1px] mt-5"
           >
             Build your own <span className="text-brand">AI WhatsApp<br className="hidden sm:block" /> auto-reply bot.</span>
-          </motion.h1>
+          </m.h1>
 
-          <motion.p
+          <m.p
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -226,9 +226,9 @@ export default function WhatsAppBotGuide() {
             Almost everything here happens in folders you can see and click — Claude, File Explorer, Notepad. The
             black command window is only opened <strong className="text-ink">once</strong>, for about 2 minutes, to
             install and start the bot.
-          </motion.p>
+          </m.p>
 
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
@@ -237,7 +237,7 @@ export default function WhatsAppBotGuide() {
             <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-brand" /> ~40 min total</span>
             <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-brand" /> 1 terminal visit</span>
             <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-brand" /> 100% free</span>
-          </motion.div>
+          </m.div>
         </div>
       </div>
 

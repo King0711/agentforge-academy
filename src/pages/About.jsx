@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Hammer, Briefcase, Wallet, Users } from 'lucide-react';
 import { agents } from '../data/agents';
 import { departments, isVisibleToPublic } from '../data/departments';
@@ -66,7 +66,7 @@ export default function About() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+      <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
         <span className="inline-flex items-center gap-2 text-[13px] font-bold px-4 py-1.5 rounded-full bg-[#F3EBFF] dark:bg-brand/15 text-brand">
           About us
         </span>
@@ -79,7 +79,7 @@ export default function About() {
           session here is a guided, hands-on build: a real integration, a real output, a real thing you can put in
           your portfolio.
         </p>
-      </motion.div>
+      </m.div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-10 mb-14">
         <Stat value={publicAgents.length} label="Guided sessions" />

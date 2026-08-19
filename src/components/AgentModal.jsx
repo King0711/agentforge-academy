@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   X, CheckCircle2, Circle, BookOpen, Wrench, ListChecks,
   ArrowRight, ExternalLink, Clock, Sparkles, Lock, Loader2, PlayCircle, FileText,
@@ -46,14 +46,14 @@ export default function AgentModal({ agent, completed, onToggleComplete, onClose
 
   return (
     <AnimatePresence>
-      <motion.div
+      <m.div
         className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-[#1A1333]/55 backdrop-blur-sm p-0 sm:p-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
       >
-        <motion.div
+        <m.div
           className="relative w-full sm:max-w-4xl h-full sm:h-[90vh] sm:rounded-2xl overflow-hidden bg-white dark:bg-[#181818] border border-border-soft flex flex-col"
           initial={{ opacity: 0, y: 40, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -270,7 +270,7 @@ export default function AgentModal({ agent, completed, onToggleComplete, onClose
           <div className="relative border-t border-border-soft px-6 sm:px-8 py-4 bg-[#FAF8FF] dark:bg-white/5 flex items-center justify-between gap-4">
             <AnimatePresence>
               {showXpPop && (
-                <motion.div
+                <m.div
                   initial={{ opacity: 0, y: 10, scale: 0.8 }}
                   animate={{ opacity: 1, y: -40, scale: 1.1 }}
                   exit={{ opacity: 0, y: -60 }}
@@ -278,7 +278,7 @@ export default function AgentModal({ agent, completed, onToggleComplete, onClose
                   className="absolute left-6 sm:left-8 -top-2 text-amber-600 font-extrabold text-lg pointer-events-none flex items-center gap-1"
                 >
                   <Sparkles className="w-5 h-5" /> +{agent.xp} XP!
-                </motion.div>
+                </m.div>
               )}
             </AnimatePresence>
 
@@ -297,8 +297,8 @@ export default function AgentModal({ agent, completed, onToggleComplete, onClose
               {completed ? 'Completed' : 'Mark Complete'}
             </button>
           </div>
-        </motion.div>
-      </motion.div>
+        </m.div>
+      </m.div>
     </AnimatePresence>
   );
 }

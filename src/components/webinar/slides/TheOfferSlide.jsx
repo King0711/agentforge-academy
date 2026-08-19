@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, Tag, CalendarDays, Info, UserPlus, CreditCard, Unlock } from 'lucide-react';
 import SlideShell from '../SlideShell';
@@ -47,7 +47,7 @@ export default function TheOfferSlide() {
       </div>
 
       <div className="grid lg:grid-cols-[1.1fr_.9fr] gap-6 max-w-4xl mx-auto items-start">
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -84,9 +84,9 @@ export default function TheOfferSlide() {
           <p className="flex items-start gap-1.5 text-[12px] text-body mt-3">
             <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" /> One-time payment. You'll need your own paid Claude account to complete the builds.
           </p>
-        </motion.div>
+        </m.div>
 
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
@@ -105,7 +105,7 @@ export default function TheOfferSlide() {
           <p className="text-[12.5px] text-body leading-relaxed px-1">
             Builder 2 — the next-level, multi-step builds — is waiting for you when you're ready. No rush, no expiry on that decision.
           </p>
-        </motion.div>
+        </m.div>
       </div>
     </SlideShell>
   );

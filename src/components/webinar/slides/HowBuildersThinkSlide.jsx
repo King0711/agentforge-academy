@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Search, FileText, MessageSquareText, Plug, FlaskConical, Wrench, Rocket } from 'lucide-react';
 import SlideShell from '../SlideShell';
 
@@ -28,7 +28,7 @@ export default function HowBuildersThinkSlide() {
           counting it out live. */}
       <div className="flex flex-wrap justify-center gap-2.5 max-w-3xl mx-auto">
         {LOOP.map((step, i) => (
-          <motion.div
+          <m.div
             key={step.label}
             initial={{ opacity: 0, y: 14, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -40,27 +40,27 @@ export default function HowBuildersThinkSlide() {
             </span>
             <step.icon className="w-4 h-4 text-brand flex-shrink-0" />
             <span className="text-[13px] font-bold text-body-strong whitespace-nowrap">{step.label}</span>
-          </motion.div>
+          </m.div>
         ))}
       </div>
 
-      <motion.p
+      <m.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.45 * LOOP.length + 0.3 }}
         className="text-center text-body text-[13.5px] mt-9 max-w-md mx-auto"
       >
         This loop never changes. Only the problem changes, session to session.
-      </motion.p>
+      </m.p>
 
-      <motion.p
+      <m.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.45 * LOOP.length + 0.55 }}
         className="text-center font-display font-bold text-[13.5px] text-brand mt-2 max-w-md mx-auto"
       >
         Every AI system you've ever admired follows this same pattern.
-      </motion.p>
+      </m.p>
     </SlideShell>
   );
 }

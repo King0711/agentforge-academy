@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { X, Target, MessageCircle, Sparkles, Users, ArrowRightCircle } from 'lucide-react';
 
 export default function PresenterNotes({ open, onClose, notes, slideLabel, index, total }) {
@@ -7,7 +7,7 @@ export default function PresenterNotes({ open, onClose, notes, slideLabel, index
   return (
     <AnimatePresence>
       {open && (
-        <motion.div
+        <m.div
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
@@ -33,7 +33,7 @@ export default function PresenterNotes({ open, onClose, notes, slideLabel, index
               <NoteBlock icon={MessageCircle} title="Audience interaction" text={notes.interactionPrompt} />
             </div>
           </div>
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

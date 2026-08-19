@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { Users, CalendarDays, Video, MessageSquareText, Mail, Newspaper, BookOpen, ChevronDown } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -66,7 +66,7 @@ export default function AdminSidebar() {
         </button>
         <AnimatePresence>
           {mobileOpen && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
@@ -76,7 +76,7 @@ export default function AdminSidebar() {
               <div className="px-3 pb-3">
                 <NavItems onNavigate={() => setMobileOpen(false)} />
               </div>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
       </div>

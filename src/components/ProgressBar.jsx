@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 
 export default function ProgressBar({ value, max, color = '#7C3AED', label, showLabel = true, height = 'h-2.5' }) {
   const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
@@ -14,7 +14,7 @@ export default function ProgressBar({ value, max, color = '#7C3AED', label, show
         </div>
       )}
       <div className={`w-full ${height} rounded-full bg-[#F3EBFF] dark:bg-[#181818] overflow-hidden`}>
-        <motion.div
+        <m.div
           className={`${height} rounded-full`}
           style={{ background: `linear-gradient(90deg, ${color}, ${color}AA)` }}
           initial={{ width: 0 }}

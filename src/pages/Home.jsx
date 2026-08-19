@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Code2, Bot, KeyRound, MessageCircle, Video, CalendarDays, PlayCircle, Send, CheckCheck } from 'lucide-react';
 import AgentCard from '../components/AgentCard';
 import YouTubeFacade from '../components/YouTubeFacade';
@@ -273,7 +273,7 @@ export default function Home({ progress, onSelectAgent }) {
                 priority
               />
             </div>
-            <motion.div
+            <m.div
               className="absolute -top-4.5 -left-6"
               initial={{ opacity: 0, x: -50, y: -20 }}
               animate={{ opacity: 1, x: 0, y: 0 }}
@@ -286,8 +286,8 @@ export default function Home({ progress, onSelectAgent }) {
                   <div className="text-[11.5px] text-green font-bold">+300 XP earned</div>
                 </div>
               </div>
-            </motion.div>
-            <motion.div
+            </m.div>
+            <m.div
               className="absolute -bottom-4 -right-4.5"
               initial={{ opacity: 0, x: 50, y: 20 }}
               animate={{ opacity: 1, x: 0, y: 0 }}
@@ -297,7 +297,7 @@ export default function Home({ progress, onSelectAgent }) {
                 <div className="text-[11px] opacity-85 font-semibold">Your level</div>
                 <div className="font-display font-extrabold text-base">🔨 Builder</div>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         </div>
       </div>

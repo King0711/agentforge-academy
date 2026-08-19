@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Clock, Repeat, TrendingDown, Box } from 'lucide-react';
 import SlideShell from '../SlideShell';
 
@@ -51,7 +51,7 @@ export default function TheHonestCheckSlide() {
 
       <div className="grid sm:grid-cols-2 gap-3.5 max-w-3xl mx-auto mb-7">
         {GROUPS.map((group, i) => (
-          <motion.div
+          <m.div
             key={group.title}
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
@@ -71,18 +71,18 @@ export default function TheHonestCheckSlide() {
                 </li>
               ))}
             </ul>
-          </motion.div>
+          </m.div>
         ))}
       </div>
 
-      <motion.p
+      <m.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6 }}
         className="text-center font-display font-bold text-[15px] sm:text-lg text-ink max-w-xl mx-auto"
       >
         If two or more sound like your week, you don't need more hours. <span className="text-brand">You need a system that runs without you.</span>
-      </motion.p>
+      </m.p>
     </SlideShell>
   );
 }

@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Check, X } from 'lucide-react';
 import SlideShell from '../SlideShell';
 
@@ -27,7 +27,7 @@ export default function WhoThisIsForSlide() {
       </h2>
 
       <div className="grid sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
-        <motion.div
+        <m.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
@@ -41,9 +41,9 @@ export default function WhoThisIsForSlide() {
               </li>
             ))}
           </ul>
-        </motion.div>
+        </m.div>
 
-        <motion.div
+        <m.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
@@ -57,17 +57,17 @@ export default function WhoThisIsForSlide() {
               </li>
             ))}
           </ul>
-        </motion.div>
+        </m.div>
       </div>
 
-      <motion.p
+      <m.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.45 }}
         className="text-center text-body text-[14px] mt-8 max-w-lg mx-auto"
       >
         If that's you on the left — here's exactly what's included.
-      </motion.p>
+      </m.p>
     </SlideShell>
   );
 }

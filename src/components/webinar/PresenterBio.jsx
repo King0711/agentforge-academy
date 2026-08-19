@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 
 // Shared layout for the two presenter-introduction slides — avatar-with-
 // initials rather than a photo (none supplied for either presenter, and a
@@ -6,34 +6,34 @@ import { motion } from 'framer-motion';
 export default function PresenterBio({ initials, name, title, credentials, closingLine }) {
   return (
     <div className="flex flex-col items-center text-center">
-      <motion.div
+      <m.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
         className="w-24 h-24 rounded-full bg-brand text-white flex items-center justify-center font-display font-extrabold text-2xl mb-4 shadow-[0_12px_28px_-8px_rgba(124,58,237,.4)]"
       >
         {initials}
-      </motion.div>
+      </m.div>
 
-      <motion.h2
+      <m.h2
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
         className="font-display font-extrabold text-2xl text-ink"
       >
         {name}
-      </motion.h2>
+      </m.h2>
 
-      <motion.p
+      <m.p
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.25 }}
         className="text-body-strong text-[14px] font-semibold mt-1 mb-5"
       >
         {title}
-      </motion.p>
+      </m.p>
 
-      <motion.div
+      <m.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
@@ -47,17 +47,17 @@ export default function PresenterBio({ initials, name, title, credentials, closi
             {c}
           </span>
         ))}
-      </motion.div>
+      </m.div>
 
       {closingLine && (
-        <motion.p
+        <m.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
           className="text-body text-[13.5px] italic max-w-md"
         >
           {closingLine}
-        </motion.p>
+        </m.p>
       )}
     </div>
   );

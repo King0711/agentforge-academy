@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 
 // The one repeated, memorable line of the whole webinar — same wording
 // every time it appears, at a handful of emotionally load-bearing moments
@@ -9,7 +9,7 @@ export default function SignatureLine({ variant = 'light', delay = 0, className 
   const accentColor = variant === 'dark' ? 'text-yellow' : 'text-brand';
 
   return (
-    <motion.p
+    <m.p
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.5 }}
@@ -17,6 +17,6 @@ export default function SignatureLine({ variant = 'light', delay = 0, className 
     >
       The future won't belong to the people who use AI.
       <br className="hidden sm:block" /> It will belong to the people who <span className={accentColor}>build with it.</span>
-    </motion.p>
+    </m.p>
   );
 }

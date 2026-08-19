@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Routes, Route, Outlet } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { usePro } from '../hooks/usePro';
@@ -74,14 +74,14 @@ export default function Admin() {
 
       {/* Toast */}
       {toast && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
           className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-green text-white text-sm font-bold px-5 py-3 rounded-xl shadow-lg"
         >
           {toast}
-        </motion.div>
+        </m.div>
       )}
     </div>
   );

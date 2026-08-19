@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { GraduationCap, Building2, HeartPulse, Sprout, Landmark, Church, Store } from 'lucide-react';
 import SlideShell from '../SlideShell';
 import SignatureLine from '../SignatureLine';
@@ -18,7 +18,7 @@ const SECTORS = [
 export default function MissionSlide() {
   return (
     <SlideShell background="#1A1333" contentClassName="text-center flex flex-col items-center">
-      <motion.span
+      <m.span
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
@@ -26,9 +26,9 @@ export default function MissionSlide() {
         style={{ color: '#B39DFF' }}
       >
         Why Africa needs AI Builders
-      </motion.span>
+      </m.span>
 
-      <motion.h2
+      <m.h2
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.15 }}
@@ -36,18 +36,18 @@ export default function MissionSlide() {
       >
         Africa shouldn't just use AI.<br />
         <span className="text-yellow">Africa should build with AI.</span>
-      </motion.h2>
+      </m.h2>
 
-      <motion.p
+      <m.p
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.4 }}
         className="text-[#E5DEF7] text-[15px] leading-relaxed max-w-lg mt-6"
       >
         Our mission is to equip ordinary people with practical AI Builder skills — so they can solve real problems, create opportunities, and shape the future of work.
-      </motion.p>
+      </m.p>
 
-      <motion.div
+      <m.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6 }}
@@ -62,7 +62,7 @@ export default function MissionSlide() {
             {s.label}
           </span>
         ))}
-      </motion.div>
+      </m.div>
 
       <div className="border-t border-white/10 pt-6 mt-8 max-w-md">
         <SignatureLine variant="dark" delay={0.85} />

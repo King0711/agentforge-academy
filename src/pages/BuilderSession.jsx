@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft, ChevronRight, Lock, Clock, CheckCircle2, Sparkles,
   ListChecks, BookOpen, ExternalLink, Loader2, ArrowLeft, Circle, Wrench, Info,
@@ -175,7 +175,7 @@ export default function BuilderSession({ progress, tier }) {
         </Link>
 
         {/* Hero */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           className="rounded-2xl border-[1.5px] border-border-soft p-6 sm:p-8 mb-8"
@@ -201,7 +201,7 @@ export default function BuilderSession({ progress, tier }) {
               </div>
             </div>
           </div>
-        </motion.div>
+        </m.div>
 
         <div className="flex items-start gap-2 text-[13px] text-brand bg-[#F3EBFF] dark:bg-brand/15 rounded-lg px-3.5 py-2.5 mb-8">
           <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
@@ -212,7 +212,7 @@ export default function BuilderSession({ progress, tier }) {
         <div className="relative flex items-center justify-between gap-4 rounded-xl border border-border-soft bg-[#FAF8FF] dark:bg-white/5 px-5 py-4 mb-8">
           <AnimatePresence>
             {showXpPop && (
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, y: 10, scale: 0.8 }}
                 animate={{ opacity: 1, y: -36, scale: 1.1 }}
                 exit={{ opacity: 0, y: -56 }}
@@ -220,7 +220,7 @@ export default function BuilderSession({ progress, tier }) {
                 className="absolute left-5 -top-2 text-amber-600 font-extrabold text-lg pointer-events-none flex items-center gap-1"
               >
                 <Sparkles className="w-5 h-5" /> +<span>{agent.xp}</span> XP!
-              </motion.div>
+              </m.div>
             )}
           </AnimatePresence>
           <p className="text-sm text-body">

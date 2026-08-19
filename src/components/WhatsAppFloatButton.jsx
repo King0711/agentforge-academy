@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 
 const WHATSAPP_LINK = 'https://wa.me/2349066006963?text=' + encodeURIComponent(
   "Hi! I'd like to know more about Social Dev Technologies."
@@ -22,7 +22,7 @@ function WhatsAppGlyph({ className }) {
 // is only shared once someone actually signs up.
 export default function WhatsAppFloatButton() {
   return (
-    <motion.a
+    <m.a
       href={WHATSAPP_LINK}
       target="_blank"
       rel="noreferrer"
@@ -36,6 +36,6 @@ export default function WhatsAppFloatButton() {
     >
       <span className="absolute inset-0 rounded-full bg-[#25D366] animate-ping opacity-40" />
       <WhatsAppGlyph className="w-7 h-7 relative" />
-    </motion.a>
+    </m.a>
   );
 }
