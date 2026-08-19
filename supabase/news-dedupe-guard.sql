@@ -16,6 +16,12 @@
 --   2. service_insert_news_draft (below) refuses a draft that duplicates
 --      something already covered, so a prompt miss can't reach the table.
 --
+-- STATUS: applied to production 2026-08-19 (migration `news_dedupe_guard`).
+-- Verified in a rolled-back transaction: a repeat source_url is blocked, a
+-- reworded headline for a covered story is blocked, a genuinely new story
+-- inserts, and an html source reusing its index url still inserts. ACL reads
+-- postgres=X, service_role=X only -- no PUBLIC, anon or authenticated entry.
+--
 -- Idempotent: safe to re-run.
 -- ============================================================
 

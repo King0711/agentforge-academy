@@ -30,6 +30,10 @@
 -- fetchSource() has no per-item permalink for those, so every story from
 -- e.g. Anthropic's newsroom shares one source_url and is NOT a duplicate.
 --
+-- STATUS: run against production 2026-08-19. 13 rows moved to 'rejected';
+-- 0 duplicate groups remain among non-rejected rows. Re-running is safe and
+-- is a no-op unless the bot has since produced new duplicates.
+--
 -- Run the SELECT first, eyeball it, then run the UPDATE.
 -- ============================================================
 
