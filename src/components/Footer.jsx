@@ -42,6 +42,7 @@ export default function Footer() {
           <div>
             <div className="font-bold text-[13px] text-white mb-3">Connect</div>
             <div className="flex flex-col gap-2.5 text-[13.5px] text-[#B8B0D8]">
+              <a href="https://www.linkedin.com/company/social-dev-technologies/" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">LinkedIn</a>
               <a href="https://www.facebook.com/SocialDevTech/" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">Facebook</a>
               <a href="https://wa.me/2349066006963" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">WhatsApp</a>
             </div>

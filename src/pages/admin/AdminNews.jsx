@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import {
-  Newspaper, CheckCircle2, XCircle, Trash2, Loader2, AlertCircle, Send, Pencil, ExternalLink,
+  Newspaper, CheckCircle2, XCircle, Trash2, Loader2, AlertCircle, Send, Pencil, ExternalLink, Share2,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { departments } from '../../data/departments';
+import NewsSharePanel from '../../components/admin/NewsSharePanel';
 
 // body_blocks <-> plain text, same spirit as AdminEmails.jsx's
 // plainTextToHtml — admins edit plain text, not a raw block-JSON editor.
@@ -142,6 +143,7 @@ function EditForm({ draft, onSave, onCancel, saving }) {
 
 function DraftRow({ draft, actionLoading, editingId, onEdit, onCancelEdit, onSave, onApprove, onReject, onDelete }) {
   const isEditing = editingId === draft.id;
+  const [showShare, setShowShare] = useState(false);
   const depts = (draft.department_ids || []).map((id) => departments.find((d) => d.id === id)).filter(Boolean);
 
   return (
@@ -182,6 +184,14 @@ function DraftRow({ draft, actionLoading, editingId, onEdit, onCancelEdit, onSav
           >
             <Pencil className="w-3 h-3" /> Edit
           </button>
+          {draft.status === 'approved' && draft.is_full_article && (
+            <button
+              onClick={() => setShowShare((v) => !v)}
+              className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors ${showShare ? 'bg-brand text-white' : 'bg-[#FAF8FF] dark:bg-white/5 text-body-strong hover:bg-[#F3EBFF] dark:hover:bg-brand/15 hover:text-brand'}`}
+            >
+              <Share2 className="w-3 h-3" /> Post
+            </button>
+          )}
           {draft.status !== 'approved' && (
             <button
               onClick={() => onApprove(draft.id)}
@@ -212,6 +222,7 @@ function DraftRow({ draft, actionLoading, editingId, onEdit, onCancelEdit, onSav
       {isEditing && (
         <EditForm draft={draft} onCancel={onCancelEdit} onSave={(fields) => onSave(draft.id, fields)} saving={actionLoading === draft.id + '_save'} />
       )}
+      {showShare && !isEditing && <NewsSharePanel article={draft} />}
     </div>
   );
 }

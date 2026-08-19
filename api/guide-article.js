@@ -1,4 +1,5 @@
 import { escapeHtml, renderGuideBlocksToHtml, renderFaqsToHtml } from '../src/lib/guideBlocks.js';
+import { sectionOgImage, applyOgImage } from '../src/lib/ogCards.js';
 
 // Server-renders /guides/:slug (routed here via the vercel.json rewrite,
 // which passes the slug as ?slug=). Same reasoning and shape as
@@ -36,7 +37,11 @@ export default async function handler(req, res) {
   const pageTitle = `${guide.title} | Social Dev Technologies`;
   const description = guide.dek;
   const canonicalUrl = `${siteUrl}/guides/${guide.slug}`;
-  const imageUrl = guide.image_url || `${siteUrl}/logo.jpeg`;
+  // Same rule as api/news-article.js: never fall back to the 192x192 logo,
+  // which is under LinkedIn's large-card threshold and Facebook's floor.
+  const ogImage = guide.image_url
+    ? { url: guide.image_url, isCard: false }
+    : sectionOgImage('guides');
 
   html = html
     .replace(/<title>.*?<\/title>/s, `<title>${escapeHtml(pageTitle)}</title>`)
@@ -45,10 +50,9 @@ export default async function handler(req, res) {
     .replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${canonicalUrl}$2`)
     .replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${escapeHtml(guide.title)}$2`)
     .replace(/(<meta property="og:description" content=")[^"]*(")/, `$1${escapeHtml(description)}$2`)
-    .replace(/(<meta property="og:image" content=")[^"]*(")/, `$1${imageUrl}$2`)
     .replace(/(<meta name="twitter:title" content=")[^"]*(")/, `$1${escapeHtml(guide.title)}$2`)
-    .replace(/(<meta name="twitter:description" content=")[^"]*(")/, `$1${escapeHtml(description)}$2`)
-    .replace(/(<meta name="twitter:image" content=")[^"]*(")/, `$1${imageUrl}$2`);
+    .replace(/(<meta name="twitter:description" content=")[^"]*(")/, `$1${escapeHtml(description)}$2`);
+  html = applyOgImage(html, ogImage, escapeHtml(guide.title));
 
   const jsonLd = JSON.stringify({
     '@context': 'https://schema.org',

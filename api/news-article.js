@@ -1,4 +1,5 @@
 import { escapeHtml, renderBlocksToHtml } from '../src/lib/newsBlocks.js';
+import { articleOgImage, applyOgImage } from '../src/lib/ogCards.js';
 
 // Server-renders a real HTML document for /news/:slug (routed here via the
 // vercel.json rewrite, which passes the slug as ?slug=) — this is the fix
@@ -51,7 +52,10 @@ export default async function handler(req, res) {
   const pageTitle = `${article.title} | Social Dev Technologies News`;
   const description = article.dek;
   const canonicalUrl = `${siteUrl}/news/${article.slug}`;
-  const imageUrl = article.image_url || `${siteUrl}/logo.jpeg`;
+  // Falls back through the article's own illustration -> a card themed to
+  // its department -> the generic news card. Never the logo: it's 192x192,
+  // under LinkedIn's large-card threshold and Facebook's floor both.
+  const ogImage = articleOgImage(article);
 
   html = html
     .replace(/<title>.*?<\/title>/s, `<title>${escapeHtml(pageTitle)}</title>`)
@@ -60,10 +64,9 @@ export default async function handler(req, res) {
     .replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${canonicalUrl}$2`)
     .replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${escapeHtml(article.title)}$2`)
     .replace(/(<meta property="og:description" content=")[^"]*(")/, `$1${escapeHtml(description)}$2`)
-    .replace(/(<meta property="og:image" content=")[^"]*(")/, `$1${imageUrl}$2`)
     .replace(/(<meta name="twitter:title" content=")[^"]*(")/, `$1${escapeHtml(article.title)}$2`)
-    .replace(/(<meta name="twitter:description" content=")[^"]*(")/, `$1${escapeHtml(description)}$2`)
-    .replace(/(<meta name="twitter:image" content=")[^"]*(")/, `$1${imageUrl}$2`);
+    .replace(/(<meta name="twitter:description" content=")[^"]*(")/, `$1${escapeHtml(description)}$2`);
+  html = applyOgImage(html, ogImage, escapeHtml(article.title));
 
   const jsonLd = JSON.stringify({
     '@context': 'https://schema.org',
