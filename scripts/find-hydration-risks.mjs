@@ -21,7 +21,14 @@ const root = path.join(__dirname, '..');
 
 function classify(node) {
   if (node.type === 'JSXText') {
-    return node.value.trim() ? 'text' : null; // whitespace-only is dropped by JSX
+    if (node.value.trim()) return 'text';
+    // Whitespace-only text is only dropped when it spans a line break. A
+    // plain space on the same line survives — which is why `<Icon /> {t}`
+    // still merges: its children are [element, " ", expression], and that
+    // space and the expression are two adjacent text nodes on the client
+    // but one in the serialized HTML. Missing this is what let a whole
+    // category of these through the first time.
+    return node.value.includes('\n') ? null : 'text';
   }
   if (node.type === 'JSXExpressionContainer') {
     const e = node.expression;

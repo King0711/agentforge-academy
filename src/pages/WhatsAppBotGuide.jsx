@@ -86,7 +86,7 @@ function Callout({ variant = 'tip', title, children }) {
         <Lightbulb className="w-4 h-4 text-brand mt-0.5 flex-shrink-0" />
       )}
       <p className="text-[13.5px] text-body-strong leading-relaxed m-0">
-        <strong className="text-ink">{title}</strong> {children}
+        <strong className="text-ink">{title}</strong> <span>{children}</span>
       </p>
     </div>
   );
@@ -106,7 +106,7 @@ function Section({ id, icon: Icon, badge, time, title, desc, children }) {
     <div id={id} className="py-10 border-b border-border-soft scroll-mt-[130px]">
       <div className="flex items-center gap-3 mb-3 flex-wrap">
         <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-brand bg-[#F3EBFF] dark:bg-brand/15 rounded-full px-2.5 py-1">
-          <Icon className="w-3.5 h-3.5" /> {badge}
+          <Icon className="w-3.5 h-3.5" /> <span>{badge}</span>
         </span>
         {time && <span className="text-[12.5px] text-body font-semibold ml-auto">{time}</span>}
       </div>
@@ -278,7 +278,7 @@ export default function WhatsAppBotGuide() {
               'A WhatsApp number to connect (ideally a spare one, not your main personal number)',
             ].map((item) => (
               <li key={item} className="flex items-start gap-2.5 text-[13.5px] text-body-strong">
-                <CheckCircle2 className="w-4 h-4 text-green mt-0.5 flex-shrink-0" /> {item}
+                <CheckCircle2 className="w-4 h-4 text-green mt-0.5 flex-shrink-0" /> <span>{item}</span>
               </li>
             ))}
           </ul>
