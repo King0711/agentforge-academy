@@ -6,6 +6,7 @@ import { departments } from '../data/departments';
 import { getAgentBySlug, getBuilderPagePath } from '../data/agents';
 import ArticleBody from '../components/news/ArticleBody';
 import ShareRow from '../components/ShareRow';
+import ShareRail from '../components/ShareRail';
 import NotFound from './NotFound';
 
 const TIER_LABEL = { builder1: 'Builder 1', builder2: 'Builder 2' };
@@ -97,6 +98,8 @@ export default function NewsArticle() {
 
   return (
     <article className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <ShareRail section="news" slug={article.slug} title={article.title} />
+
       <div className="flex flex-wrap gap-1.5 mb-4">
         {departmentBadges.map((d) => (
           <span
