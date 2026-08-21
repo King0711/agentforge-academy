@@ -28,7 +28,13 @@ export default function GuidesIndex() {
       .from('guides')
       .select('slug, title, dek, category, emoji, reading_time, image_url')
       .eq('status', 'published')
-      .order('sort_order', { ascending: true })
+      // Newest guide first. published_at is stamped once, on the first
+      // draft -> published transition (admin_set_guide_status only writes it
+      // `when published_at is null`), so re-publishing an edited guide can't
+      // bounce it back to the top the way a `now()`-on-every-approve column
+      // would. nullsFirst:false keeps an unstamped row at the bottom rather
+      // than letting it head the list.
+      .order('published_at', { ascending: false, nullsFirst: false })
       .then(({ data }) => {
         if (cancelled) return;
         setGuides(data || []);
