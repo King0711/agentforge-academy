@@ -21,6 +21,22 @@ function Rich({ text }) {
   );
 }
 
+// react-router's <Link to> only understands in-app routes — handing it an
+// absolute URL produces a relative navigation to a path that doesn't exist.
+// Guides cite outside sources, so route on the destination instead. The
+// string renderer in lib/guideBlocks.js emits plain <a href> and already
+// handles both cases.
+function GuideLink({ to, className, children }) {
+  if (/^(https?:)?\/\//i.test(to) || to.startsWith('mailto:')) {
+    return (
+      <a href={to} target="_blank" rel="noopener noreferrer" className={className}>
+        {children}
+      </a>
+    );
+  }
+  return <Link to={to} className={className}>{children}</Link>;
+}
+
 function Callout({ block }) {
   const isWarning = block.variant === 'warning';
   return (
@@ -42,9 +58,9 @@ function Callout({ block }) {
         {block.linkTo && (
           <>
             {' '}
-            <Link to={block.linkTo} className="text-brand font-bold hover:underline">
+            <GuideLink to={block.linkTo} className="text-brand font-bold hover:underline">
               {block.linkLabel || 'Read more'}
-            </Link>
+            </GuideLink>
           </>
         )}
       </p>
@@ -59,13 +75,13 @@ function Cta({ block }) {
         {block.eyebrow || 'Build this one'}
       </div>
       <p className="text-[15px] text-body leading-relaxed mb-5"><Rich text={block.text} /></p>
-      <Link
+      <GuideLink
         to={block.to}
         className="inline-flex items-center gap-2 bg-brand hover:bg-brand-deep text-white font-bold text-sm px-5 py-3 rounded-xl transition-colors shadow-[0_6px_16px_rgba(124,58,237,.3)]"
       >
         <span>{block.tier ? `${block.label} — ${block.tier} session` : block.label}</span>
         <ArrowRight className="w-4 h-4 flex-shrink-0" />
-      </Link>
+      </GuideLink>
     </div>
   );
 }
