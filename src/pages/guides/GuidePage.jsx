@@ -48,7 +48,7 @@ export default function GuidePage() {
       .from('guides')
       .select('slug, title, emoji, reading_time')
       .eq('status', 'published')
-      .order('sort_order', { ascending: true })
+      .order('published_at', { ascending: false, nullsFirst: false })
       .then(({ data }) => {
         if (!cancelled) setRelated((data || []).filter((g) => g.slug !== slug));
       });

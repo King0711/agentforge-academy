@@ -13,7 +13,9 @@ export default async function handler(req, res) {
   const [shellRes, guidesRes] = await Promise.all([
     fetch(`${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}/index.html`),
     fetch(
-      `${SUPABASE_URL}/rest/v1/guides?status=eq.published&select=slug,title,dek,category,emoji,reading_time&order=sort_order.asc`,
+      // Newest first, matching src/pages/guides/GuidesIndex.jsx — a crawler
+      // and a browser must see the same order on the same URL.
+      `${SUPABASE_URL}/rest/v1/guides?status=eq.published&select=slug,title,dek,category,emoji,reading_time&order=published_at.desc.nullslast`,
       { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } },
     ),
   ]);
