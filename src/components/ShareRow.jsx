@@ -6,12 +6,11 @@ import { TARGETS, copyShareLink } from './shareTargets';
 // Inline share row at the end of the content, shared by /news/:slug and
 // /guides/:slug.
 //
-// Shown BELOW lg only. The floating ShareRail now renders at every width,
-// so this is no longer the small-screen substitute it started as — it is
-// the labelled version. The rail shrinks to 36px icon-only buttons below
-// lg, where "which one is Ⓧ again" is a real question, so the row still
-// earns its place at the end of the read. From lg up the rail is big enough
-// to stand alone and this stays hidden.
+// Shown BELOW lg only. Below lg, ShareRail is a collapsed 32px toggle that
+// needs a tap to reveal its icons at all — this labelled row is what most
+// mobile readers actually use to share, reached by scrolling rather than
+// discovering the toggle. From lg up the rail is the always-open labelled-
+// enough version on its own and this stays hidden.
 //
 // Every destination gets its own utm_source, and each section its own
 // utm_campaign (see shareUrl), so GA4 can tell which platform AND which

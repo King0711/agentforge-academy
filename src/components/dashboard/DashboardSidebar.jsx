@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, Video, PlayCircle, UserCircle2, HelpCircle, LogOut, Shield, Hammer, Rocket } from 'lucide-react';
+import { Home, Video, PlayCircle, UserCircle2, HelpCircle, LogOut, Shield, Hammer, Rocket, Gift } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { usePro } from '../../hooks/usePro';
 import { getBuilder2Agents, getBuilderPagePath } from '../../data/agents';
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { to: '/dashboard/live-sessions', end: false, icon: Video, label: 'Live Sessions' },
   { to: '/dashboard/replays', end: false, icon: PlayCircle, label: 'Replays' },
   { to: '/dashboard/account', end: false, icon: UserCircle2, label: 'Account' },
+  { to: '/dashboard/refer', end: false, icon: Gift, label: 'Refer & Earn' },
   { to: '/dashboard/help', end: false, icon: HelpCircle, label: 'Help' },
 ];
 

@@ -1,10 +1,11 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { LazyMotion, domAnimation } from 'framer-motion';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProfileInfoModal from './components/ProfileInfoModal';
 import WhatsAppFloatButton from './components/WhatsAppFloatButton';
+import { captureReferralFromLocation } from './lib/referral';
 import Home from './pages/Home';
 import Catalog from './pages/Catalog';
 import PathDetail from './pages/PathDetail';
@@ -71,6 +72,13 @@ function AppShell() {
   const [selectedAgent, setSelectedAgent] = useState(null);
   const location = useLocation();
   const isWebinar = location.pathname === '/webinar';
+
+  // A referral link can land on any page, not just /welcome — capture it
+  // here so browsing around before signing up doesn't lose attribution.
+  // No-ops silently if there's no ?ref= param.
+  useEffect(() => {
+    captureReferralFromLocation();
+  }, []);
   // The student dashboard renders its own sidebar/top-bar chrome (see
   // StudentDashboard.jsx) instead of the site Navbar/Footer — same
   // suppression pattern as the webinar keynote.

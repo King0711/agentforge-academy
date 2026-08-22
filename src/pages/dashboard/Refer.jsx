@@ -1,0 +1,170 @@
+import { useEffect, useState } from 'react';
+import { Gift, Loader2, Link2, Check, Users } from 'lucide-react';
+import { supabase } from '../../lib/supabaseClient';
+import { SITE_URL } from '../../lib/ogCards';
+import { copyShareLink } from '../../components/shareTargets';
+
+const PAYOUT_PER_REFERRAL = 5000;
+
+const STATUS_BADGE = {
+  paid: { label: 'Paid', cls: 'bg-[#EAFBF1] text-green dark:bg-green/15' },
+  pending: { label: 'Payout pending', cls: 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400' },
+};
+
+// Gated on the RPC's own answer, not a client-side entitlement check.
+// get_or_create_my_referral_code() allows anyone who has ever held a
+// Builder 1/2 entitlement — current or expired — so re-deriving that same
+// "ever purchased" rule here from usePro() (which only tracks *currently
+// active* access) would drift from the database's actual rule the moment
+// someone's access lapses. Letting the RPC's error decide keeps there being
+// exactly one source of truth for who's eligible.
+export default function Refer() {
+  const [loading, setLoading] = useState(true);
+  const [eligible, setEligible] = useState(true);
+  const [code, setCode] = useState('');
+  const [referrals, setReferrals] = useState([]);
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const { data: codeData, error: codeErr } = await supabase.rpc('get_or_create_my_referral_code');
+      if (cancelled) return;
+
+      if (codeErr) {
+        setEligible(false);
+        setLoading(false);
+        return;
+      }
+      setCode(codeData || '');
+
+      const { data: referralsData, error: referralsErr } = await supabase.rpc('get_my_referrals');
+      if (cancelled) return;
+      if (referralsErr) {
+        setError('Could not load your referrals — try refreshing.');
+      } else {
+        setReferrals(referralsData || []);
+      }
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const link = code ? `${SITE_URL}/?ref=${code}` : '';
+  const paidCount = referrals.filter((r) => r.earning_status === 'paid').length;
+  const pendingCount = referrals.filter((r) => r.earning_status === 'pending').length;
+  const totalPaid = paidCount * PAYOUT_PER_REFERRAL;
+  const totalPending = pendingCount * PAYOUT_PER_REFERRAL;
+
+  const copyLink = async () => {
+    if (await copyShareLink(link)) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="py-16 text-center">
+        <Loader2 className="w-6 h-6 animate-spin text-brand mx-auto" />
+      </div>
+    );
+  }
+
+  if (!eligible) {
+    return (
+      <div className="bg-white dark:bg-[#181818] border border-border-soft rounded-2xl p-6 sm:p-8 text-center">
+        <Gift className="w-8 h-8 text-brand mx-auto mb-3" />
+        <h1 className="font-display text-xl font-extrabold text-ink mb-1.5">Refer & Earn</h1>
+        <p className="text-body max-w-sm mx-auto">
+          Enroll in Builder 1, Builder 2, or Pro to get your referral link — you'll earn ₦{PAYOUT_PER_REFERRAL.toLocaleString()}
+          {' '}for every student you send our way who signs up for a plan.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="font-display text-2xl font-extrabold text-ink flex items-center gap-2.5">
+          <Gift className="w-6 h-6 text-brand" /> Refer & Earn
+        </h1>
+        <p className="text-body mt-1.5">
+          Share your link. When someone signs up for Builder 1, Builder 2, or Pro through it, you earn ₦{PAYOUT_PER_REFERRAL.toLocaleString()}.
+        </p>
+      </div>
+
+      <div className="bg-white dark:bg-[#181818] border border-border-soft rounded-2xl p-5">
+        <p className="text-[11px] font-bold uppercase tracking-wide text-gray-400 mb-2">Your referral link</p>
+        <div className="flex items-center gap-2">
+          <code className="flex-1 min-w-0 truncate px-3 py-2.5 rounded-lg bg-[#FAF8FF] dark:bg-white/5 text-[13px] text-body-strong">
+            {link}
+          </code>
+          <button
+            type="button"
+            onClick={copyLink}
+            className="flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2.5 rounded-lg bg-brand hover:bg-brand-deep text-white transition-colors"
+          >
+            {copied ? <Check className="w-3.5 h-3.5" /> : <Link2 className="w-3.5 h-3.5" />}
+            {copied ? 'Copied' : 'Copy link'}
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-white dark:bg-[#181818] border border-border-soft rounded-2xl p-4 text-center">
+          <p className="text-2xl font-display font-extrabold text-ink">{referrals.length}</p>
+          <p className="text-[11px] font-semibold text-body mt-0.5">Signed up</p>
+        </div>
+        <div className="bg-white dark:bg-[#181818] border border-border-soft rounded-2xl p-4 text-center">
+          <p className="text-2xl font-display font-extrabold text-ink">₦{totalPaid.toLocaleString()}</p>
+          <p className="text-[11px] font-semibold text-body mt-0.5">Paid out</p>
+        </div>
+        <div className="bg-white dark:bg-[#181818] border border-border-soft rounded-2xl p-4 text-center">
+          <p className="text-2xl font-display font-extrabold text-ink">₦{totalPending.toLocaleString()}</p>
+          <p className="text-[11px] font-semibold text-body mt-0.5">Pending</p>
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-[#181818] border border-border-soft rounded-2xl p-5">
+        <h2 className="font-display font-bold text-ink flex items-center gap-2 mb-4">
+          <Users className="w-[18px] h-[18px] text-brand" /> People you've referred
+        </h2>
+
+        {error && <p className="text-sm text-rose-600 mb-3">{error}</p>}
+
+        {referrals.length === 0 ? (
+          <p className="text-sm text-body py-6 text-center">
+            Nobody yet — share your link above to start earning.
+          </p>
+        ) : (
+          <div className="divide-y divide-border-soft">
+            {referrals.map((r, i) => {
+              const badge = r.earning_status ? STATUS_BADGE[r.earning_status] : null;
+              return (
+                <div key={i} className="flex items-center justify-between gap-3 py-3">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-ink text-sm truncate">{r.referred_display_name || 'A student'}</p>
+                    <p className="text-[12px] text-gray-400">
+                      Signed up {new Date(r.signed_up_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <span
+                    className={`flex-shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-full ${
+                      badge ? badge.cls : 'bg-gray-100 dark:bg-white/5 text-gray-400'
+                    }`}
+                  >
+                    {badge ? badge.label : "Hasn't enrolled yet"}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
