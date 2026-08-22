@@ -98,8 +98,12 @@ export default function GuidePage() {
 
   const faqs = guide.faqs || [];
 
+  // pl-14 below lg reserves the strip the floating ShareRail occupies on
+  // narrow screens, where there is no gutter for it to sit in. lg:px-8 hands
+  // the spacing back to the normal rule once the centred column leaves a
+  // real gutter. Keep in step with the offsets in ShareRail.jsx.
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div className="max-w-3xl mx-auto pl-14 pr-4 sm:pl-16 sm:pr-6 lg:px-8 py-10">
       <ShareRail section="guides" slug={guide.slug} title={guide.title} />
 
       <Link

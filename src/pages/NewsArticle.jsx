@@ -96,8 +96,10 @@ export default function NewsArticle() {
   const relatedAgent = article.related_agent_slug ? getAgentBySlug(article.related_agent_slug) : null;
   const relatedAgentPath = relatedAgent ? getBuilderPagePath(relatedAgent) : null;
 
+  // pl-14 below lg reserves the strip the floating ShareRail occupies — see
+  // the matching note in GuidePage.jsx and the offsets in ShareRail.jsx.
   return (
-    <article className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <article className="max-w-3xl mx-auto pl-14 pr-4 sm:pl-16 sm:pr-6 lg:px-8 py-10">
       <ShareRail section="news" slug={article.slug} title={article.title} />
 
       <div className="flex flex-wrap gap-1.5 mb-4">
