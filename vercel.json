@@ -8,6 +8,7 @@
     { "source": "/guides/:slug", "destination": "/api/guide-article?slug=:slug" },
     { "source": "/guides-sitemap.xml", "destination": "/api/guides-sitemap.xml" },
     { "source": "/webinar", "destination": "/api/webinar" },
+    { "source": "/article-images/:path*", "destination": "https://qkrfpuckvymjpewcszgs.supabase.co/storage/v1/object/public/news-images/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
@@ -19,6 +20,12 @@
     },
     {
       "source": "/video-thumbnail.jpg",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/article-images/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
