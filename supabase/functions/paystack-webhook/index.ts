@@ -264,15 +264,54 @@ serve(async (req) => {
     .update(entitlementUpdate)
     .eq('user_id', userId);
 
-  await supabase.from('payments').insert({
-    user_id: userId,
-    provider: 'paystack',
-    provider_transaction_id: txId,
-    amount: amountNaira,
-    currency,
-    plan,
-    status: 'granted',
-  });
+  const { data: paymentRow } = await supabase
+    .from('payments')
+    .insert({
+      user_id: userId,
+      provider: 'paystack',
+      provider_transaction_id: txId,
+      amount: amountNaira,
+      currency,
+      plan,
+      status: 'granted',
+    })
+    .select('id')
+    .single();
+
+  // Referral payout — best-effort and isolated from the grant above: a
+  // referrals-table hiccup must never cost a real student their entitlement.
+  // This only ever creates a 'pending' ledger row; an admin marks it paid
+  // by hand later (admin_mark_referral_earning_paid in referrals-setup.sql)
+  // — there is no automatic transfer anywhere in this flow.
+  //
+  // At most one payout per referred student, ever, no matter how many
+  // separate plans they go on to buy — referral_earnings.referral_id is
+  // UNIQUE, so `ignoreDuplicates` here is just avoiding a thrown error on
+  // the expected-common case of a second qualifying purchase; the database
+  // constraint is what actually enforces the cap.
+  try {
+    if (paymentRow?.id) {
+      const { data: referral } = await supabase
+        .from('referrals')
+        .select('id, referrer_id')
+        .eq('referred_user_id', userId)
+        .maybeSingle();
+
+      if (referral) {
+        await supabase.from('referral_earnings').upsert(
+          {
+            referral_id: referral.id,
+            referrer_id: referral.referrer_id,
+            payment_id: paymentRow.id,
+            plan,
+          },
+          { onConflict: 'referral_id', ignoreDuplicates: true },
+        );
+      }
+    }
+  } catch (_err) {
+    // non-fatal — see comment above
+  }
 
   // Welcome email — best-effort, must never block the entitlement grant
   // above or this webhook's 200 response back to Paystack. The idempotency
