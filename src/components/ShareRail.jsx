@@ -13,12 +13,12 @@ import { TARGETS, copyShareLink } from './shareTargets';
 // Below lg: a collapsed 32px toggle that expands downward into the same
 // icon set on tap. Below lg there is no real gutter, so an always-open rail
 // either covers the text or forces the article to give back reading width
-// permanently for something used once per visit. A collapsed toggle needs
-// permanent space for only itself -- the expanded flyout is `absolute`, so
-// it does not affect the container's box and can overlay text briefly
-// without the article ever reserving room for it. GuidePage.jsx and
-// NewsArticle.jsx reserve just enough left padding for the collapsed
-// button; keep that padding and this button's size/offset in step.
+// permanently for something used once per visit. Both this button and its
+// expanded flyout are `fixed`/`absolute`, out of document flow, so neither
+// affects the container's box — they overlay the top-left corner of the
+// text instead of the page reserving room for them. (NewsArticle.jsx still
+// reserves left padding for it — see the note there — GuidePage.jsx
+// doesn't.)
 export default function ShareRail({ section, slug, title }) {
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
