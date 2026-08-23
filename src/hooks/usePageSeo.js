@@ -8,6 +8,13 @@ import { useEffect } from 'react';
 //
 // Prerender-safe: scripts/prerender.mjs snapshots the DOM after the app has
 // settled, so tags injected here land in the committed static HTML.
+//
+// jsonLd accepts either one schema object or an array of them (a guide page
+// wants Article + FAQPage + BreadcrumbList on the same page). Every script
+// this hook creates carries data-page-seo="jsonld" and, before adding new
+// ones, the effect sweeps that marker clean first — belt-and-braces against
+// ending up with two copies of the same block if an effect ever fires twice
+// for the same page (e.g. a hot-reload) without its cleanup running first.
 export function usePageSeo({ title, description, canonicalPath, jsonLd }) {
   useEffect(() => {
     const prevTitle = document.title;
@@ -31,13 +38,15 @@ export function usePageSeo({ title, description, canonicalPath, jsonLd }) {
       canonicalEl.setAttribute('href', `https://socialdevtechnologies.com${canonicalPath}`);
     }
 
-    let script;
-    if (jsonLd) {
-      script = document.createElement('script');
+    document.querySelectorAll('script[data-page-seo="jsonld"]').forEach((el) => el.remove());
+    const scripts = (Array.isArray(jsonLd) ? jsonLd : jsonLd ? [jsonLd] : []).map((entry) => {
+      const script = document.createElement('script');
       script.type = 'application/ld+json';
-      script.textContent = JSON.stringify(jsonLd);
+      script.setAttribute('data-page-seo', 'jsonld');
+      script.textContent = JSON.stringify(entry);
       document.head.appendChild(script);
-    }
+      return script;
+    });
 
     return () => {
       document.title = prevTitle;
@@ -46,7 +55,7 @@ export function usePageSeo({ title, description, canonicalPath, jsonLd }) {
         if (hadCanonical && prevCanonical) canonicalEl.setAttribute('href', prevCanonical);
         else canonicalEl.remove();
       }
-      if (script) script.remove();
+      scripts.forEach((script) => script.remove());
     };
   }, [title, description, canonicalPath, jsonLd]);
 }
