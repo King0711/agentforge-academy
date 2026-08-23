@@ -63,26 +63,53 @@ export default function GuidePage() {
     title: guide ? `${guide.title} | Social Dev Technologies` : undefined,
     description: guide?.dek,
     canonicalPath: guide ? `/guides/${guide.slug}` : undefined,
+    // Article carries the byline/dates search engines use for the result
+    // itself; BreadcrumbList mirrors the "All guides" link above into the
+    // trail Google renders under the URL; FAQPage is what turns the
+    // Q&A section below into an expandable rich result — only added when
+    // there's actually an FAQ section, since an empty FAQPage is invalid.
     jsonLd: guide
-      ? {
-          '@context': 'https://schema.org',
-          '@type': 'Article',
-          headline: guide.title,
-          description: guide.dek,
-          image: guide.image_url ? [guide.image_url] : undefined,
-          datePublished: guide.published_at,
-          dateModified: guide.updated_at,
-          author: { '@type': 'Organization', name: 'Social Dev Technologies' },
-          publisher: {
-            '@type': 'Organization',
-            name: 'Social Dev Technologies',
-            logo: { '@type': 'ImageObject', url: 'https://socialdevtechnologies.com/logo-icon.webp' },
+      ? [
+          {
+            '@context': 'https://schema.org',
+            '@type': 'Article',
+            headline: guide.title,
+            description: guide.dek,
+            image: guide.image_url ? [guide.image_url] : undefined,
+            datePublished: guide.published_at,
+            dateModified: guide.updated_at,
+            author: { '@type': 'Organization', name: 'Social Dev Technologies' },
+            publisher: {
+              '@type': 'Organization',
+              name: 'Social Dev Technologies',
+              logo: { '@type': 'ImageObject', url: 'https://socialdevtechnologies.com/logo-icon.webp' },
+            },
+            mainEntityOfPage: {
+              '@type': 'WebPage',
+              '@id': `https://socialdevtechnologies.com/guides/${guide.slug}`,
+            },
           },
-          mainEntityOfPage: {
-            '@type': 'WebPage',
-            '@id': `https://socialdevtechnologies.com/guides/${guide.slug}`,
+          {
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://socialdevtechnologies.com/' },
+              { '@type': 'ListItem', position: 2, name: 'Guides', item: 'https://socialdevtechnologies.com/guides' },
+              { '@type': 'ListItem', position: 3, name: guide.title, item: `https://socialdevtechnologies.com/guides/${guide.slug}` },
+            ],
           },
-        }
+          ...(guide.faqs?.length
+            ? [{
+                '@context': 'https://schema.org',
+                '@type': 'FAQPage',
+                mainEntity: guide.faqs.map((f) => ({
+                  '@type': 'Question',
+                  name: f.q,
+                  acceptedAnswer: { '@type': 'Answer', text: f.a },
+                })),
+              }]
+            : []),
+        ]
       : undefined,
   });
 
