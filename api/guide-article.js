@@ -54,7 +54,13 @@ export default async function handler(req, res) {
     .replace(/(<meta name="twitter:description" content=")[^"]*(")/, `$1${escapeHtml(description)}$2`);
   html = applyOgImage(html, ogImage, escapeHtml(guide.title));
 
-  const jsonLd = JSON.stringify({
+  // Mirrors the three blocks src/pages/guides/GuidePage.jsx sends via
+  // usePageSeo — but THIS is the copy that actually reaches most crawlers.
+  // The React version only exists once client JS has run and replaced this
+  // server-rendered stub (see the data-ssr-stub note below), so a crawler
+  // that doesn't execute JS — GPTBot, ClaudeBot, PerplexityBot, Bing's
+  // first pass — sees only what's built here. Keep these two in sync by eye.
+  const articleJsonLd = JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'Article',
     headline: guide.title,
@@ -71,9 +77,33 @@ export default async function handler(req, res) {
     mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
   });
 
+  const breadcrumbJsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl}/` },
+      { '@type': 'ListItem', position: 2, name: 'Guides', item: `${siteUrl}/guides` },
+      { '@type': 'ListItem', position: 3, name: guide.title, item: canonicalUrl },
+    ],
+  });
+
+  const faqJsonLd = guide.faqs?.length
+    ? JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: guide.faqs.map((f) => ({
+          '@type': 'Question',
+          name: f.q,
+          acceptedAnswer: { '@type': 'Answer', text: f.a },
+        })),
+      })
+    : null;
+
   html = html.replace('</head>', `
     <link rel="canonical" href="${canonicalUrl}" />
-    <script type="application/ld+json">${jsonLd}</script>
+    <script type="application/ld+json">${articleJsonLd}</script>
+    <script type="application/ld+json">${breadcrumbJsonLd}</script>
+    ${faqJsonLd ? `<script type="application/ld+json">${faqJsonLd}</script>` : ''}
   </head>`);
 
   const imageBlock = guide.image_url
