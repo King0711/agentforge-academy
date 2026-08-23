@@ -99,11 +99,20 @@ export default async function handler(req, res) {
       })
     : null;
 
+  // data-page-seo="jsonld" matches the marker src/hooks/usePageSeo.js puts on
+  // every script IT injects, and sweeps before injecting a fresh set. This
+  // route's #root carries data-ssr-stub (see below), so the client does a
+  // clean createRoot().render() rather than hydrating — that only replaces
+  // #root's contents, never touches <head>, so without this shared marker
+  // usePageSeo's sweep can't see (and can't remove) these server-rendered
+  // scripts. Once GuidePage mounts, its own Article/Breadcrumb/FAQPage blocks
+  // would then stack on top of these instead of replacing them — two
+  // Article blocks, both correct in isolation, is exactly that bug.
   html = html.replace('</head>', `
     <link rel="canonical" href="${canonicalUrl}" />
-    <script type="application/ld+json">${articleJsonLd}</script>
-    <script type="application/ld+json">${breadcrumbJsonLd}</script>
-    ${faqJsonLd ? `<script type="application/ld+json">${faqJsonLd}</script>` : ''}
+    <script type="application/ld+json" data-page-seo="jsonld">${articleJsonLd}</script>
+    <script type="application/ld+json" data-page-seo="jsonld">${breadcrumbJsonLd}</script>
+    ${faqJsonLd ? `<script type="application/ld+json" data-page-seo="jsonld">${faqJsonLd}</script>` : ''}
   </head>`);
 
   const imageBlock = guide.image_url
