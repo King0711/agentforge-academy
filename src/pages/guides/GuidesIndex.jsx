@@ -104,7 +104,7 @@ export default function GuidesIndex() {
       ) : visible.length === 0 ? (
         <div className="py-16 text-center text-body">No guides yet — check back soon.</div>
       ) : (
-        <div className="grid sm:grid-cols-2 gap-4 mt-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
           {visible.map((g) => (
             <Link
               key={g.slug}
