@@ -154,11 +154,18 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function draftWithGemini(rawItems, recentlyCovered) {
-  // gemini-3.7-flash: current stable/GA flash model, free-tier eligible —
-  // this is a repetitive daily curation/drafting job (dedupe, pick notable
-  // stories, write in a fixed voice), well within its capability.
-  const model = 'gemini-3.7-flash';
+// gemini-3.7-flash first: current stable/GA flash model, free-tier
+// eligible — this is a repetitive daily curation/drafting job (dedupe, pick
+// notable stories, write in a fixed voice), well within its capability.
+// gemini-2.5-flash is a fallback, not a downgrade-and-forget: on 2026-08-23
+// gemini-3.7-flash returned "high demand" 503s on every attempt for over 30
+// hours straight (two consecutive daily cron runs), and there was no other
+// path to a digest that day short of a human noticing and re-running it by
+// hand. A different model is a different capacity pool, so it's likely to
+// still be up during a 3.7-specific outage.
+const GEMINI_MODELS = ['gemini-3.7-flash', 'gemini-2.5-flash'];
+
+async function draftWithGeminiModel(model, rawItems, recentlyCovered) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
   const body = JSON.stringify({
     systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
@@ -176,8 +183,25 @@ async function draftWithGemini(rawItems, recentlyCovered) {
     const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
     if (res.ok) {
       const data = await res.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '[]';
-      return JSON.parse(text);
+      // Join every part, not just parts[0] — Gemini splits a single
+      // response across multiple parts (seen live: consistent
+      // "Unterminated string" JSON.parse failures around the same offset
+      // regardless of model, which is what dropping part 2+ looks like, not
+      // what genuine mid-generation truncation looks like).
+      const text = (data.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? '').join('') || '[]';
+      try {
+        return JSON.parse(text);
+      } catch (parseErr) {
+        // A 200 with truncated/malformed JSON is retryable, same as a 503 —
+        // seen live from gemini-2.5-flash (2026-08-24): request/response
+        // both fine, the model just cut the response off mid-string. Same
+        // request replayed can easily come back well-formed.
+        lastError = new Error(`Gemini returned malformed JSON: ${parseErr.message}`);
+        if (attempt === GEMINI_MAX_ATTEMPTS) throw lastError;
+        console.error(`Gemini attempt ${attempt}/${GEMINI_MAX_ATTEMPTS} returned malformed JSON, retrying:`, lastError.message);
+        await sleep(GEMINI_RETRY_DELAY_MS * attempt);
+        continue;
+      }
     }
     lastError = new Error(`Gemini API returned ${res.status}: ${await res.text()}`);
     // Only retry on transient server-side errors (e.g. 503 "high demand") —
@@ -185,6 +209,19 @@ async function draftWithGemini(rawItems, recentlyCovered) {
     if (res.status < 500 || attempt === GEMINI_MAX_ATTEMPTS) throw lastError;
     console.error(`Gemini attempt ${attempt}/${GEMINI_MAX_ATTEMPTS} failed, retrying:`, lastError.message);
     await sleep(GEMINI_RETRY_DELAY_MS * attempt);
+  }
+  throw lastError;
+}
+
+async function draftWithGemini(rawItems, recentlyCovered) {
+  let lastError;
+  for (const model of GEMINI_MODELS) {
+    try {
+      return await draftWithGeminiModel(model, rawItems, recentlyCovered);
+    } catch (err) {
+      lastError = err;
+      console.error(`Model "${model}" failed after ${GEMINI_MAX_ATTEMPTS} attempts, trying next:`, err.message);
+    }
   }
   throw lastError;
 }

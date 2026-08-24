@@ -303,3 +303,33 @@ select cron.schedule(
   );
   $$
 );
+
+-- 13. Catch-up run. The 06:00 job above has no retry-later-in-the-day path:
+--     when generate-news-digest fails outright, nothing drafts until the next
+--     run 24h later. On 2026-08-23/24 a gemini-3.7-flash "high demand" 503
+--     outage lasted 30+ hours and zeroed out two consecutive days before
+--     anyone noticed. This fires 6h after the primary run, gated on the day
+--     having no rows yet — a no-op on a normal day, one more shot on a
+--     failed one.
+select cron.schedule(
+  'news-digest-catchup',
+  '0 12 * * *',
+  $cron$
+  do $do$
+  begin
+    if not exists (
+      select 1 from public.news_articles where digest_date = current_date
+    ) then
+      perform net.http_post(
+        url := 'https://qkrfpuckvymjpewcszgs.supabase.co/functions/v1/generate-news-digest',
+        headers := jsonb_build_object(
+          'Content-Type', 'application/json',
+          'x-cron-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'cron_secret')
+        ),
+        body := '{}'::jsonb
+      );
+    end if;
+  end;
+  $do$;
+  $cron$
+);
