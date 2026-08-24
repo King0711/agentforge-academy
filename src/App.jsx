@@ -19,6 +19,7 @@ import WhatsAppBotGuide from './pages/WhatsAppBotGuide';
 import AIBuilder from './pages/AIBuilder';
 import Builder1Guide from './pages/Builder1Guide';
 import PortfolioSessionGuide from './pages/PortfolioSessionGuide';
+import WebinarSurvey from './pages/WebinarSurvey';
 // /news and /guides are the one group of PUBLIC routes safe to lazy-load.
 // The eager-import rule above exists because a lazy component introduces a
 // Suspense boundary, and Suspense can't hydrate against a plain Puppeteer
@@ -175,6 +176,7 @@ function AppShell() {
             <Route path="/ai-builder" element={<AIBuilder />} />
             <Route path="/builder-1-guide" element={<Builder1Guide />} />
             <Route path="/session/build-real-product" element={<PortfolioSessionGuide />} />
+            <Route path="/webinar-survey" element={<WebinarSurvey />} />
             <Route path="/news" element={<Suspense fallback={null}><News /></Suspense>} />
             <Route path="/news/:slug" element={<Suspense fallback={null}><NewsArticle /></Suspense>} />
             {/* Evergreen explainer section — DB-backed, so one route handles
