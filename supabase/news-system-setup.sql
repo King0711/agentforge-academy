@@ -29,18 +29,27 @@ alter table public.news_sources enable row level security;
 -- No policies — internal-only, read via the service role from the daily
 -- Edge Function. Same lockdown shape as `email_log`/`email_settings`.
 
-insert into public.news_sources (name, feed_url, source_type) values
-  ('OpenAI', 'https://openai.com/news/rss.xml', 'rss'),
-  ('Anthropic', 'https://www.anthropic.com/news', 'html'),
-  ('Google DeepMind', 'https://deepmind.google/blog/rss.xml', 'rss'),
-  ('TechCrunch AI', 'https://techcrunch.com/category/artificial-intelligence/feed/', 'rss'),
-  ('The Verge AI', 'https://www.theverge.com/ai-artificial-intelligence/rss/index.xml', 'rss'),
-  ('Ars Technica', 'https://arstechnica.com/feed/', 'rss'),
-  ('VentureBeat AI', 'https://venturebeat.com/category/ai/feed/', 'rss'),
-  ('Hacker News (AI)', 'https://hnrss.org/newest?q=AI', 'rss'),
-  ('AI News', 'https://www.artificialintelligence-news.com/feed/', 'rss'),
-  ('AI Magazine', 'https://aimagazine.com', 'html'),
-  ('MIT Technology Review (AI)', 'https://www.technologyreview.com/topic/artificial-intelligence/feed', 'rss')
+insert into public.news_sources (name, feed_url, source_type, enabled) values
+  ('OpenAI', 'https://openai.com/news/rss.xml', 'rss', true),
+  ('Anthropic', 'https://www.anthropic.com/news', 'html', true),
+  ('Google DeepMind', 'https://deepmind.google/blog/rss.xml', 'rss', true),
+  ('TechCrunch AI', 'https://techcrunch.com/category/artificial-intelligence/feed/', 'rss', true),
+  -- Note the segment order: /rss/<section>/index.xml, NOT
+  -- /<section>/rss/index.xml. The swapped form 404s silently — fetchSource
+  -- logs it and returns [], so the run still "succeeds" with one fewer
+  -- source. Cost us this feed for an unknown stretch before 2026-08-24.
+  ('The Verge AI', 'https://www.theverge.com/rss/ai-artificial-intelligence/index.xml', 'rss', true),
+  ('Ars Technica', 'https://arstechnica.com/feed/', 'rss', true),
+  ('VentureBeat AI', 'https://venturebeat.com/category/ai/feed/', 'rss', true),
+  ('Hacker News (AI)', 'https://hnrss.org/newest?q=AI', 'rss', true),
+  -- Seeded disabled as of 2026-08-24. The feed is alive, but it 403s any
+  -- request whose User-Agent identifies itself as a bot; the same URL
+  -- returns 200 to a browser UA. Left in place, disabled, rather than
+  -- spoofing a browser to get around a block the publisher set
+  -- deliberately. Re-enable only if someone decides that's acceptable.
+  ('AI News', 'https://www.artificialintelligence-news.com/feed/', 'rss', false),
+  ('AI Magazine', 'https://aimagazine.com', 'html', true),
+  ('MIT Technology Review (AI)', 'https://www.technologyreview.com/topic/artificial-intelligence/feed', 'rss', true)
 on conflict do nothing;
 
 -- 2. news_articles — one row per drafted item, whether it ends up as a
@@ -302,4 +311,34 @@ select cron.schedule(
     body := '{}'::jsonb
   );
   $$
+);
+
+-- 13. Catch-up run. The 06:00 job above has no retry-later-in-the-day path:
+--     when generate-news-digest fails outright, nothing drafts until the next
+--     run 24h later. On 2026-08-23/24 a gemini-3.7-flash "high demand" 503
+--     outage lasted 30+ hours and zeroed out two consecutive days before
+--     anyone noticed. This fires 6h after the primary run, gated on the day
+--     having no rows yet — a no-op on a normal day, one more shot on a
+--     failed one.
+select cron.schedule(
+  'news-digest-catchup',
+  '0 12 * * *',
+  $cron$
+  do $do$
+  begin
+    if not exists (
+      select 1 from public.news_articles where digest_date = current_date
+    ) then
+      perform net.http_post(
+        url := 'https://qkrfpuckvymjpewcszgs.supabase.co/functions/v1/generate-news-digest',
+        headers := jsonb_build_object(
+          'Content-Type', 'application/json',
+          'x-cron-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'cron_secret')
+        ),
+        body := '{}'::jsonb
+      );
+    end if;
+  end;
+  $do$;
+  $cron$
 );
