@@ -175,7 +175,15 @@ async function draftWithGeminiModel(model, rawItems, recentlyCovered) {
         text: `Already covered in the last 14 days — do NOT draft any of these again:\n\n${JSON.stringify(recentlyCovered)}\n\nHere are today's raw items:\n\n${JSON.stringify(rawItems)}`,
       }],
     }],
-    generationConfig: { maxOutputTokens: 8000, responseMimeType: 'application/json' },
+    // maxOutputTokens was 8000, which a normal day's digest overruns: ~8
+    // full articles at 300-500 words each, plus deks, image prompts and
+    // JSON scaffolding for the blurb tail, lands past that ceiling. The
+    // model then stops mid-string and the response fails to parse — which
+    // showed up as "Unterminated string in JSON" at a position that moved
+    // around with the day's content (1287, 1313, 1514...) rather than
+    // sitting at a fixed offset. 32000 leaves generous headroom and is well
+    // inside both flash models' output limits.
+    generationConfig: { maxOutputTokens: 32000, responseMimeType: 'application/json' },
   });
 
   let lastError;
@@ -183,11 +191,12 @@ async function draftWithGeminiModel(model, rawItems, recentlyCovered) {
     const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
     if (res.ok) {
       const data = await res.json();
-      // Join every part, not just parts[0] — Gemini splits a single
-      // response across multiple parts (seen live: consistent
-      // "Unterminated string" JSON.parse failures around the same offset
-      // regardless of model, which is what dropping part 2+ looks like, not
-      // what genuine mid-generation truncation looks like).
+      // Join every part rather than reading parts[0]: Gemini may split one
+      // response across several parts, and taking only the first silently
+      // truncates it. (This was first suspected as the cause of the
+      // "Unterminated string" failures below; it wasn't — those were the
+      // output-token ceiling — but concatenating is still the correct way
+      // to read the response.)
       const text = (data.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? '').join('') || '[]';
       try {
         return JSON.parse(text);
@@ -196,7 +205,14 @@ async function draftWithGeminiModel(model, rawItems, recentlyCovered) {
         // seen live from gemini-2.5-flash (2026-08-24): request/response
         // both fine, the model just cut the response off mid-string. Same
         // request replayed can easily come back well-formed.
-        lastError = new Error(`Gemini returned malformed JSON: ${parseErr.message}`);
+        // finishReason is the tell for *why*: MAX_TOKENS means the output
+        // ceiling above is too low for the day's volume rather than the
+        // model misbehaving, and that distinction is invisible from the
+        // parse error alone.
+        const finishReason = data.candidates?.[0]?.finishReason ?? 'unknown';
+        lastError = new Error(
+          `Gemini returned malformed JSON (finishReason: ${finishReason}): ${parseErr.message}`,
+        );
         if (attempt === GEMINI_MAX_ATTEMPTS) throw lastError;
         console.error(`Gemini attempt ${attempt}/${GEMINI_MAX_ATTEMPTS} returned malformed JSON, retrying:`, lastError.message);
         await sleep(GEMINI_RETRY_DELAY_MS * attempt);
