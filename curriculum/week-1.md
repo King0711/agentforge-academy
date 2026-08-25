@@ -2,15 +2,15 @@
 
 ## Scheduled Digests
 
-*Revamped session instructions · Free-tier build paths*
+*Session guides · No paid AI account required*
 
 ---
 
 ## About this week
 
-Week 1 teaches one mechanism three times: **read a source on a timer, summarise it, deliver it somewhere useful.** By Sunday you will have three agents running on schedules you set, delivering to your inbox and your team chat, without you touching them.
+Week 1 teaches one mechanism three times: **read a source on a timer, summarise it, deliver it somewhere useful.** By the end you will have three agents running on schedules you set, delivering to your inbox and your team chat, without you touching them.
 
-Every build this week runs on a **free AI tier**. No credit card, no subscription, no dollar card. If you already have a paid Claude plan, each session also includes the Claude path — but you do not need it to finish the week or earn your certificate.
+**Everything this week is free.** No Claude Pro. No ChatGPT Plus. No API credits. No credit card, virtual or otherwise. That applies to both halves of the work — the AI that runs *inside* your agents, and the AI assistant that helps you *write* them.
 
 | Session | Agent | Time | Main project |
 |---|---|---|---|
@@ -24,64 +24,166 @@ Completing **Session 1 alone** earns your Week 1 certificate. Sessions 2 and 3 a
 
 ## Before you start — read this once
 
-These four things apply to every Python build from here to Week 4. Learn them now and the rest of the programme is smoother.
+Four things that apply to every build from here to Week 4.
 
-### 1. Your AI provider is free, and it is a choice
+### 1. The AI *inside* your agent — free
 
-We use **Google AI Studio (Gemini)** as the default. It is free, it needs no credit card, and you sign in with the Google account you already have. Get your key at [aistudio.google.com](https://aistudio.google.com) — click **Get API key**. It takes about ninety seconds.
+Your agents call **Google Gemini** through Google AI Studio. Free, no credit card, and you sign in with the Google account you already have.
 
-**Groq** ([console.groq.com](https://console.groq.com)) is your backup. Also free, also no card, noticeably faster. If Gemini ever rate-limits you mid-session, switch to Groq and carry on.
+Get your key at **[aistudio.google.com](https://aistudio.google.com)** → click **Get API key**. Ninety seconds.
 
-You will notice we never tell you to use a specific model version. Model names change every few months. Pick whatever the current Flash model is in the dropdown — the instructions are written to survive that.
+**Groq** ([console.groq.com](https://console.groq.com)) is your backup — also free, also no card, and noticeably faster. If Gemini ever rate-limits you mid-session, switch to Groq and carry on. Session 2 shows you how.
 
-### 2. `llm.py` — the file that keeps you free
+### 2. The AI that *helps you write* — also free
 
-Every agent you build from now on will call one function: `chat()`. That function lives in a file called `llm.py`, and it is the only place that knows which AI company you are using.
+Several sessions say "paste this prompt into your AI assistant." Any of these work, and all are free:
+
+| Assistant | Where | Notes |
+|---|---|---|
+| **Google AI Studio** | [aistudio.google.com](https://aistudio.google.com) | **Recommended** — you are already there for your API key, and it writes code well |
+| Gemini | [gemini.google.com](https://gemini.google.com) | Same models, chat-style interface |
+| ChatGPT (free tier) | [chatgpt.com](https://chatgpt.com) | Works fine for these prompts |
+| Claude (free tier) | [claude.ai](https://claude.ai) | Works fine — you will hit usage limits sooner, but you do **not** need Pro |
+
+Pick one and stick with it for the week. If it stops mid-answer or hits a limit, switch to another and paste the same prompt — none of these prompts depend on a specific assistant.
+
+> **You do not need a paid plan for any of this.** If a step ever seems to require one, it is a mistake in our instructions — tell us and we will fix it.
+
+### 3. `llm.py` — the file that keeps you free
+
+Every agent you build calls one function: `chat()`. It lives in `llm.py`, and it is the only file that knows which AI company is answering. Change one line and every agent you have built switches provider.
+
+**Copy this file exactly as it is.** Do not ask an AI to generate it — this is the one file where a subtle mistake breaks every agent you build afterwards, so we have written and tested it for you.
 
 ```python
-# llm.py — one place to choose your AI provider.
-# Swap PROVIDER and every agent you have built switches with it.
-import os, time, random
+"""
+llm.py — one place to choose your AI provider.
 
-PROVIDER = os.getenv("LLM_PROVIDER", "gemini")   # "gemini" | "groq" | "claude"
+Every agent you build calls chat(). Nothing else in your project needs to
+know which AI company is answering. Change LLM_PROVIDER in your .env and
+every agent you have built switches with it.
+"""
+import os
+import random
+import time
+
+PROVIDER = os.getenv("LLM_PROVIDER", "gemini").lower()
 MAX_RETRIES = 5
+
+_client = None  # built once, on first use
 
 
 class RateLimited(Exception):
-    """Raised when the provider says we are going too fast."""
+    """The provider asked us to slow down. chat() handles this for you."""
 
 
 def chat(prompt: str, system: str = "", max_tokens: int = 1200) -> str:
-    """Send a prompt, get text back. Retries politely on rate limits."""
+    """Send a prompt, get text back. Waits and retries if we hit a rate limit."""
     for attempt in range(MAX_RETRIES):
         try:
             if PROVIDER == "gemini":
                 return _gemini(prompt, system, max_tokens)
             if PROVIDER == "groq":
                 return _groq(prompt, system, max_tokens)
-            if PROVIDER == "claude":
-                return _claude(prompt, system, max_tokens)
-            raise ValueError(f"Unknown LLM_PROVIDER: {PROVIDER!r}")
+            raise ValueError(
+                f"Unknown LLM_PROVIDER: {PROVIDER!r}. Use 'gemini' or 'groq'."
+            )
         except RateLimited:
-            wait = (2 ** attempt) + random.random()
-            print(f"Rate limited — waiting {wait:.1f}s, then retrying...")
+            if attempt == MAX_RETRIES - 1:
+                break
+            wait = 2**attempt + random.random()
+            print(f"  Rate limited — waiting {wait:.1f}s, then retrying...")
             time.sleep(wait)
-    raise RuntimeError(f"Still rate limited after {MAX_RETRIES} attempts.")
+
+    raise RuntimeError(
+        f"Still rate limited after {MAX_RETRIES} tries. Wait a minute, or set "
+        f"LLM_PROVIDER=groq in your .env and run again."
+    )
+
+
+def _require(name: str) -> str:
+    value = os.getenv(name)
+    if not value:
+        raise RuntimeError(f"{name} is missing. Add it to your .env file.")
+    return value
+
+
+def _gemini(prompt: str, system: str, max_tokens: int) -> str:
+    global _client
+    from google import genai
+    from google.genai import errors, types
+
+    if _client is None:
+        _client = genai.Client(api_key=_require("GEMINI_API_KEY"))
+
+    config = types.GenerateContentConfig(
+        max_output_tokens=max_tokens,
+        system_instruction=system or None,
+    )
+    try:
+        response = _client.models.generate_content(
+            model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+            contents=prompt,
+            config=config,
+        )
+    except errors.ClientError as e:
+        if getattr(e, "code", None) == 429:
+            raise RateLimited from e
+        raise
+
+    return (response.text or "").strip()
+
+
+def _groq(prompt: str, system: str, max_tokens: int) -> str:
+    global _client
+    import groq
+
+    if _client is None:
+        _client = groq.Groq(api_key=_require("GROQ_API_KEY"))
+
+    messages = []
+    if system:
+        messages.append({"role": "system", "content": system})
+    messages.append({"role": "user", "content": prompt})
+
+    try:
+        response = _client.chat.completions.create(
+            model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+            messages=messages,
+            max_tokens=max_tokens,
+        )
+    except groq.RateLimitError as e:
+        raise RateLimited from e
+
+    return (response.choices[0].message.content or "").strip()
+
+
+if __name__ == "__main__":
+    print(f"Provider: {PROVIDER}")
+    print(chat("Say hello in exactly five words."))
 ```
 
-You will generate the provider functions in Session 2. Do not skip this file or inline the AI call directly into your agent. The habit matters more than the code: **a well-built agent does not care which model answers it.** Engineers who understand that are worth more than engineers who memorised one company's SDK.
+Install what it needs:
 
-### 3. Free tiers have speed limits — that is fine
+```bash
+pip install google-genai groq python-dotenv
+```
 
-Free plans cap how many requests you can send per minute. Week 1's agents run once a morning, so you will almost never hit a limit. But `llm.py` handles it automatically by waiting and retrying, so you never see a raw error.
+Then test it on its own before building anything:
 
-You will meet this properly in Week 2, when you start processing whole folders of files. The groundwork is here.
+```bash
+python llm.py
+```
 
-### 4. Be deliberate about what you send
+> ✅ **Check your work:** You should see `Provider: gemini` and a five-word greeting. If you get `GEMINI_API_KEY is missing`, your `.env` is not set up yet. If you get a model-not-found error, open AI Studio, copy the exact name of the current Flash model from the dropdown, and add `GEMINI_MODEL=that-name` to your `.env`.
 
-Free AI tiers generally train on the data you send them. For a test Slack channel or your own calendar, that is completely fine.
+**Why this file matters more than it looks.** Most people learning this hard-code one company's SDK straight into their agent. Then that company changes its pricing, or deprecates the model, and everything they built stops working. You are learning the version that survives that. **A well-built agent does not care which model answers it.**
 
-It is **not** fine for a real client's contract or a stranger's CV — both of which turn up in Weeks 2 and 3. When you get there, that is the point at which paying for a private tier starts to make sense. Not before.
+### 4. Two habits to build now
+
+**Free tiers have speed limits.** Free plans cap requests per minute. Week 1's agents run once a morning, so you will rarely hit one — and `llm.py` already waits and retries so you never see a raw error. This matters properly in Week 2, when you start processing whole folders.
+
+**Be deliberate about what you send.** Free AI tiers generally train on the data you send them. For a test Slack channel or your own calendar, that is completely fine. It is **not** fine for a real client's contract or a stranger's CV — both of which turn up in Weeks 2 and 3. That is the point where paying for a private tier starts to make sense. Not before.
 
 ---
 
@@ -210,7 +312,7 @@ Automate daily delivery so the briefing arrives before you start work, without y
 You just built an automated news analyst that reads industry headlines and writes you a professional briefing — on a permanent zero-cost architecture. Take a screenshot of the email you received and add this project to your portfolio.
 
 <details>
-<summary>Need help writing it up? Use this prompt</summary>
+<summary>Need help writing it up? Paste this into any free AI assistant</summary>
 
 ```
 I just built a daily news briefing agent using a visual workflow builder (Make.com) that automatically pulls RSS articles for my industry, uses the Google Gemini API to write a 5-minute executive summary, and delivers it to me via email every morning on a schedule.
@@ -233,21 +335,22 @@ Help me write:
 
 A scheduled Python job that pulls the last 24 hours of messages from your most important team channels, asks an AI to sort them into **Urgent / Decisions Needed / FYI**, and posts that briefing directly to your DMs every morning.
 
-This is your first real code build, and where you create `llm.py` — the provider shim you reuse for the rest of the programme.
+This is your first real code build, and where `llm.py` earns its keep.
 
 ## What you need
 
 - Python 3.10+ installed locally
-- A free Google AI Studio account — [aistudio.google.com](https://aistudio.google.com), no credit card
+- Your free Gemini API key from [aistudio.google.com](https://aistudio.google.com)
+- A free AI assistant open in a browser tab (see the table in *Before you start*)
 - **Either** a Slack workspace where you can install apps, **or** a Discord server you own — Build 1 covers both
 - 2–3 channels with real conversation in them to summarise
 
-> **A note on Slack.** Most people cannot install apps in their employer's Slack — that permission belongs to admins. If that is you, use the Discord route in Build 1. It is free, you own the server, you can create one in two minutes, and every other step in this session is identical. You are not missing out on anything.
+> **A note on Slack.** Most people cannot install apps in their employer's Slack — that permission belongs to admins. If that is you, use the **Discord route** in Build 1. It is free, you own the server, you can create one in two minutes, and every other step in this session is identical. You are not missing out on anything.
 
 ## By the end of this session
 
 - Connect a bot to your team chat and read channel history
-- Build a provider shim so your agent is not locked to one AI company
+- Use the provider shim so your agent is not locked to one AI company
 - Design a multi-section summarisation prompt
 - Get a prioritised briefing delivered to your DMs every morning
 - Schedule the whole thing to run without you
@@ -278,53 +381,60 @@ Click **Install to Workspace** and copy the Bot User OAuth Token (it starts with
 
 ---
 
-### Build 2 — Build the briefing generator (30 min)
+### Build 2 — Set up your project and the AI layer (20 min)
 
-The core of the agent: pulling messages and turning them into a briefing. You will also build the provider shim you reuse for every agent after this one.
+**1. Create your project folder** and a `.env` file inside it:
 
-**1. Get your free Gemini API key.** Open [aistudio.google.com](https://aistudio.google.com), sign in with your Google account, and click **Get API key**. No credit card required. Create a `.env` file in your project folder with `GEMINI_API_KEY`, your bot token, and your user ID.
+```
+GEMINI_API_KEY=your_key_from_aistudio
+LLM_PROVIDER=gemini
+SLACK_BOT_TOKEN=xoxb-your-token
+SLACK_USER_ID=your-user-id
+```
 
-**2. Paste this prompt into your AI assistant:**
+*(Discord users: use `DISCORD_BOT_TOKEN` and `DISCORD_USER_ID` instead.)*
+
+**2. Add `llm.py`.** Copy it from *Before you start* into your project folder, exactly as written. Then:
+
+```bash
+pip install google-genai groq python-dotenv slack_sdk
+python llm.py
+```
+
+> ✅ **Check your work:** You should see `Provider: gemini` and a five-word greeting. **Do not move on until this works** — every remaining step depends on it, and debugging it now is far easier than debugging it buried inside the agent.
+
+**3. Now build the reader and summariser.** Paste this into your free AI assistant:
 
 ```
 I'm building a "Morning Briefing" bot in Python that reads my team chat and summarizes the last 24 hours.
 
-I have a .env file with GEMINI_API_KEY, SLACK_BOT_TOKEN, and SLACK_USER_ID. (If I'm using Discord instead, use DISCORD_BOT_TOKEN and DISCORD_USER_ID and the discord.py library.)
+I already have a working llm.py in my project folder that exposes:
+    chat(prompt: str, system: str = "", max_tokens: int = 1200) -> str
+Use that function for all AI calls. Do not import any AI SDK directly, and do not rewrite llm.py.
+
+I have a .env file with GEMINI_API_KEY, LLM_PROVIDER, SLACK_BOT_TOKEN, and SLACK_USER_ID.
+(If I'm using Discord instead, use DISCORD_BOT_TOKEN and DISCORD_USER_ID and the discord.py library.)
 
 Please create:
 
-1. requirements.txt with slack_sdk, google-generativeai, python-dotenv
+1. chat_reader.py with get_recent_messages(channel_id, hours=24) that fetches all messages from the last N hours (handling pagination), and get_channel_name(channel_id). Load the .env with python-dotenv.
 
-2. llm.py — a provider shim so this agent isn't locked to one AI company. It should have:
-   - A PROVIDER constant at the top read from the LLM_PROVIDER env var, defaulting to "gemini"
-   - chat(prompt, system="", max_tokens=1200) that routes to the right provider and returns plain text
-   - Support for "gemini" (use the latest Flash model), and stubs for "groq" and "claude" I can fill in later
-   - On a rate-limit (429) error, retry up to 5 times with exponential backoff (1s, 2s, 4s, 8s, 16s) plus small random jitter, printing what it's waiting for before each retry
+2. summarizer.py with summarize_briefing(channel_messages: dict) that combines messages from all channels into one prompt and calls chat() to produce a briefing with exactly three sections — Urgent, Decisions Needed, and FYI. Ask for my platform's markdown flavour in the prompt. Pass the role instruction as the `system` argument, not inside the prompt text.
 
-3. chat_reader.py with get_recent_messages(channel_id, hours=24) that fetches all messages from the last N hours (handling pagination), and get_channel_name(channel_id)
+3. notifier.py with send_dm(user_id, text) that opens a DM and posts the message.
 
-4. summarizer.py with summarize_briefing(channel_messages: dict) that combines messages from all channels and calls chat() from llm.py to produce a briefing with exactly three sections — Urgent, Decisions Needed, and FYI — using the markdown flavour my platform renders
-
-5. notifier.py with send_dm(user_id, text) that opens a DM and posts the message
-
-Install the dependencies for me.
+Show me each file in full, and tell me what to run to test each one on its own.
 ```
 
-> ✅ **Check your work:** Run `python -c "from llm import chat; print(chat('Say hello in exactly five words'))"` — it should print a short greeting with no error. That confirms your Gemini key works before you wire anything else together.
+> ✅ **Check your work:** Run `chat_reader.py` directly. It should print real message text from your channels. An empty list means the bot is not in the channel (Slack) or Message Content Intent is off (Discord).
 
-**3. Test the reader on its own.** Run `chat_reader.py` directly and confirm it prints real messages from your channels, not an empty list.
-
-> ✅ **Check your work:** You should see actual message text. An empty list usually means the bot is not in the channel (Slack) or Message Content Intent is off (Discord).
-
-**Go further:** Ask your assistant to add a fourth section, "Wins", that highlights anything positive or completed in the last 24 hours.
+**Go further:** Ask your assistant to add a fourth section, "Wins", highlighting anything positive or completed in the last 24 hours.
 
 ---
 
-### Build 3 — Wire it together and schedule it (20 min)
+### Build 3 — Wire it together and schedule it (30 min)
 
-Connect the pieces into one script, then make it run every morning without you.
-
-**1. Paste this prompt into your AI assistant:**
+**1. Paste this into your AI assistant:**
 
 ```
 Now create main.py that ties my Morning Briefing bot together:
@@ -336,6 +446,7 @@ Now create main.py that ties my Morning Briefing bot together:
 - Send the result as a DM to my user ID using notifier.py
 - Print "Briefing sent!" when done
 - If a channel has no messages in the window, skip it rather than sending an empty section
+- If any single channel fails to load, print a warning and carry on with the others rather than crashing
 
 Also show me the crontab line to run this every weekday at 8am, and explain how I'd host it free on Render or Hugging Face Spaces so it runs when my laptop is off.
 ```
@@ -344,7 +455,15 @@ Also show me the crontab line to run this every weekday at 8am, and explain how 
 
 **2. Add the crontab line** so it runs tomorrow morning on its own. Use the absolute path to your virtual environment's Python — run the exact command manually once first to confirm it works before trusting cron with it.
 
-**Go further:** Swap `LLM_PROVIDER` to `groq` in your `.env`, fill in the Groq stub in `llm.py`, and run it again. Same briefing, different company, one line changed. That is the entire point of the shim.
+**3. Now prove the point of `llm.py`.** Get a free key at [console.groq.com](https://console.groq.com), add `GROQ_API_KEY=...` to your `.env`, and change one line:
+
+```
+LLM_PROVIDER=groq
+```
+
+Run `python main.py` again.
+
+> ✅ **Check your work:** You get the same briefing, generated by a completely different company's model, and you changed one line to do it. **Nothing in your agent code knew or cared.** That is the lesson of this session — remember it when a provider changes its pricing.
 
 ---
 
@@ -352,22 +471,24 @@ Also show me the crontab line to run this every weekday at 8am, and explain how 
 
 | Problem | Fix |
 |---|---|
+| `GEMINI_API_KEY is missing` | Your `.env` is not being loaded, or the key name is misspelled. `llm.py` reads it via `os.getenv` — make sure something calls `load_dotenv()` before your first `chat()` call. |
+| Model-not-found error from Gemini | Model names change. Open AI Studio, copy the exact name of the current Flash model, and add `GEMINI_MODEL=that-name` to your `.env`. |
 | Slack: `SlackApiError: not_in_channel` | Type `/invite @YourBotName` in each channel you want summarised. The bot can only read channels it has joined. |
-| Slack: `SlackApiError: missing_scope` | Go back to OAuth & Permissions, add the missing scope to Bot Token Scopes, then reinstall the app to your workspace to apply the change. |
-| Discord: the bot connects but every message body is empty | Message Content Intent is off. Go to your app's Bot tab in the Discord Developer Portal, turn ON "Message Content Intent" under Privileged Gateway Intents, and restart your script. |
-| 429 / "resource exhausted" from Gemini | You are calling faster than the free tier allows. The backoff in `llm.py` handles this automatically — if you are still seeing it after all retries, you are testing in a tight loop. Wait 60 seconds. A once-a-morning briefing will never hit this. |
-| Briefing arrives but is empty or says "no messages found" | Double-check your channel IDs, and confirm messages were actually posted in the last 24 hours. Post a few test messages and re-run. |
-| The cron job never seems to run | Crontab needs an absolute path to your venv's Python. Run the exact command from your crontab entry manually in a terminal first. |
+| Slack: `SlackApiError: missing_scope` | Go back to OAuth & Permissions, add the missing scope, then **reinstall** the app to your workspace to apply the change. |
+| Discord: bot connects but every message is empty | Message Content Intent is off. Turn it ON in the Bot tab of the Developer Portal and restart your script. |
+| Rate-limit messages that never stop | `llm.py` retries five times, then tells you to switch. Set `LLM_PROVIDER=groq` in `.env` and run again. |
+| Briefing arrives but is empty | Check your channel IDs, and confirm messages were posted in the last 24 hours. Post a few test messages and re-run. |
+| The cron job never runs | Crontab needs an absolute path to your venv's Python. Run the exact command from your crontab entry manually first. |
 
 ## Add this to your portfolio
 
-You just built a bot that reads your team's chat and hands you a prioritised briefing every morning — running on a free AI tier, with a provider shim that means you are not locked to any one company. Screenshot the DM it sent you and add it to your portfolio.
+You just built a bot that reads your team's chat and hands you a prioritised briefing every morning — running on a free AI tier, with a provider layer that means you are not locked to any one company. Screenshot the DM it sent you and add it to your portfolio.
 
 <details>
-<summary>Need help writing it up? Use this prompt</summary>
+<summary>Need help writing it up? Paste this into any free AI assistant</summary>
 
 ```
-I built an automated morning briefing bot in Python that reads the last 24 hours of messages from my team chat channels, uses an LLM to summarize them into Urgent / Decisions Needed / FYI sections, and delivers the briefing to my DMs on a daily schedule. I architected it with a provider abstraction layer so the underlying AI model can be swapped with a single config change.
+I built an automated morning briefing bot in Python that reads the last 24 hours of messages from my team chat channels, uses an LLM to summarize them into Urgent / Decisions Needed / FYI sections, and delivers the briefing to my DMs on a daily schedule. I architected it with a provider abstraction layer so the underlying AI model can be swapped with a single config change, and it handles rate limits with exponential backoff.
 
 Help me write:
 1. A 2-3 sentence project description for my portfolio site
@@ -390,7 +511,8 @@ A morning automation that pulls today's Google Calendar events and your open tas
 ## What you need
 
 - Python 3.10+ installed locally
-- A free Google AI Studio account — [aistudio.google.com](https://aistudio.google.com), no credit card
+- Your free Gemini API key from [aistudio.google.com](https://aistudio.google.com)
+- A free AI assistant open in a browser tab
 - A Google Cloud account (free tier is fine) with the Calendar API enabled
 - A Google Calendar you can share with a service account
 - A Gmail account with an App Password for sending mail
@@ -400,7 +522,7 @@ A morning automation that pulls today's Google Calendar events and your open tas
 - Authenticate with Google Calendar via a service account — no browser login flow
 - Combine two different data sources into one prompt
 - Design a planning prompt that returns a real time-blocked schedule
-- Reuse the provider shim so the agent is not tied to one AI company
+- Reuse `llm.py` across a second project
 - Get a daily plan emailed to you automatically every weekday morning
 
 ---
@@ -413,7 +535,7 @@ Set up read-only access to your calendar without any browser login flow.
 
 Then open Google Calendar → **Settings → Settings for my calendars → your calendar → Share with specific people**, and add the service account's email address with "See all event details". You will find that email inside the JSON key file as `client_email`.
 
-**2. Paste this prompt into your AI assistant:**
+**2. Paste this into your free AI assistant:**
 
 ```
 Create calendar_reader.py for a Python project. It should:
@@ -422,20 +544,18 @@ Create calendar_reader.py for a Python project. It should:
 3. Convert event times to my local timezone before returning them
 4. Print the result when run directly
 
-Also create requirements.txt with google-auth, google-api-python-client, google-generativeai, and python-dotenv.
+Also tell me the pip install command for the packages it needs.
 ```
 
-> ✅ **Check your work:** Run `calendar_reader.py` — it should print a list of today's events with times that match what you see in Google Calendar. If you get a permission error, double-check the calendar is shared with the exact service account email.
+> ✅ **Check your work:** Run `calendar_reader.py` — it should print today's events with times matching what you see in Google Calendar. A permission error means the calendar is not shared with the exact service account email.
 
-**Go further:** Try running it on a day with no events and a day with several — confirm both cases work without errors.
+**Go further:** Try it on a day with no events and a day with several — confirm both work without errors.
 
 ---
 
 ### Build 2 — Add your tasks and build the planner (30 min)
 
-The core of the agent: turning your raw schedule and to-dos into an actual plan. You will build the provider shim here too.
-
-**1. Create a `tasks.txt` file** in your project folder with your open tasks, one per line:
+**1. Create a `tasks.txt`** in your project folder, one task per line:
 
 ```
 - Finish Q3 budget review
@@ -443,27 +563,38 @@ The core of the agent: turning your raw schedule and to-dos into an actual plan.
 - Draft the team update
 ```
 
-**2. Get your free Gemini API key** at [aistudio.google.com](https://aistudio.google.com) — sign in with your Google account, click **Get API key**, no credit card required. Add `GEMINI_API_KEY` to a `.env` file.
+**2. Copy `llm.py`** from *Before you start* into this project folder too — same file, second project. Add a `.env` with your `GEMINI_API_KEY` and `LLM_PROVIDER=gemini`, then:
 
-**3. Paste this prompt into your AI assistant:**
+```bash
+pip install google-genai groq python-dotenv google-auth google-api-python-client
+python llm.py
+```
+
+> ✅ **Check your work:** `Provider: gemini` and a five-word greeting. Fix this before going further.
+
+**3. Paste this into your AI assistant:**
 
 ```
 Now build the planning layer for my daily planner agent.
 
-1. llm.py — a provider shim so this agent isn't locked to one AI company. It should have:
-   - A PROVIDER constant at the top read from the LLM_PROVIDER env var, defaulting to "gemini"
-   - chat(prompt, system="", max_tokens=1200) that routes to the right provider and returns plain text
-   - Support for "gemini" (use the latest Flash model), and stubs for "groq" and "claude" I can fill in later
-   - On a rate-limit (429) error, retry up to 5 times with exponential backoff (1s, 2s, 4s, 8s, 16s) plus small random jitter, printing what it's waiting for before each retry
+I already have a working llm.py in this folder that exposes:
+    chat(prompt: str, system: str = "", max_tokens: int = 1200) -> str
+Use that function for all AI calls. Do not import any AI SDK directly, and do not rewrite llm.py.
 
-2. tasks_reader.py with get_tasks_from_file(path="tasks.txt") that reads each non-empty line, stripping leading "- " markers, and returns a list of task strings
+Please create:
 
-3. planner.py with plan_day(events, tasks) that sends both lists to chat() from llm.py, asking for: (1) a time-blocked schedule that fits tasks around my meetings, (2) the top 3 priorities with a sentence of reasoning each, and (3) two energy-management tips based on how busy the day looks. Handle the case where events or tasks are empty.
+1. tasks_reader.py with get_tasks_from_file(path="tasks.txt") that reads each non-empty line, strips leading "- " markers, and returns a list of task strings
 
-4. main.py that calls get_today_events(), get_tasks_from_file(), plan_day(), and prints the result
+2. planner.py with plan_day(events, tasks) that sends both lists to chat(), asking for:
+   (1) a time-blocked schedule that fits my tasks around my meetings
+   (2) the top 3 priorities with a sentence of reasoning each
+   (3) two energy-management tips based on how busy the day looks
+   Pass the "you are an executive assistant" role instruction as the `system` argument, not inside the prompt text. Handle the case where events or tasks are empty.
+
+3. main.py that calls get_today_events(), get_tasks_from_file(), plan_day(), and prints the result
 ```
 
-> ✅ **Check your work:** Run `python -c "from llm import chat; print(chat('Say hello in exactly five words'))"` first — a short greeting means your key works. Then run `main.py`: you should see a readable daily plan that references your actual calendar events and `tasks.txt` items, with a clear top-three priority list.
+> ✅ **Check your work:** Run `main.py`. You should see a readable daily plan referencing your actual calendar events and `tasks.txt` items, with a clear top-three priority list.
 
 **Go further:** If your calendar is packed, ask your assistant to have the planner also flag which tasks realistically will not fit today.
 
@@ -471,11 +602,9 @@ Now build the planning layer for my daily planner agent.
 
 ### Build 3 — Email it to yourself every morning (25 min)
 
-The plan only helps if it shows up in your inbox before your day starts.
+**1. Generate a Gmail App Password** at [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) — Google blocks scripts using your normal password. Add `SMTP_USER` and `SMTP_PASS` to your `.env`.
 
-**1. Generate a Gmail App Password** at [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) — Google blocks scripts using your normal password. Add `SMTP_USER` and `SMTP_PASS` to your `.env` file.
-
-**2. Paste this prompt into your AI assistant:**
+**2. Paste this into your AI assistant:**
 
 ```
 Finish my daily planner agent:
@@ -489,7 +618,7 @@ Then tell me the crontab line to run this at 6:30am on weekdays only.
 
 > ✅ **Check your work:** Run `main.py` and check your inbox for a "Your Daily Plan" email with a readable, time-blocked schedule. Check spam if it does not arrive. Then add the crontab line.
 
-**Go further:** Swap `LLM_PROVIDER` to `groq` in your `.env`, fill in the Groq stub in `llm.py`, and run it again. Same planner, different company, one line changed.
+**Go further:** Set `LLM_PROVIDER=groq` in your `.env` (with a free key from [console.groq.com](https://console.groq.com)) and run it again. Same planner, different company, one line changed — exactly as in Session 2.
 
 ---
 
@@ -497,18 +626,19 @@ Then tell me the crontab line to run this at 6:30am on weekdays only.
 
 | Problem | Fix |
 |---|---|
-| "No events found" even though your calendar clearly has events today | `"primary"` is the *service account's* own empty calendar unless you shared yours with it. Confirm you added the service account email under Share with specific people, and try your actual calendar's ID. |
-| Google returns a 403 permission error | Either the calendar is not shared with the service account, or the Calendar API is not enabled on the project. Confirm both. The service account email is in the JSON key file as `client_email`. |
-| The times in your schedule email look wrong | Google Calendar returns times in UTC or the event's own time zone. Convert to your local time zone before displaying — the Build 1 prompt asks for this, but double-check it happened. |
-| 429 / "resource exhausted" from Gemini | You are calling faster than the free tier allows. The backoff in `llm.py` handles this. A once-a-morning planner will never hit this naturally. |
-| The email never arrives | Check spam first, then confirm your Gmail App Password is set up correctly. Your normal Google password will not work. |
+| "No events found" though your calendar clearly has events | `"primary"` is the *service account's* own empty calendar unless you shared yours with it. Confirm you added the service account email under Share with specific people, and try your actual calendar's ID. |
+| Google returns a 403 | Either the calendar is not shared with the service account, or the Calendar API is not enabled on the project. Check both. The service account email is in the JSON key file as `client_email`. |
+| Times in the email look wrong | Google Calendar returns times in UTC or the event's own zone. Convert to local before displaying — the Build 1 prompt asks for this, but confirm it happened. |
+| `GEMINI_API_KEY is missing` | `.env` is not loaded or the name is misspelled. Make sure `load_dotenv()` runs before your first `chat()` call. |
+| Rate-limit messages that never stop | Set `LLM_PROVIDER=groq` in `.env` and run again. |
+| The email never arrives | Check spam, then confirm your Gmail App Password is correct. Your normal Google password will not work. |
 
 ## Add this to your portfolio
 
 You just built an agent that reads your calendar, weighs it against your task list, and emails you a time-blocked plan before you wake up — on a free AI tier. Screenshot the email and add it to your portfolio.
 
 <details>
-<summary>Need help writing it up? Use this prompt</summary>
+<summary>Need help writing it up? Paste this into any free AI assistant</summary>
 
 ```
 I built a daily planning agent in Python that pulls my Google Calendar events via a service account, combines them with an open task list, uses an LLM to generate a time-blocked schedule with prioritized tasks and energy-management advice, and emails it to me automatically every weekday morning on a cron schedule. I architected it with a provider abstraction layer so the underlying AI model can be swapped with a single config change.
@@ -525,40 +655,32 @@ Help me write:
 
 ## Appendix — notes for the team
 
-*Not student-facing. Delete before publishing.*
+*Not student-facing. Remove before publishing.*
 
-### How this maps onto the site
+### What makes this version Claude-free
 
-Each session above becomes a **two-guide** `course_content.session` entry — a JSON array where index 0 is the free guide and index 1 is the existing Claude guide, relabelled. `SessionGuide.jsx:7` already detects the array and renders a two-tab switcher, so **no frontend work is required.** Agent #4 already ships in this shape; sessions 2 and 3 are being brought up to match it.
+The previous guides assumed a paid Claude account at **two** separate points. Both are now closed:
 
-Three rules the renderer enforces:
+| Where | Before | Now |
+|---|---|---|
+| **Runtime** — the AI inside the agent | `client = Anthropic()`, needs an API key with credits | `chat()` from `llm.py` → Gemini free tier |
+| **Authoring** — writing the code | "Open Claude Code / paste into Claude" | Named free assistants, AI Studio recommended |
 
-1. **Exactly two guides** — the switcher is `grid-cols-2` (`SessionGuide.jsx:22`). A third breaks the layout.
-2. **Free guide first** — the active tab defaults to index 0 (`SessionGuide.jsx:17`).
-3. **`outcomes`, `whatYouNeed`, and `builds` are mandatory on every guide** — those `.map()` calls are unguarded (lines 70, 83, 94). Omitting any one crashes the session page.
+The authoring fix is the one that was missing from the earlier draft. Every prompt is now written to be assistant-agnostic, and each one states the `chat()` contract explicitly so the assistant does not reach for an SDK on its own.
 
-### Two fixes to Agent #4 while we are in here
+### `llm.py` is tested, not guessed
 
-**Blank resource links (live bug).** `BuilderSession.jsx:334` and `AgentModal.jsx:226` both render `r.title`, but course 4's `resources` rows use `label` — so its resource links currently render as empty rows in both places. Normalise to `title`. Worth grepping the other 43 rows for the same drift.
+The shim was written against the installed SDKs (`google-genai` 2.19.0, `groq` 1.6.0), with the API surface introspected rather than recalled. It passes 15 tests covering: missing-key errors, unknown provider, the Gemini success path, `system_instruction` and `max_output_tokens` plumbing, 429 → backoff → recovery, non-429 errors *not* being swallowed as rate limits, the exhausted-retry message, and the Groq path including system-message placement.
 
-**Stale model pin.** Guide 1's badge reads `"Gemini 1.5 Flash (free)"`. Change to `"Gemini Flash (free tier)"` to match the version-agnostic wording used in the steps.
+**It has not been run against a live API** — we have no key in the build environment. Someone must do one real call before this ships. That is the single highest-value verification step remaining.
 
-### Corrections to the Claude guides
+`GEMINI_MODEL` is overridable by env var precisely because model names go stale; the default is a starting point, not a guarantee.
 
-Both sessions 2 and 3 currently list only "Claude Code, Cowork, or Claude Desktop" under **What you need**, while their build steps require an Anthropic API key at runtime. Add to both:
+### Still outstanding
 
-> An Anthropic API key with credits (console.anthropic.com) — the finished agent calls the API on every run
-
-Course 11 also has `test_it_out` set to `null`. Suggested fill:
-
-> Add two or three events to today's calendar and a few lines to `tasks.txt`, then run `python main.py`. Within about 30 seconds you should get a "Your Daily Plan" email containing a time-blocked schedule that references your real events by name, a top-three priority list, and two energy tips.
-
-### Before this goes live
-
-- **Verify current free-tier limits** for Gemini and Groq. The figures here are directionally right, not freshly checked, and they move.
-- **Run one build end to end on the free tier.** Session 3 is fastest to verify (calendar read → Gemini → email). Do not tell students a path works until someone has walked it.
-- **Do not write to `course_content` casually** — it is live paywalled content and the write path is service-role only.
-
-### Still open
-
-The authoring step still assumes a paid plan — every session says "paste this into Claude". We ship `starter_code` for all 12 Builder 1 sessions, so a free authoring path already exists; it just is not written up as one. Worth deciding before Week 2.
+- **Verify free-tier limits** for Gemini and Groq. Figures quoted are directionally right, not freshly checked.
+- **Run all three sessions end to end.** Session 3 is fastest (calendar → Gemini → email). Do not tell students a path works until someone has walked it.
+- **Course #4's resource links render blank.** Its `resources` rows use `label`; `BuilderSession.jsx:334` and `AgentModal.jsx:226` both read `title`. Worth grepping the other 43 rows for the same drift.
+- **Courses #3 and #11 omit the API key** from `whatYouNeed` while their existing Claude build steps require it. If those guides are kept as a paid second tab, fix the lists.
+- **Course #11 has `test_it_out` set to `null`.**
+- Nothing here has been written to `course_content`. That table is live paywalled content on a service-role-only write path.
