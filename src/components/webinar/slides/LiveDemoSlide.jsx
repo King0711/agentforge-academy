@@ -35,7 +35,7 @@ export default function LiveDemoSlide() {
         transition={{ duration: 0.5, delay: 0.22 }}
         className="text-body text-sm font-semibold mt-3"
       >
-        Samuel is building the WhatsApp Auto-Reply Bot — live.
+        Samuel is building the WhatsApp Auto-Reply Agent — live.
       </m.p>
 
       <m.p

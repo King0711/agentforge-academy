@@ -541,7 +541,7 @@ export default function WhatsAppBotGuide() {
           <div>
             <h2 className="font-display font-extrabold text-2xl sm:text-[26px] text-white m-0">Ready for the real thing?</h2>
             <p className="text-[#EDE4FF] mt-2 mb-0 text-[15px]">
-              The Advanced WhatsApp Auto-Reply Bot is one of 12 real sessions inside Builder 1 — guided, with support.
+              The Advanced WhatsApp Auto-Reply Agent is one of 12 real sessions inside Builder 1 — guided, with support.
             </p>
           </div>
           <Link

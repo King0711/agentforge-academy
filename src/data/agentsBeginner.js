@@ -150,7 +150,7 @@ export const agentsBeginner = [
     week: 1,
     isMainProject: false,
     slug: "slack-morning-briefing-bot",
-    title: "Slack Morning Briefing Bot",
+    title: "Slack Morning Briefing Agent",
     emoji: "☀️",
     department: [
       "Operations",
@@ -159,7 +159,7 @@ export const agentsBeginner = [
       "operations",
     ],
     difficulty: "Builder 1",
-    description: "A bot that runs every morning at 8am, reads your top Slack channels for the past 24 hours, and sends a prioritized briefing to your DM.",
+    description: "An agent that runs every morning at 8am, reads your top Slack channels for the past 24 hours, and sends a prioritized briefing to your DM.",
     techStack: [
       "Python",
       "Slack API",
@@ -183,7 +183,7 @@ export const agentsBeginner = [
     week: 4,
     isMainProject: false,
     slug: "simple-faq-chatbot",
-    title: "Simple FAQ Chatbot",
+    title: "Simple FAQ Agent",
     emoji: "🤖",
     department: [
       "Customer Support",
@@ -192,7 +192,7 @@ export const agentsBeginner = [
       "support",
     ],
     difficulty: "Builder 1",
-    description: "A web-based chatbot that answers questions from a custom FAQ document you provide — embeddable on any website.",
+    description: "A web-based agent that answers questions from a custom FAQ document you provide — embeddable on any website.",
     techStack: [
       "Python",
       "Claude API",
@@ -355,7 +355,7 @@ export const agentsBeginner = [
     week: 3,
     isMainProject: false,
     slug: "lead-capture-qualifier-bot",
-    title: "Lead Capture & Qualifier Bot",
+    title: "Lead Capture & Qualifier Agent",
     emoji: "🎯",
     department: [
       "Sales",
@@ -390,7 +390,7 @@ export const agentsBeginner = [
     week: 4,
     isMainProject: true,
     slug: "whatsapp-auto-reply-bot",
-    title: "WhatsApp Auto-Reply Bot",
+    title: "WhatsApp Auto-Reply Agent",
     emoji: "💬",
     department: [
       "Sales",
@@ -401,7 +401,7 @@ export const agentsBeginner = [
       "support",
     ],
     difficulty: "Builder 1",
-    description: "A WhatsApp bot that receives messages, understands intent, and replies in your personal voice 24/7 using a persona file.",
+    description: "A WhatsApp agent that receives messages, understands intent, and replies in your personal voice 24/7 using a persona file.",
     techStack: [
       "Node.js",
       "Twilio",

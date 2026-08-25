@@ -408,7 +408,7 @@ export const agentsIntermediate = [
   {
     id: 16,
     slug: "customer-support-rag-bot",
-    title: "Customer Support RAG Bot",
+    title: "Customer Support RAG Agent",
     emoji: "🤖",
     department: [
       "Customer Support",
@@ -417,7 +417,7 @@ export const agentsIntermediate = [
       "support",
     ],
     difficulty: "Builder 2",
-    description: "Upload your docs, FAQs, and past tickets — the bot answers customer questions accurately using only your real documentation.",
+    description: "Upload your docs, FAQs, and past tickets — the agent answers customer questions accurately using only your real documentation.",
     techStack: [
       "Python",
       "Pinecone",

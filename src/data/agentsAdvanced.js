@@ -131,7 +131,7 @@ export const agentsAdvanced = [
     xp: 850,
     popularity: 75,
     prerequisites: [
-      "Completed Customer Support RAG Bot",
+      "Completed Customer Support RAG Agent",
       "Neo4j installed (Desktop or AuraDB free tier)",
     ],
     tags: [
@@ -164,7 +164,7 @@ export const agentsAdvanced = [
     xp: 900,
     popularity: 78,
     prerequisites: [
-      "Completed Customer Support RAG Bot",
+      "Completed Customer Support RAG Agent",
       "Twilio account with a phone number",
       "ElevenLabs API key",
     ],

@@ -319,7 +319,7 @@ export default function AIBuilder() {
         </Link>
         <p className="text-[12.5px] text-body mt-4 max-w-md mx-auto">
           Want the version built on Twilio's official WhatsApp Business API, trained on your own voice? That's the
-          Advanced WhatsApp Auto-Reply Bot — one of 12 sessions inside Builder 1.
+          Advanced WhatsApp Auto-Reply Agent — one of 12 sessions inside Builder 1.
         </p>
       </div>
 

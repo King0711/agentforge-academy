@@ -1,6 +1,6 @@
 // Content spine for the "AI Builder" webinar (/webinar) — a LIVE Zoom
 // session presented by a host, with a second presenter (Samuel) doing a
-// live build of the WhatsApp Auto-Reply Bot partway through. This deck
+// live build of the WhatsApp Auto-Reply Agent partway through. This deck
 // supports that delivery; it doesn't replace it. Slide visual content lives
 // in each component under src/components/webinar/slides — this file is
 // navigation metadata (id/label for the progress dots) plus presenter
