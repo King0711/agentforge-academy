@@ -1,0 +1,5 @@
+Team standup, Tuesday.
+Ada said the payment webhook is fixed and deployed. She'll monitor it for a week.
+Chidi raised that the signup page is slow on mobile - about 4 seconds on 3G.
+We agreed Chidi will investigate before Friday.
+Budget review moved to next Monday because Ngozi is travelling.
