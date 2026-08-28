@@ -1,6 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { GoogleGenAI } from 'npm:@google/genai@2.19.0';
 import { z } from 'npm:zod@4.4.3';
 import { SYSTEM_PROMPT } from './knowledge-base.ts';
 
@@ -36,8 +35,18 @@ const FALLBACK_REPLY =
   "Thanks for reaching out! Let me get someone from the team to reply to you " +
   'personally — they’ll come back to you shortly.';
 
+// Same model and same call style as generate-news-digest — raw fetch against
+// v1beta rather than the SDK, so both Gemini callers in this project read the
+// same way and neither drags an npm dependency into a cold start.
+const GEMINI_MODEL = 'gemini-3.7-flash';
+const GEMINI_MAX_ATTEMPTS = 3;
+const GEMINI_RETRY_DELAY_MS = 2000;
+
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-const gemini = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 // Gemini enforces the schema server-side, but it is not a hard guarantee the
 // way a strict tool call is — so the response is parsed and validated before
@@ -58,7 +67,7 @@ const REPLY_SCHEMA = {
   required: ['reply', 'confident', 'escalation_reason'],
 };
 
-type Turn = { type: 'user_input' | 'model_output'; content: Array<{ type: 'text'; text: string }> };
+type Turn = { role: 'user' | 'model'; parts: Array<{ text: string }> };
 
 function escapeHtml(value: unknown): string {
   return String(value)
@@ -186,32 +195,48 @@ async function escalate(phone: string, name: string, question: string, reason: s
 }
 
 async function askAgent(history: Turn[]) {
-  const interaction = await gemini.interactions.create({
-    model: 'gemini-3.7-flash',
-    system_instruction: SYSTEM_PROMPT,
-    input: history,
-    response_format: {
-      type: 'text',
-      mime_type: 'application/json',
-      schema: REPLY_SCHEMA,
+  const url =
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+  const body = JSON.stringify({
+    systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+    contents: history,
+    generationConfig: {
+      maxOutputTokens: 2000,
+      responseMimeType: 'application/json',
+      responseSchema: REPLY_SCHEMA,
+      // Deliberately no `seed`. Pinning one would make the same question come
+      // back worded the same way every time, which is the opposite of the
+      // point — see the voice notes in knowledge-base.ts.
     },
-    generation_config: {
-      max_output_tokens: 2000,
-      // Enough thinking to compose in-voice rather than echo the knowledge
-      // base back, not so much that a WhatsApp reply feels slow.
-      thinking_level: 'low',
-      // Deliberately no `seed`. Pinning one would make the same question
-      // come back the same way every time, which is the opposite of what
-      // this bot is for.
-    },
-    // Don't leave customers' support messages sitting in Google's storage.
-    store: false,
   });
 
-  if (!interaction.output_text) return null;
+  let lastError: Error | undefined;
+  for (let attempt = 1; attempt <= GEMINI_MAX_ATTEMPTS; attempt++) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
 
-  const parsed = AgentReply.safeParse(JSON.parse(interaction.output_text));
-  return parsed.success ? parsed.data : null;
+    if (res.ok) {
+      const data = await res.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) return null;
+      // The schema is enforced server-side but isn't a hard guarantee, and
+      // this string is about to be sent to a customer.
+      const parsed = AgentReply.safeParse(JSON.parse(text));
+      return parsed.success ? parsed.data : null;
+    }
+
+    lastError = new Error(`Gemini API returned ${res.status}: ${await res.text()}`);
+    // Only retry transient server-side errors. A 4xx (bad key, bad request)
+    // fails identically on every attempt; a 429 means we're over the free
+    // tier's rate limit and hammering it makes that worse.
+    if (res.status < 500 || attempt === GEMINI_MAX_ATTEMPTS) throw lastError;
+    console.error(`Gemini attempt ${attempt}/${GEMINI_MAX_ATTEMPTS} failed, retrying:`, lastError.message);
+    await sleep(GEMINI_RETRY_DELAY_MS * attempt);
+  }
+  throw lastError;
 }
 
 async function handleMessage(
@@ -238,12 +263,12 @@ async function handleMessage(
       const history: Turn[] = (recent ?? [])
         .reverse()
         .map((m) => ({
-          type: m.direction === 'inbound' ? ('user_input' as const) : ('model_output' as const),
-          content: [{ type: 'text' as const, text: m.body }],
+          role: m.direction === 'inbound' ? ('user' as const) : ('model' as const),
+          parts: [{ text: m.body }],
         }));
 
       // The conversation must open on a customer turn.
-      while (history.length && history[0].type === 'model_output') history.shift();
+      while (history.length && history[0].role === 'model') history.shift();
 
       const parsed = await askAgent(history);
       if (parsed) {

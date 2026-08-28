@@ -66,11 +66,17 @@ supabase link --project-ref qkrfpuckvymjpewcszgs
 ```
 
 ```bash
-supabase secrets set GEMINI_API_KEY=... WHATSAPP_TOKEN=EAA... WHATSAPP_PHONE_NUMBER_ID=... WHATSAPP_APP_SECRET=... WHATSAPP_VERIFY_TOKEN=...
+supabase secrets set WHATSAPP_TOKEN=EAA... WHATSAPP_PHONE_NUMBER_ID=... WHATSAPP_APP_SECRET=... WHATSAPP_VERIFY_TOKEN=...
 ```
 
-`RESEND_API_KEY` and `ADMIN_NOTIFY_EMAIL` are already set from the email
-functions and are reused for the hand-off notification.
+Only the WhatsApp secrets are new. Three others are already set and reused:
+
+- `GEMINI_API_KEY` — the same key `generate-news-digest` runs on, same model.
+- `RESEND_API_KEY` and `ADMIN_NOTIFY_EMAIL` — from the email functions, reused
+  for the hand-off notification.
+
+Confirm with `supabase secrets list` (names only, values aren't readable back).
+If `GEMINI_API_KEY` isn't listed, set it too.
 
 The webhook must be reachable by Meta without a Supabase JWT, so deploy it
 with verification off — the function does its own, stronger check (an HMAC
