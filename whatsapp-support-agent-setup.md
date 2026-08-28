@@ -5,8 +5,19 @@ everything else to you via email + the `/admin/support` inbox.
 
 - `supabase/functions/whatsapp-support-agent/index.ts` — the webhook
 - `supabase/functions/whatsapp-support-agent/knowledge-base.ts` — **what the bot knows; edit this file to change its answers**
+- `supabase/functions/whatsapp-send-reply/index.ts` — sends your personal replies from the business number
 - `supabase/whatsapp-support-setup.sql` — tables + admin RPCs
 - `src/pages/admin/AdminSupport.jsx` — the escalation inbox
+- `scripts/test-whatsapp-voice.ts` — voice check, run after editing the knowledge base
+
+## Who sees what
+
+Customers use **normal WhatsApp**. There is no app, widget, or link for them —
+they message the business number and get replies in that same thread.
+
+You get `/admin/support`: what the agent handed off, why, the full conversation,
+and a box to reply from the business number. Replies land in the customer's
+existing thread, so the hand-off from bot to human is invisible to them.
 
 ---
 
@@ -43,12 +54,18 @@ Decide this first — it is the one genuinely hard-to-undo step here.
 
 Leave the webhook step for after deployment (step 4 below).
 
-## 2. Database
+## 2. Database — ✅ already applied
 
-Run `supabase/whatsapp-support-setup.sql` in the Supabase SQL editor.
+Applied to `qkrfpuckvymjpewcszgs` on 2026-08-28 as migration
+`whatsapp_support_agent_setup`. Both tables and all three admin RPCs exist,
+and the ACL was verified: `postgres` / `authenticated` / `service_role` only,
+no `PUBLIC` and no `anon`.
 
-Then confirm the RPCs are locked down — per `CLAUDE.md`, the `is_admin()`
-guard inside a function is not sufficient on this project:
+`supabase/whatsapp-support-setup.sql` is kept as the source of record. If you
+ever need to re-run it (a new environment, a rebuilt project), it's idempotent.
+
+To re-verify the lockdown — per `CLAUDE.md`, the `is_admin()` guard inside a
+function is not sufficient on this project:
 
 ```sql
 select p.proname, a.grantee::regrole::text, a.privilege_type
@@ -84,6 +101,16 @@ signature over the request body using your app secret):
 
 ```bash
 supabase functions deploy whatsapp-support-agent --no-verify-jwt
+```
+
+The second function — the one that sends your personal replies from the
+business number — is the opposite: it *must* keep JWT verification, because
+it's called from the admin panel by a signed-in person. It also re-checks
+`is_admin` itself, since being merely signed in shouldn't let anyone message
+the public as the company.
+
+```bash
+supabase functions deploy whatsapp-send-reply
 ```
 
 ## 4. Point Meta at it

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import {
-  LifeBuoy, CheckCircle2, Loader2, AlertCircle, MessageCircle, ChevronDown,
+  LifeBuoy, CheckCircle2, Loader2, AlertCircle, Send, ChevronDown,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
@@ -9,9 +9,23 @@ function formatWhen(iso) {
   return new Date(iso).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
-function Thread({ phone }) {
+const WINDOW_MS = 24 * 60 * 60 * 1000;
+
+// WhatsApp only accepts a free-form reply within 24h of the customer's last
+// message. Work it out here so the composer can say so up front rather than
+// letting the send fail against Meta.
+function replyWindow(messages) {
+  const lastInbound = [...messages].reverse().find((m) => m.direction === 'inbound');
+  if (!lastInbound) return { open: false, hoursLeft: 0 };
+  const msLeft = WINDOW_MS - (Date.now() - new Date(lastInbound.created_at).getTime());
+  return { open: msLeft > 0, hoursLeft: Math.max(0, Math.floor(msLeft / 3600_000)) };
+}
+
+function Thread({ phone, onSent }) {
   const [messages, setMessages] = useState(null);
   const [error, setError] = useState('');
+  const [draft, setDraft] = useState('');
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -23,25 +37,93 @@ function Thread({ phone }) {
     return () => { cancelled = true; };
   }, [phone]);
 
-  if (error) return <p className="text-xs text-rose px-1 py-2">{error}</p>;
+  const send = async () => {
+    const body = draft.trim();
+    if (!body) return;
+    setSending(true);
+    setError('');
+    try {
+      const { data, error: err } = await supabase.functions.invoke('whatsapp-send-reply', {
+        body: { phone, body },
+      });
+      if (err) throw err;
+      if (data?.error) throw new Error(data.error);
+
+      setMessages((prev) => [
+        ...(prev || []),
+        { direction: 'outbound', body, created_at: new Date().toISOString() },
+      ]);
+      setDraft('');
+      onSent?.();
+    } catch (err) {
+      setError(err.message || 'Could not send that.');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (error && !messages) return <p className="text-xs text-rose px-1 py-2">{error}</p>;
   if (!messages) return <Loader2 className="w-4 h-4 animate-spin text-brand my-3" />;
-  if (messages.length === 0) return <p className="text-xs text-gray-400 py-2">No messages logged.</p>;
+
+  const { open, hoursLeft } = replyWindow(messages);
 
   return (
-    <div className="flex flex-col gap-2 mt-3 max-h-72 overflow-y-auto pr-1">
-      {messages.map((m, i) => (
-        <div
-          key={i}
-          className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${
-            m.direction === 'inbound'
-              ? 'self-start bg-[#FAF8FF] dark:bg-white/5 text-ink'
-              : 'self-end bg-[#EAFAF1] dark:bg-green/10 text-ink'
-          }`}
-        >
-          <p className="whitespace-pre-wrap leading-relaxed">{m.body}</p>
-          <span className="block text-[10px] text-gray-400 mt-1">{formatWhen(m.created_at)}</span>
+    <div className="mt-3">
+      {messages.length === 0 ? (
+        <p className="text-xs text-gray-400 py-2">No messages logged.</p>
+      ) : (
+        <div className="flex flex-col gap-2 max-h-72 overflow-y-auto pr-1">
+          {messages.map((m, i) => (
+            <div
+              key={i}
+              className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${
+                m.direction === 'inbound'
+                  ? 'self-start bg-[#FAF8FF] dark:bg-white/5 text-ink'
+                  : 'self-end bg-[#EAFAF1] dark:bg-green/10 text-ink'
+              }`}
+            >
+              <p className="whitespace-pre-wrap leading-relaxed">{m.body}</p>
+              <span className="block text-[10px] text-gray-400 mt-1">{formatWhen(m.created_at)}</span>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
+
+      {open ? (
+        <div className="mt-3">
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) send();
+            }}
+            rows={3}
+            placeholder="Reply as Social Dev Technologies…"
+            disabled={sending}
+            className="w-full px-3 py-2 rounded-lg border border-border text-sm text-ink bg-white dark:bg-[#181818] focus:outline-none focus:ring-2 focus:ring-brand/40 resize-none disabled:opacity-50"
+          />
+          <div className="flex items-center justify-between gap-3 mt-2 flex-wrap">
+            <span className="text-[11px] text-gray-400">
+              Sends from your business number · {hoursLeft}h left in WhatsApp&apos;s reply window
+            </span>
+            <button
+              onClick={send}
+              disabled={sending || !draft.trim()}
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#25D366] text-white hover:brightness-95 transition-colors disabled:opacity-40"
+            >
+              {sending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+              Send
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p className="mt-3 text-xs text-amber-700 dark:text-amber-400 bg-[#FEF9E7] dark:bg-amber-500/10 rounded-lg px-3 py-2">
+          WhatsApp&apos;s 24-hour reply window has closed for this contact. You can email them, or
+          wait for them to message again.
+        </p>
+      )}
+
+      {error && <p className="text-xs text-rose mt-2">{error}</p>}
     </div>
   );
 }
@@ -76,20 +158,12 @@ function EscalationRow({ e, actionLoading, expanded, onToggle, onResolve }) {
             className="flex items-center gap-1 text-xs font-semibold text-brand mt-2 hover:underline"
           >
             <ChevronDown className={`w-3 h-3 transition-transform ${expanded ? 'rotate-180' : ''}`} />
-            {expanded ? 'Hide' : 'View'} conversation
+            {expanded ? 'Hide conversation' : 'Open conversation & reply'}
           </button>
           {expanded && <Thread phone={e.wa_phone} />}
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
-          <a
-            href={`https://wa.me/${e.wa_phone}`}
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-[#25D366] text-white hover:brightness-95 transition-colors"
-          >
-            <MessageCircle className="w-3 h-3" /> Reply
-          </a>
           {e.status === 'open' && (
             <button
               onClick={() => onResolve(e.id)}
