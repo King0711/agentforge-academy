@@ -9,7 +9,8 @@
     "prerender": "node scripts/prerender.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
-    "og-cards": "node scripts/generate-og-cards.mjs"
+    "og-cards": "node scripts/generate-og-cards.mjs",
+    "test:voice": "node --env-file-if-exists=.env scripts/test-whatsapp-voice.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.1",

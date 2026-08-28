@@ -12,6 +12,7 @@ import AdminTestimonials from './admin/AdminTestimonials';
 import AdminEmails from './admin/AdminEmails';
 import AdminNews from './admin/AdminNews';
 import AdminGuides from './admin/AdminGuides';
+import AdminSupport from './admin/AdminSupport';
 import AdminReferrals from './admin/AdminReferrals';
 import AdminSurvey from './admin/AdminSurvey';
 
@@ -68,6 +69,7 @@ export default function Admin() {
                 <Route path="emails" element={<AdminEmails />} />
                 <Route path="news" element={<AdminNews />} />
                 <Route path="guides" element={<AdminGuides />} />
+                <Route path="support" element={<AdminSupport />} />
                 <Route path="referrals" element={<AdminReferrals />} />
                 <Route path="webinar-survey" element={<AdminSurvey />} />
               </Route>
