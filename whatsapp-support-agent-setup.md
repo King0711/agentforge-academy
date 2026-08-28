@@ -156,13 +156,24 @@ So: test on free, enable billing before you point real customers at it.
 
 ## Checking the voice before you ship
 
-`scripts/test-whatsapp-voice.ts` runs the real prompt against a set of
-questions — including the same question three times, so you can see whether
-the wording actually varies — and flags any that route the wrong way:
+This runs the real prompt against a set of questions — including the same
+question three times, so you can see whether the wording actually varies — and
+flags any that route the wrong way. No WhatsApp, no Meta, no deploy needed.
+
+Add your Gemini key to `.env` (gitignored) once:
 
 ```bash
-deno run --allow-env --allow-net scripts/test-whatsapp-voice.ts
+GEMINI_API_KEY=your-key-here
 ```
+
+Then, from the project folder:
+
+```bash
+npm run test:voice
+```
+
+Runs on Node, so there's nothing extra to install — only the edge function
+itself needs Deno, and that runs on Supabase, not on your machine.
 
 Re-run it after editing `knowledge-base.ts`. If repeated questions start
 coming back identically worded, the facts have drifted back into
