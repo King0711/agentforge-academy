@@ -76,7 +76,19 @@ where p.proname like 'admin_%whatsapp%';
 Every row should be `postgres`, `authenticated`, or `service_role`. If you see
 an empty grantee (that's `PUBLIC`) or `anon`, re-run the REVOKE statements.
 
-## 3. Secrets and deploy
+## 3. Secrets and deploy — ⚠️ functions deployed, secrets still missing
+
+Both functions were deployed to `qkrfpuckvymjpewcszgs` on 2026-08-28:
+
+| Function | JWT | Live behaviour verified |
+|---|---|---|
+| `whatsapp-support-agent` | off | GET with a wrong verify token → 403; POST without a signature → 401 |
+| `whatsapp-send-reply` | on | POST without a JWT → 401 at the gateway |
+
+They boot and their auth gates work. **They cannot do anything yet** — the four
+WhatsApp secrets below aren't set, so the signature check fails closed on every
+request and nothing can be sent. Set them and it starts working; no redeploy is
+needed for a secret change.
 
 ```bash
 supabase link --project-ref qkrfpuckvymjpewcszgs

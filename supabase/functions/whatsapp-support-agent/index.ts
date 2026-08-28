@@ -148,12 +148,13 @@ async function emailOwner(phone: string, name: string, question: string, reason:
       <div style="margin-top:16px;padding:14px;background:#FAF8FF;border-left:3px solid #7C3AED;border-radius:6px;">
         <p style="margin:0;color:#333;font-size:14px;white-space:pre-wrap;">${escapeHtml(question)}</p>
       </div>
-      <a href="https://wa.me/${encodeURIComponent(phone)}" style="display:inline-block;margin-top:18px;background:#25D366;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">
-        Reply on WhatsApp →
+      <a href="https://socialdevtechnologies.com/admin/support" style="display:inline-block;margin-top:18px;background:#25D366;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">
+        Reply in the inbox →
       </a>
-      <a href="https://socialdevtechnologies.com/admin/support" style="display:inline-block;margin-top:18px;margin-left:8px;color:#7C3AED;font-weight:600;text-decoration:none;">
-        Open inbox
-      </a>
+      <p style="color:#999;font-size:12px;margin-top:12px;">
+        Reply there, not from your own WhatsApp — the inbox sends from the
+        business number, so it lands in the same chat the customer started.
+      </p>
     </div>
   `;
 
