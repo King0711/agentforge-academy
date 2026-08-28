@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import SharePanel from '../../components/admin/SharePanel';
+import ImageUploadField from '../../components/admin/ImageUploadField';
 
 // Admins write guides in a plain-text block syntax rather than a raw JSON
 // editor — same idea as AdminNews.jsx's blocksToText/textToBlocks, extended
@@ -321,7 +322,12 @@ export default function AdminGuides() {
             <input className={inputCls} type="number" value={form.sort_order} onChange={(e) => setForm((f) => ({ ...f, sort_order: e.target.value }))} placeholder="Sort order" />
           </div>
 
-          <input className={inputCls} value={form.image_url} onChange={(e) => setForm((f) => ({ ...f, image_url: e.target.value }))} placeholder="Header image URL (optional) — shown on the card and at the top of the guide" />
+          <ImageUploadField
+            value={form.image_url}
+            onChange={(url) => setForm((f) => ({ ...f, image_url: url }))}
+            slug={form.slug}
+            placeholder="Header image (optional) — shown on the card and at the top of the guide"
+          />
 
           <div className="grid sm:grid-cols-2 gap-3">
             <input className={inputCls} value={form.related_agent_slug} onChange={(e) => setForm((f) => ({ ...f, related_agent_slug: e.target.value }))} placeholder="Related agent slug (optional)" />

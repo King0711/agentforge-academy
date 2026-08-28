@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
+import { getStoredReferralCode } from '../lib/referral';
 
 const AuthContext = createContext(null);
 
@@ -34,6 +35,10 @@ export function AuthProvider({ children }) {
   const signUp = useCallback(async (email, password, displayName) => {
     if (!isSupabaseConfigured) return { error: { message: 'Supabase is not configured.' } };
     const isBYU = email.trim().toLowerCase().endsWith('@byupathway.edu');
+    // referral_code rides along in metadata purely for handle_new_user()
+    // (referrals-setup.sql) to read at insert time — it's never written to
+    // profiles directly, and a missing/invalid/expired code here just means
+    // no referral gets attributed, never a failed signup.
     return supabase.auth.signUp({
       email,
       password,
@@ -41,6 +46,7 @@ export function AuthProvider({ children }) {
         data: {
           display_name: displayName || email.split('@')[0],
           is_byu_student: isBYU,
+          referral_code: getStoredReferralCode() || undefined,
         },
       },
     });

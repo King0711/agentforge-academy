@@ -28,7 +28,13 @@ export default function GuidesIndex() {
       .from('guides')
       .select('slug, title, dek, category, emoji, reading_time, image_url')
       .eq('status', 'published')
-      .order('sort_order', { ascending: true })
+      // Newest guide first. published_at is stamped once, on the first
+      // draft -> published transition (admin_set_guide_status only writes it
+      // `when published_at is null`), so re-publishing an edited guide can't
+      // bounce it back to the top the way a `now()`-on-every-approve column
+      // would. nullsFirst:false keeps an unstamped row at the bottom rather
+      // than letting it head the list.
+      .order('published_at', { ascending: false, nullsFirst: false })
       .then(({ data }) => {
         if (cancelled) return;
         setGuides(data || []);
@@ -62,7 +68,7 @@ export default function GuidesIndex() {
   const visible = filter === 'all' ? guides : guides.filter((g) => g.category === filter);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <h1 className="font-display text-3xl sm:text-4xl font-extrabold text-ink flex items-center gap-3">
         <BookOpen className="w-7 h-7 text-brand" />
         AI Agent Guides
@@ -98,7 +104,7 @@ export default function GuidesIndex() {
       ) : visible.length === 0 ? (
         <div className="py-16 text-center text-body">No guides yet — check back soon.</div>
       ) : (
-        <div className="grid sm:grid-cols-2 gap-4 mt-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
           {visible.map((g) => (
             <Link
               key={g.slug}

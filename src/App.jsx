@@ -1,10 +1,11 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { LazyMotion, domAnimation } from 'framer-motion';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProfileInfoModal from './components/ProfileInfoModal';
 import WhatsAppFloatButton from './components/WhatsAppFloatButton';
+import { captureReferralFromLocation } from './lib/referral';
 import Home from './pages/Home';
 import Catalog from './pages/Catalog';
 import PathDetail from './pages/PathDetail';
@@ -18,6 +19,7 @@ import WhatsAppBotGuide from './pages/WhatsAppBotGuide';
 import AIBuilder from './pages/AIBuilder';
 import Builder1Guide from './pages/Builder1Guide';
 import PortfolioSessionGuide from './pages/PortfolioSessionGuide';
+import WebinarSurvey from './pages/WebinarSurvey';
 // /news and /guides are the one group of PUBLIC routes safe to lazy-load.
 // The eager-import rule above exists because a lazy component introduces a
 // Suspense boundary, and Suspense can't hydrate against a plain Puppeteer
@@ -71,6 +73,13 @@ function AppShell() {
   const [selectedAgent, setSelectedAgent] = useState(null);
   const location = useLocation();
   const isWebinar = location.pathname === '/webinar';
+
+  // A referral link can land on any page, not just /welcome — capture it
+  // here so browsing around before signing up doesn't lose attribution.
+  // No-ops silently if there's no ?ref= param.
+  useEffect(() => {
+    captureReferralFromLocation();
+  }, []);
   // The student dashboard renders its own sidebar/top-bar chrome (see
   // StudentDashboard.jsx) instead of the site Navbar/Footer — same
   // suppression pattern as the webinar keynote.
@@ -167,6 +176,7 @@ function AppShell() {
             <Route path="/ai-builder" element={<AIBuilder />} />
             <Route path="/builder-1-guide" element={<Builder1Guide />} />
             <Route path="/session/build-real-product" element={<PortfolioSessionGuide />} />
+            <Route path="/webinar-survey" element={<WebinarSurvey />} />
             <Route path="/news" element={<Suspense fallback={null}><News /></Suspense>} />
             <Route path="/news/:slug" element={<Suspense fallback={null}><NewsArticle /></Suspense>} />
             {/* Evergreen explainer section — DB-backed, so one route handles

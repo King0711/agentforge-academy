@@ -48,7 +48,7 @@ export default function GuidePage() {
       .from('guides')
       .select('slug, title, emoji, reading_time')
       .eq('status', 'published')
-      .order('sort_order', { ascending: true })
+      .order('published_at', { ascending: false, nullsFirst: false })
       .then(({ data }) => {
         if (!cancelled) setRelated((data || []).filter((g) => g.slug !== slug));
       });
@@ -63,26 +63,53 @@ export default function GuidePage() {
     title: guide ? `${guide.title} | Social Dev Technologies` : undefined,
     description: guide?.dek,
     canonicalPath: guide ? `/guides/${guide.slug}` : undefined,
+    // Article carries the byline/dates search engines use for the result
+    // itself; BreadcrumbList mirrors the "All guides" link above into the
+    // trail Google renders under the URL; FAQPage is what turns the
+    // Q&A section below into an expandable rich result — only added when
+    // there's actually an FAQ section, since an empty FAQPage is invalid.
     jsonLd: guide
-      ? {
-          '@context': 'https://schema.org',
-          '@type': 'Article',
-          headline: guide.title,
-          description: guide.dek,
-          image: guide.image_url ? [guide.image_url] : undefined,
-          datePublished: guide.published_at,
-          dateModified: guide.updated_at,
-          author: { '@type': 'Organization', name: 'Social Dev Technologies' },
-          publisher: {
-            '@type': 'Organization',
-            name: 'Social Dev Technologies',
-            logo: { '@type': 'ImageObject', url: 'https://socialdevtechnologies.com/logo-icon.webp' },
+      ? [
+          {
+            '@context': 'https://schema.org',
+            '@type': 'Article',
+            headline: guide.title,
+            description: guide.dek,
+            image: guide.image_url ? [guide.image_url] : undefined,
+            datePublished: guide.published_at,
+            dateModified: guide.updated_at,
+            author: { '@type': 'Organization', name: 'Social Dev Technologies' },
+            publisher: {
+              '@type': 'Organization',
+              name: 'Social Dev Technologies',
+              logo: { '@type': 'ImageObject', url: 'https://socialdevtechnologies.com/logo-icon.webp' },
+            },
+            mainEntityOfPage: {
+              '@type': 'WebPage',
+              '@id': `https://socialdevtechnologies.com/guides/${guide.slug}`,
+            },
           },
-          mainEntityOfPage: {
-            '@type': 'WebPage',
-            '@id': `https://socialdevtechnologies.com/guides/${guide.slug}`,
+          {
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://socialdevtechnologies.com/' },
+              { '@type': 'ListItem', position: 2, name: 'Guides', item: 'https://socialdevtechnologies.com/guides' },
+              { '@type': 'ListItem', position: 3, name: guide.title, item: `https://socialdevtechnologies.com/guides/${guide.slug}` },
+            ],
           },
-        }
+          ...(guide.faqs?.length
+            ? [{
+                '@context': 'https://schema.org',
+                '@type': 'FAQPage',
+                mainEntity: guide.faqs.map((f) => ({
+                  '@type': 'Question',
+                  name: f.q,
+                  acceptedAnswer: { '@type': 'Answer', text: f.a },
+                })),
+              }]
+            : []),
+        ]
       : undefined,
   });
 
@@ -98,6 +125,10 @@ export default function GuidePage() {
 
   const faqs = guide.faqs || [];
 
+  // Below lg there's no real gutter for ShareRail's collapsed toggle to sit
+  // in without it, so it just overlays the top-left corner of the text —
+  // `fixed`, out of flow, doesn't push the column over. Normal symmetric
+  // padding here, same as every other content page.
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <ShareRail section="guides" slug={guide.slug} title={guide.title} />

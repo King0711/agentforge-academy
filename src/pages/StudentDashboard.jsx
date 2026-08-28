@@ -9,6 +9,7 @@ import LiveSessions from './dashboard/LiveSessions';
 import Replays from './dashboard/Replays';
 import Account from './dashboard/Account';
 import Help from './dashboard/Help';
+import Refer from './dashboard/Refer';
 
 // Layout shell for every /dashboard/* page — sidebar + top bar + a
 // persistent right-hand "Jump back in" card, mirroring Admin.jsx's
@@ -36,6 +37,7 @@ export default function StudentDashboard({ progress, onSelectAgent }) {
                 <Route path="live-sessions" element={<LiveSessions />} />
                 <Route path="replays" element={<Replays />} />
                 <Route path="account" element={<Account />} />
+                <Route path="refer" element={<Refer />} />
                 <Route path="help" element={<Help />} />
               </Route>
             </Routes>

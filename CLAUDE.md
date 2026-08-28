@@ -47,6 +47,26 @@ A correctly-locked function's ACL reads `postgres=X, authenticated=X, service_ro
 - [ ] Decide whether to also turn off "customer bears the fee" in Paystack Dashboard → Settings → Preferences (optional now that the webhook tolerates it, but affects what customers see at checkout).
 - [ ] Re-run `backfill-fee-flagged-payments.sql` periodically or after the redeploy to confirm no new flagged rows accumulate.
 
+## Article and guide images
+
+Header images for news articles and guides live in the **`news-images` Supabase Storage bucket** (public), but `image_url` on a row stores a **first-party URL**, never the raw storage one:
+
+```
+https://socialdevtechnologies.com/article-images/<slug>-<timestamp36>.jpg
+```
+
+`vercel.json` rewrites `/article-images/*` onto the bucket's public endpoint — so images are attributed to the site rather than a `supabase.co` host, and changing storage later is a rewrite change instead of a rewrite of every `image_url` in the database. The rewrite must stay **above** the catch-all `/(.*)  → /index.html`, or it never matches. `src/lib/articleImages.js` owns the path/URL construction; keep it and the rewrite in step.
+
+**Use 1200×675 (16:9).** Every on-site placement renders the image in a 16:9 `object-cover` box — both listing cards (`News.jsx`, `GuidesIndex.jsx`) and both article heroes (`NewsArticle.jsx`, `GuidePage.jsx`) — so 1200×675 fits all four exactly, while still clearing LinkedIn's 1200×627 floor for the `og:image` (which crops to ~1.91:1 and loses only a couple dozen pixels). The admin upload control warns on off-ratio images but never blocks them.
+
+**Uploads use a unique path per upload, not a stable `<slug>.jpg`.** These are served with a one-year immutable `Cache-Control`, so overwriting a path would strand viewers on the old image until the CDN entry expired. The tradeoff is that replaced images become unreferenced orphans in the bucket — prune them from the Supabase dashboard, not with `delete from storage.objects` (a direct row delete unlinks the index entry but leaves the actual blob behind).
+
+**Storage policies are a separate layer from the `admin_*` RPC grants above.** The bucket existed with *zero* RLS policies until 2026-08-22 and nobody noticed, because `generate-news-digest` writes through `service_role`, which bypasses RLS entirely — so the gap only surfaced when a browser first tried to upload. Anything that writes to a bucket from the client needs explicit policies; `supabase/article-images-setup.sql` holds the three admin-gated ones (insert/update/delete) plus the bucket's `file_size_limit` (2MB) and `allowed_mime_types` (JPG/PNG/WebP). Those two bucket settings were also null until then — harmless while only `service_role` could write, dangerous the moment a browser can.
+
+Note the policies read the caller's `entitlements` row, which works only because that table's RLS permits `auth.uid() = user_id` self-reads. Tightening `entitlements` RLS would silently break admin uploads — verify with a role-simulation probe (`set local role authenticated` + `request.jwt.claims`), not by eyeballing the policy.
+
+**Automatic generation exists but has never run.** `generateImage()` in `supabase/functions/generate-news-digest/index.ts` calls OpenAI `gpt-image-1` when `OPENAI_API_KEY` is set, and returns `null` (logging a warning) when it isn't — which is why the bucket sat empty for weeks. Two things to know before switching it on: `gpt-image-1` is **deprecated as of 2026-10-23**, and the hardcoded `1536x1024` is 1.5:1, not the ~1.91:1 the code comment claims to be aiming for. Gemini's free tier (~500 images/day, native 16:9) was evaluated as the better replacement if per-article art is ever wanted.
+
 ## Workflow preferences (confirmed with project owner)
 
 - **Git:** push to a feature branch and open a PR — do not push straight to `main`. This repo has live payment/auth logic; changes should go through a review step before production.

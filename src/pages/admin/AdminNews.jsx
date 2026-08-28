@@ -6,6 +6,7 @@ import {
 import { supabase } from '../../lib/supabaseClient';
 import { departments } from '../../data/departments';
 import SharePanel from '../../components/admin/SharePanel';
+import ImageUploadField from '../../components/admin/ImageUploadField';
 
 // body_blocks <-> plain text, same spirit as AdminEmails.jsx's
 // plainTextToHtml — admins edit plain text, not a raw block-JSON editor.
@@ -91,12 +92,11 @@ function EditForm({ draft, onSave, onCancel, saving }) {
           </button>
         ))}
       </div>
-      <input
-        type="text"
+      <ImageUploadField
         value={imageUrl}
-        onChange={(e) => setImageUrl(e.target.value)}
-        placeholder="Image URL — leave blank to remove the image"
-        className="w-full px-3 py-2 rounded-lg border border-border text-sm text-ink bg-white dark:bg-[#0A090F] focus:outline-none focus:ring-2 focus:ring-brand/40"
+        onChange={setImageUrl}
+        slug={draft.slug}
+        placeholder="Image URL — upload one, paste a link, or leave blank for no image"
       />
       <div className="flex items-center gap-2 flex-wrap">
         <input
