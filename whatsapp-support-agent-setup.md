@@ -66,7 +66,7 @@ supabase link --project-ref qkrfpuckvymjpewcszgs
 ```
 
 ```bash
-supabase secrets set ANTHROPIC_API_KEY=sk-ant-... WHATSAPP_TOKEN=EAA... WHATSAPP_PHONE_NUMBER_ID=... WHATSAPP_APP_SECRET=... WHATSAPP_VERIFY_TOKEN=...
+supabase secrets set GEMINI_API_KEY=... WHATSAPP_TOKEN=EAA... WHATSAPP_PHONE_NUMBER_ID=... WHATSAPP_APP_SECRET=... WHATSAPP_VERIFY_TOKEN=...
 ```
 
 `RESEND_API_KEY` and `ADMIN_NOTIFY_EMAIL` are already set from the email
@@ -125,13 +125,45 @@ see payments, grant access, issue refunds, or promise anything — every one of
 those routes to you. Customer messages are treated as data, and the prompt
 tells it to hand off rather than comply if someone tries to instruct it.
 
+## ⚠️ Turn on Gemini billing before real customers message it
+
+The bot runs on `gemini-3.7-flash`. Get the key from Google AI Studio.
+
+The **free tier is fine while you test against your own phone**, but Google's
+API terms say free-tier input and output are used to improve their products
+and that *human reviewers may read, annotate, and process* it. The input here
+is customer support messages — names, and things like "I paid ₦50,000 and
+can't log in". Your customers didn't agree to that, and it's the kind of
+processing NDPA cares about.
+
+Enabling billing on the project stops both the training use and the human
+review. It is a switch in Google AI Studio — **no code change and no
+redeploy**, same key, same model.
+
+So: test on free, enable billing before you point real customers at it.
+
 ## Cost and limits
 
-- Model calls: roughly ₦15–₦30 per answered conversation at current Opus
-  pricing. The system prompt is cached, so follow-up messages in a thread cost
-  noticeably less than the first.
+- Model calls: free tier covers testing. On paid, Flash is cheap enough that
+  low support volume lands in the low hundreds of naira a month.
+- Free-tier rate limits are roughly 10–15 requests/minute and a few hundred to
+  ~1,500 a day — not the constraint here. The data terms are.
 - WhatsApp: replies inside the 24-hour customer service window are free, and
   since the bot only ever replies to an inbound message it is always inside
   that window. No paid message templates needed.
 - Abuse guard: after 20 inbound messages from one number in an hour the agent
   stops replying to it. Messages are still logged.
+
+## Checking the voice before you ship
+
+`scripts/test-whatsapp-voice.ts` runs the real prompt against a set of
+questions — including the same question three times, so you can see whether
+the wording actually varies — and flags any that route the wrong way:
+
+```bash
+deno run --allow-env --allow-net scripts/test-whatsapp-voice.ts
+```
+
+Re-run it after editing `knowledge-base.ts`. If repeated questions start
+coming back identically worded, the facts have drifted back into
+pre-written sentences — rewrite them as terse data.

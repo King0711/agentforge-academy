@@ -1,7 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import Anthropic from 'npm:@anthropic-ai/sdk@0.122.0';
-import { zodOutputFormat } from 'npm:@anthropic-ai/sdk@0.122.0/helpers/zod';
+import { GoogleGenAI } from 'npm:@google/genai@2.19.0';
 import { z } from 'npm:zod@4.4.3';
 import { SYSTEM_PROMPT } from './knowledge-base.ts';
 
@@ -9,7 +8,7 @@ import { SYSTEM_PROMPT } from './knowledge-base.ts';
 // model call and outbound send have finished.
 declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void };
 
-const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') ?? '';
 const WHATSAPP_TOKEN = Deno.env.get('WHATSAPP_TOKEN') ?? '';
 const WHATSAPP_PHONE_NUMBER_ID = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') ?? '';
 const WHATSAPP_APP_SECRET = Deno.env.get('WHATSAPP_APP_SECRET') ?? '';
@@ -38,13 +37,28 @@ const FALLBACK_REPLY =
   'personally — they’ll come back to you shortly.';
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+const gemini = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
+// Gemini enforces the schema server-side, but it is not a hard guarantee the
+// way a strict tool call is — so the response is parsed and validated before
+// any of it reaches a customer.
 const AgentReply = z.object({
   reply: z.string(),
   confident: z.boolean(),
   escalation_reason: z.string(),
 });
+
+const REPLY_SCHEMA = {
+  type: 'object',
+  properties: {
+    reply: { type: 'string' },
+    confident: { type: 'boolean' },
+    escalation_reason: { type: 'string' },
+  },
+  required: ['reply', 'confident', 'escalation_reason'],
+};
+
+type Turn = { type: 'user_input' | 'model_output'; content: Array<{ type: 'text'; text: string }> };
 
 function escapeHtml(value: unknown): string {
   return String(value)
@@ -171,27 +185,33 @@ async function escalate(phone: string, name: string, question: string, reason: s
   await emailOwner(phone, name, question, reason);
 }
 
-async function askAgent(history: Anthropic.MessageParam[]) {
-  const response = await anthropic.messages.parse({
-    model: 'claude-opus-5',
-    max_tokens: 2000,
-    // Low effort, not a smaller model: this is a narrow lookup-and-phrase task
-    // and a WhatsApp reply that takes 20s reads as broken.
-    output_config: {
-      effort: 'low',
-      format: zodOutputFormat(AgentReply),
+async function askAgent(history: Turn[]) {
+  const interaction = await gemini.interactions.create({
+    model: 'gemini-3.7-flash',
+    system_instruction: SYSTEM_PROMPT,
+    input: history,
+    response_format: {
+      type: 'text',
+      mime_type: 'application/json',
+      schema: REPLY_SCHEMA,
     },
-    system: [
-      {
-        type: 'text',
-        text: SYSTEM_PROMPT,
-        cache_control: { type: 'ephemeral' },
-      },
-    ],
-    messages: history,
+    generation_config: {
+      max_output_tokens: 2000,
+      // Enough thinking to compose in-voice rather than echo the knowledge
+      // base back, not so much that a WhatsApp reply feels slow.
+      thinking_level: 'low',
+      // Deliberately no `seed`. Pinning one would make the same question
+      // come back the same way every time, which is the opposite of what
+      // this bot is for.
+    },
+    // Don't leave customers' support messages sitting in Google's storage.
+    store: false,
   });
 
-  return response.parsed_output;
+  if (!interaction.output_text) return null;
+
+  const parsed = AgentReply.safeParse(JSON.parse(interaction.output_text));
+  return parsed.success ? parsed.data : null;
 }
 
 async function handleMessage(
@@ -215,15 +235,15 @@ async function handleMessage(
         .order('created_at', { ascending: false })
         .limit(HISTORY_TURNS);
 
-      const history: Anthropic.MessageParam[] = (recent ?? [])
+      const history: Turn[] = (recent ?? [])
         .reverse()
         .map((m) => ({
-          role: m.direction === 'inbound' ? ('user' as const) : ('assistant' as const),
-          content: m.body,
+          type: m.direction === 'inbound' ? ('user_input' as const) : ('model_output' as const),
+          content: [{ type: 'text' as const, text: m.body }],
         }));
 
-      // The conversation must open on a user turn.
-      while (history.length && history[0].role === 'assistant') history.shift();
+      // The conversation must open on a customer turn.
+      while (history.length && history[0].type === 'model_output') history.shift();
 
       const parsed = await askAgent(history);
       if (parsed) {
