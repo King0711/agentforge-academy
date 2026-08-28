@@ -1,7 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { z } from 'npm:zod@4.4.3';
-import { SYSTEM_PROMPT } from './knowledge-base.ts';
+import { buildSystemPrompt } from './knowledge-base.ts';
 
 // Supabase edge runtime global — lets us return a 200 to Meta before the
 // model call and outbound send have finished.
@@ -198,7 +198,7 @@ async function askAgent(history: Turn[]) {
   const url =
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
   const body = JSON.stringify({
-    systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+    systemInstruction: { parts: [{ text: buildSystemPrompt() }] },
     contents: history,
     generationConfig: {
       maxOutputTokens: 2000,
@@ -228,11 +228,25 @@ async function askAgent(history: Turn[]) {
       return parsed.success ? parsed.data : null;
     }
 
-    lastError = new Error(`Gemini API returned ${res.status}: ${await res.text()}`);
-    // Only retry transient server-side errors. A 4xx (bad key, bad request)
-    // fails identically on every attempt; a 429 means we're over the free
-    // tier's rate limit and hammering it makes that worse.
-    if (res.status < 500 || attempt === GEMINI_MAX_ATTEMPTS) throw lastError;
+    const raw = await res.text();
+    lastError = new Error(`Gemini API returned ${res.status}: ${raw.slice(0, 300)}`);
+    if (attempt === GEMINI_MAX_ATTEMPTS) throw lastError;
+
+    // 429 = over the rate limit, which on the free tier is only 5 requests a
+    // minute — two customers messaging at once can hit it. Google tells us how
+    // long to wait, so wait that long rather than turning a perfectly
+    // answerable question into a hand-off. We're inside waitUntil, so the
+    // delay costs the customer a slower reply, not a missing one.
+    if (res.status === 429) {
+      const wait = Number(raw.match(/"retryDelay":\s*"(\d+)s"/)?.[1] ?? 30) + 2;
+      console.warn(`Gemini rate limited, waiting ${wait}s (attempt ${attempt}/${GEMINI_MAX_ATTEMPTS})`);
+      await sleep(wait * 1000);
+      continue;
+    }
+
+    // Any other 4xx (bad key, malformed request) fails identically every time.
+    if (res.status < 500) throw lastError;
+
     console.error(`Gemini attempt ${attempt}/${GEMINI_MAX_ATTEMPTS} failed, retrying:`, lastError.message);
     await sleep(GEMINI_RETRY_DELAY_MS * attempt);
   }
