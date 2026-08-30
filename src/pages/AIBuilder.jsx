@@ -1,21 +1,29 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import { Link } from 'react-router-dom';
 import { m } from 'framer-motion';
 import {
   CheckCircle2, X, Briefcase, Repeat, Building2, ChevronRight, Tag, CalendarDays, Info,
-  MessageCircle, Hammer, CircleHelp, ArrowRight,
+  MessageCircle, Hammer, CircleHelp, ArrowRight, Zap, Timer,
 } from 'lucide-react';
 import TestimonialCard from '../components/TestimonialCard';
-import { agents } from '../data/agents';
+import YouTubeFacade from '../components/YouTubeFacade';
+import { agents, getBuilder1Agents, groupAgentsByWeek } from '../data/agents';
 import { agentsBeginner } from '../data/agentsBeginner';
 import { levels } from '../data/departments';
 import { useCohortSchedule } from '../hooks/useCohortSchedule';
+import { ANCHOR_PRICE, BUILDER_PRICE, BUILDER_SAVINGS, PRO_PRICE } from '../data/pricing';
 
 // Content below is adapted from the /webinar deck's narrative (same offer,
 // same honest framing, same real proof points) rebuilt as a scrollable
 // sales landing page for cold ad traffic rather than a live presentation —
 // no live-demo section (nothing to demo without a presenter), replaced
 // with a CTA to the free, self-serve WhatsApp bot guide instead.
+
+// Same video as the homepage hero. Swap this for a purpose-shot agent demo
+// (the WhatsApp bot or the inbox-triage build actually running) when one
+// exists — a demo of the product beats a talking-head intro on a cold ad
+// landing page, but a real generic video beats a placeholder for a fake one.
+const DEMO_VIDEO_ID = 'MYcREKgdAV4';
 
 const WANTS = ['More money', 'More time', 'A better job', 'A growing business', 'To stay ahead'];
 const SCENES = [
@@ -58,17 +66,29 @@ const MONEY_PATHS = [
   { icon: Building2, label: 'Become the "AI person"', text: 'The one who makes your own workplace faster — without a title change' },
 ];
 
-// One real, on-topic testimonial pinned here rather than the full live
-// testimonials grid — this specific review is about learning to build,
-// which matches this page's offer directly; most of the others are about
-// unrelated web-dev/SEO client work.
-const FEATURED_TESTIMONIAL = {
-  id: 'chiamaka-review',
-  display_name: 'Chiamaka M.',
-  body: 'When I enrolled in Social Dev Technologies, I had no clue what programming was all about, but now, I can code and my learning experience has been so wonderful... Social Dev Technologies has created a career path for me that will change my life forever.',
-  rating: 5,
-  source: 'google_business',
-};
+// Two real, on-topic reviews pinned here rather than the full live
+// testimonials grid — both are about learning to build, which matches this
+// page's offer directly; the other approved rows are about unrelated
+// web-dev/SEO client work. Copied verbatim from the `testimonials` table
+// (approved = true), never paraphrased or written for the page — this sits
+// above a payment CTA, so invented quotes would be fabricated reviews.
+// John Amadi leads: his is the only review specifically about the AI course.
+const FEATURED_TESTIMONIALS = [
+  {
+    id: '29d84036-0970-4ae7-9ec6-95b0514ef3b4',
+    display_name: 'John Amadi',
+    body: 'This was the best AI course I have seen. The instructor was super helpful too.',
+    rating: 5,
+    source: 'student',
+  },
+  {
+    id: 'chiamaka-review',
+    display_name: 'Chiamaka M.',
+    body: 'When I enrolled in Social Dev Technologies, I had no clue what programming was all about, but now, I can code and my learning experience has been so wonderful... Social Dev Technologies has created a career path for me that will change my life forever.',
+    rating: 5,
+    source: 'google_business',
+  },
+];
 
 const FAQS = [
   { q: 'Do I need coding experience?', a: 'No. Every session starts with copy-paste prompts.' },
@@ -84,16 +104,103 @@ const FAQS = [
 const FOR_YOU = ['You want to build something, not just watch a video', "You've tried AI tools and felt like you weren't getting real results", 'You can commit an hour or two per session, at your own pace', 'You want a skill you can point to, not just a certificate'];
 const NOT_FOR_YOU = ["You're looking for a magic button that needs zero effort from you", 'You want theory with no hands-on building', "You're not willing to actually open Claude and follow along"];
 
-const ANCHOR_PRICE = 100000;
-const BUILDER_PRICE = 50000;
-const BUILDER_SAVINGS = ANCHOR_PRICE - BUILDER_PRICE;
+// Prices come from src/data/pricing.js — this page used to redeclare them
+// locally, which is exactly the drift that file exists to prevent (note
+// ANCHOR_PRICE is the strikethrough anchor, NOT a purchasable plan; the
+// webhook's resolvePlan() only recognises BUILDER_PRICE and PRO_PRICE).
 const BUILDER1_FEATURES = [`${builder1Count} Builder 1 agent sessions`, 'Copy-paste prompts for every build', 'XP tracking & progress', 'Portfolio write-up prompts', '6 months of access'];
+const BUILDER2_FEATURES = [`${builder2Count} Builder 2 agent sessions`, 'Multi-step, API-integrated agent builds', 'XP tracking & progress', 'Portfolio write-up prompts', '6 months of access'];
+const PRO_FEATURES = [`All ${builder1Count + builder2Count} sessions — Builder 1 + Builder 2`, 'No prerequisite — both tracks unlock immediately', 'XP tracking & progress across both tracks', 'Portfolio write-up prompts for every agent', 'Priority support', '6 months of access'];
+
+// Short theme labels per Builder 1 week. The data (src/data/agentsBeginner.js)
+// stores only week number + isMainProject, not a display label — same split
+// as Home.jsx's WEEK_THEMES, kept here alongside the one place it renders.
+const WEEK_THEMES = {
+  1: 'Info & briefing agents',
+  2: 'Document processing',
+  3: 'Inbound triage & lead handling',
+  4: 'Customer-facing messaging',
+};
+const builder1Weeks = groupAgentsByWeek(getBuilder1Agents());
 
 function formatCohortDate(dateStr) {
   if (!dateStr) return null;
   const date = new Date(`${dateStr}T00:00:00`);
   if (date < new Date(new Date().toDateString())) return null;
   return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+// One shared 1s tick. Stable identity so useSyncExternalStore doesn't
+// resubscribe on every render.
+function subscribeToTick(onChange) {
+  const id = setInterval(onChange, 1000);
+  return () => clearInterval(id);
+}
+
+/**
+ * Counts down to the next LIVE COHORT date — deliberately not framed as an
+ * enrollment deadline. Cohort dates are informational only and don't gate
+ * access (see useCohortSchedule): buying grants the whole tier instantly,
+ * whatever the date says. Copy here has to keep promising that, or buyers
+ * arrive expecting a cohort-gated course and ask for refunds we don't give
+ * (FAQ.jsx: no change-your-mind window).
+ *
+ * useSyncExternalStore rather than useState+useEffect specifically for its
+ * third argument: this page is prerendered (scripts/prerender-routes.mjs)
+ * and main.jsx hydrates that markup, so getServerSnapshot() returning null
+ * is what keeps the hydration render empty — matching the snapshot instead
+ * of baking a stale countdown into static HTML and then mismatching on
+ * hydration (React #418, the same class of bug useTestimonials and
+ * useCohortSchedule document). The live value swaps in right after.
+ *
+ * The snapshot is a plain number (seconds left), not an object — getSnapshot
+ * must be referentially stable between ticks or React re-renders forever.
+ */
+function CohortCountdown({ dateStr }) {
+  const getSnapshot = useCallback(() => {
+    if (!dateStr) return 0;
+    return Math.max(0, Math.floor((new Date(`${dateStr}T00:00:00`).getTime() - Date.now()) / 1000));
+  }, [dateStr]);
+
+  const secondsLeft = useSyncExternalStore(subscribeToTick, getSnapshot, () => null);
+
+  if (secondsLeft === null || secondsLeft <= 0) return null;
+
+  const days = Math.floor(secondsLeft / 86400);
+  const units = [
+    { value: days, label: days === 1 ? 'day' : 'days' },
+    { value: Math.floor(secondsLeft / 3600) % 24, label: 'hrs' },
+    { value: Math.floor(secondsLeft / 60) % 60, label: 'min' },
+    { value: secondsLeft % 60, label: 'sec' },
+  ];
+
+  return (
+    // data-client-only: scripts/prerender.mjs strips this subtree from the
+    // static snapshot, so the committed HTML never carries a frozen clock
+    // and hydration still matches the null getServerSnapshot above.
+    <div data-client-only className="flex flex-col items-center gap-2.5">
+      <span className="inline-flex items-center gap-1.5 text-[12.5px] font-bold uppercase tracking-wide text-body">
+        <Timer className="w-3.5 h-3.5 text-brand" /> Next live cohort starts in
+      </span>
+      <div className="flex items-center gap-2 sm:gap-2.5">
+        {units.map((unit) => (
+          <div
+            key={unit.label}
+            className="bg-white dark:bg-[#181818] border-[1.5px] border-border-soft rounded-xl px-3 sm:px-3.5 py-2 min-w-[58px] sm:min-w-[64px] text-center"
+          >
+            <div className="font-display font-extrabold text-xl sm:text-2xl text-ink tabular-nums leading-none">
+              {String(unit.value).padStart(2, '0')}
+            </div>
+            <div className="text-[10.5px] font-bold uppercase tracking-wide text-gray-400 mt-1">{unit.label}</div>
+          </div>
+        ))}
+      </div>
+      <p className="text-[12.5px] text-body max-w-xs text-center">
+        That's when the live sessions begin — <strong className="text-body-strong">your access starts the moment you pay</strong>, so
+        you can work through the track at your own pace before then.
+      </p>
+    </div>
+  );
 }
 
 function SectionHeading({ eyebrow, children }) {
@@ -110,8 +217,15 @@ function SectionHeading({ eyebrow, children }) {
 }
 
 export default function AIBuilder() {
-  const { builder1: builder1CohortDate } = useCohortSchedule();
+  const { builder1: builder1CohortDate, builder2: builder2CohortDate } = useCohortSchedule();
   const builder1Cohort = formatCohortDate(builder1CohortDate);
+  const builder2Cohort = formatCohortDate(builder2CohortDate);
+  // Soonest cohort still ahead of us, across both tiers — the page sells all
+  // three plans now, so counting down to Builder 1's date alone would show
+  // nothing whenever that one date happens to be in the past.
+  const nextCohortDate = [builder1CohortDate, builder2CohortDate]
+    .filter((d) => d && new Date(`${d}T00:00:00`) >= new Date(new Date().toDateString()))
+    .sort()[0] || null;
   const remaining = agentsBeginner.length - wall.length;
 
   useEffect(() => {
@@ -123,7 +237,7 @@ export default function AIBuilder() {
     if (metaDesc) {
       metaDesc.setAttribute(
         'content',
-        'Stop using AI. Start building with it. 12 real AI agent sessions, one guided track, one-time payment. Enroll in Builder 1 today.'
+        `Stop using AI. Start building with it. ${builder1Count + builder2Count} real AI agent sessions across Builder 1 and Builder 2, one-time payment, 6 months access. Start with Builder 1 today.`
       );
     }
 
@@ -211,6 +325,27 @@ export default function AIBuilder() {
             <span>6 months access</span>
             <span>·</span>
             <span>One-time payment, no subscription</span>
+          </m.div>
+
+          {/* Demo video. YouTubeFacade, not a raw iframe — the embed pulls
+              ~1.5MB of third-party JS on sight, and this page is an ad
+              landing page where load time is the conversion. */}
+          <m.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55 }}
+            className="mt-9 max-w-2xl mx-auto"
+          >
+            <div className="relative h-[200px] sm:h-[280px] lg:h-[340px] rounded-[22px] overflow-hidden shadow-[0_24px_50px_-18px_rgba(80,40,160,.4)] bg-[#1A1333]">
+              <YouTubeFacade
+                className="w-full h-full"
+                videoId={DEMO_VIDEO_ID}
+                title="Learn to build real AI agents with Claude"
+                thumbnailSrc="/video-thumbnail.jpg"
+                priority
+              />
+            </div>
+            <p className="text-[12.5px] text-body mt-3">Watch what you'll actually be building — 2 minutes.</p>
           </m.div>
         </div>
       </div>
@@ -368,6 +503,105 @@ export default function AIBuilder() {
         </div>
       </div>
 
+      {/* Curriculum timeline — every count here is derived from src/data/
+          agents.js, never hardcoded, so the page can't drift out of sync
+          with the catalog the way a written-out "25 sessions" would. */}
+      <div id="curriculum" className="bg-[#FBFAFF] dark:bg-[#141416] border-y border-border-soft px-4 sm:px-6 lg:px-[5vw] py-16">
+        <div className="max-w-5xl mx-auto">
+          <SectionHeading eyebrow="The full path">
+            <span>{builder1Count + builder2Count}</span> sessions, start to finish.
+          </SectionHeading>
+
+          <div className="grid lg:grid-cols-[1.15fr_auto_1fr] gap-6 lg:gap-5 items-stretch">
+            {/* Builder 1 — week by week */}
+            <div className="bg-white dark:bg-[#181818] border-[2.5px] border-green rounded-[22px] p-6 flex flex-col">
+              <div className="flex items-baseline justify-between gap-3 mb-1">
+                <span className="inline-flex items-center gap-1.5 bg-[#EAFAF1] dark:bg-green/10 text-green font-bold text-[11px] px-2.5 py-1 rounded-full">
+                  🌱 Builder 1 · Start here
+                </span>
+                <span className="font-display font-extrabold text-2xl text-green leading-none">
+                  <span>{builder1Count}</span>
+                </span>
+              </div>
+              <p className="text-[12.5px] text-body mb-5">Four weeks, each built around one mechanism — not a random topic list.</p>
+
+              <div className="flex flex-col">
+                {builder1Weeks.map((week, i) => {
+                  const main = week.agents.find((a) => a.isMainProject);
+                  return (
+                    <div key={week.week} className="flex gap-3.5">
+                      {/* Rail */}
+                      <div className="flex flex-col items-center flex-shrink-0">
+                        <div className="w-7 h-7 rounded-full bg-green text-white font-display font-extrabold text-[12px] flex items-center justify-center">
+                          {week.week}
+                        </div>
+                        {i < builder1Weeks.length - 1 && <div className="w-0.5 flex-1 bg-green/25 my-1" />}
+                      </div>
+                      <div className={i < builder1Weeks.length - 1 ? 'pb-5' : ''}>
+                        <p className="font-display font-bold text-[14px] text-ink leading-tight">{WEEK_THEMES[week.week]}</p>
+                        <p className="text-[12px] text-body mt-1">
+                          <span>{week.agents.length}</span> sessions
+                          {main && <> · main build: <span className="text-body-strong font-semibold">{main.title}</span></>}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <p className="flex items-start gap-1.5 text-[11.5px] text-body mt-auto pt-4 border-t border-border-soft">
+                <CheckCircle2 className="w-3.5 h-3.5 text-green mt-px flex-shrink-0" />
+                Each week's main build earns a certificate on its own — the other two are optional.
+              </p>
+            </div>
+
+            <div className="hidden lg:flex items-center justify-center h-full pt-20">
+              <ChevronRight className="w-7 h-7 text-gray-300" />
+            </div>
+
+            {/* Builder 2 */}
+            <div className="bg-white dark:bg-[#181818] border-[1.5px] border-border-soft rounded-[22px] p-6 flex flex-col">
+              <div className="flex items-baseline justify-between gap-3 mb-1">
+                <span className="inline-flex items-center gap-1.5 bg-[#F3EBFF] dark:bg-brand/15 text-brand font-bold text-[11px] px-2.5 py-1 rounded-full">
+                  ⚡ Builder 2 · What's next
+                </span>
+                <span className="font-display font-extrabold text-2xl text-brand leading-none">
+                  <span>{builder2Count}</span>
+                </span>
+              </div>
+              <p className="text-[12.5px] text-body mb-5">
+                Multi-step agents that talk to real APIs — research, CRM, RAG support bots, invoice processing.
+              </p>
+              <ul className="flex flex-col gap-2.5">
+                {BUILDER2_FEATURES.slice(0, 3).map((f) => (
+                  <li key={f} className="flex items-start gap-2.5 text-[12.5px] text-body-strong">
+                    <CheckCircle2 className="w-4 h-4 text-brand mt-px flex-shrink-0" /> <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="flex items-start gap-1.5 text-[11.5px] text-body mt-auto pt-4 border-t border-border-soft">
+                <Info className="w-3.5 h-3.5 mt-px flex-shrink-0" />
+                A few of these connect to a third-party service and need a free API key of your own — each session says which, up front.
+              </p>
+            </div>
+          </div>
+
+          <p className="text-center font-display font-bold text-[15px] sm:text-lg text-ink mt-9 max-w-xl mx-auto">
+            Every session ends with a write-up prompt — <span className="text-brand">LinkedIn post, resume bullets, project blurb.</span> You
+            finish with a portfolio, not a certificate nobody asked for.
+          </p>
+
+          <div className="flex justify-center mt-6">
+            <Link
+              to="/catalog"
+              className="inline-flex items-center gap-2 bg-white dark:bg-[#181818] border-[1.5px] border-border text-body-strong font-bold text-[14.5px] px-6 py-3 rounded-xl hover:border-brand hover:text-brand transition-colors"
+            >
+              See the full curriculum <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      </div>
+
       {/* Who you become */}
       <div className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto text-center">
         <SectionHeading>Who you become</SectionHeading>
@@ -419,8 +653,10 @@ export default function AIBuilder() {
             </div>
           ))}
         </div>
-        <div className="max-w-xs mx-auto">
-          <TestimonialCard testimonial={FEATURED_TESTIMONIAL} />
+        <div className="grid sm:grid-cols-2 gap-3.5 max-w-2xl mx-auto items-stretch">
+          {FEATURED_TESTIMONIALS.map((t) => (
+            <TestimonialCard key={t.id} testimonial={t} />
+          ))}
         </div>
       </div>
 
@@ -463,38 +699,129 @@ export default function AIBuilder() {
         </div>
       </div>
 
-      {/* Offer */}
-      <div className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto">
-        <SectionHeading eyebrow="The offer">Start Builder 1 today.</SectionHeading>
-        <div className="max-w-md mx-auto rounded-[22px] border-[2.5px] border-brand bg-white dark:bg-[#181818] p-7.5">
-          <div className="font-extrabold text-ink text-lg">🌱 Builder 1</div>
-          <div className="flex items-baseline gap-2.5 mt-2.5 mb-0.5">
-            <span className="text-base text-gray-400 line-through">₦<span>{ANCHOR_PRICE.toLocaleString()}</span></span>
-            <span className="font-display font-extrabold text-[34px] text-ink">₦<span>{BUILDER_PRICE.toLocaleString()}</span></span>
+      {/* Offer — all three real plans. ANCHOR_PRICE is the strikethrough
+          anchor only; the two prices anyone can actually pay are
+          BUILDER_PRICE (either single tier) and PRO_PRICE (both). */}
+      <div id="pricing" className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto">
+        <SectionHeading eyebrow="The offer">Pick where you start.</SectionHeading>
+
+        {nextCohortDate && (
+          <div className="flex justify-center -mt-4 mb-9">
+            <CohortCountdown dateStr={nextCohortDate} />
           </div>
-          <div className="flex flex-wrap gap-1.5 mb-4">
-            <span className="inline-flex items-center gap-1 bg-[#EAFAF1] dark:bg-green/10 text-green font-extrabold text-[11.5px] px-2.5 py-1 rounded-full">
-              <Tag className="w-3 h-3" /> Save ₦<span>{BUILDER_SAVINGS.toLocaleString()}</span> · 50% off
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 text-left items-stretch">
+          {/* Builder 1 — this page's entry offer */}
+          <div className="rounded-[22px] border-[2.5px] border-green bg-white dark:bg-[#181818] p-6 flex flex-col relative">
+            <span className="absolute -top-3.5 left-6 bg-green text-white text-[11px] font-extrabold px-3.5 py-1.5 rounded-full">
+              START HERE
             </span>
-            {builder1Cohort && (
-              <span className="inline-flex items-center gap-1 bg-[#F3EBFF] dark:bg-brand/15 text-brand font-bold text-[11.5px] px-2.5 py-1 rounded-full">
-                <CalendarDays className="w-3 h-3" /> Cohort starts <span>{builder1Cohort}</span>
+            <div className="font-extrabold text-ink text-lg mt-1">🌱 Builder 1</div>
+            <div className="flex items-baseline gap-2.5 mt-2.5 mb-0.5">
+              <span className="text-base text-gray-400 line-through">₦<span>{ANCHOR_PRICE.toLocaleString()}</span></span>
+              <span className="font-display font-extrabold text-[32px] text-ink">₦<span>{BUILDER_PRICE.toLocaleString()}</span></span>
+            </div>
+            <div className="flex flex-wrap gap-1.5 mb-3.5">
+              <span className="inline-flex items-center gap-1 bg-[#EAFAF1] dark:bg-green/10 text-green font-extrabold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
+                <Tag className="w-3 h-3" /> Save ₦<span>{BUILDER_SAVINGS.toLocaleString()}</span> · 50% off
               </span>
-            )}
+              {builder1Cohort && (
+                <span className="inline-flex items-center gap-1 bg-[#F3EBFF] dark:bg-brand/15 text-brand font-bold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
+                  <CalendarDays className="w-3 h-3" /> Live cohort <span>{builder1Cohort}</span>
+                </span>
+              )}
+            </div>
+            <p className="text-[13px] text-body mb-4">The foundation track. No prerequisite, no coding experience needed.</p>
+            <ul className="flex flex-col gap-2.5 mb-5 flex-1">
+              {BUILDER1_FEATURES.map((f) => (
+                <li key={f} className="flex items-start gap-2.5 text-[13px] text-body-strong"><CheckCircle2 className="w-4 h-4 text-green mt-0.5 flex-shrink-0" /> <span>{f}</span></li>
+              ))}
+            </ul>
+            <Link
+              to="/pricing"
+              className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-deep text-white font-extrabold px-5 py-3.5 rounded-xl shadow-[0_10px_22px_rgba(124,58,237,.35)] transition-colors"
+            >
+              Claim Builder 1 →
+            </Link>
           </div>
-          <ul className="flex flex-col gap-2.5 mb-6">
-            {BUILDER1_FEATURES.map((f) => (
-              <li key={f} className="flex items-start gap-2.5 text-[13.5px] text-body-strong"><CheckCircle2 className="w-4 h-4 text-green mt-0.5 flex-shrink-0" /> <span>{f}</span></li>
-            ))}
-          </ul>
-          <Link
-            to="/pricing"
-            className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-deep text-white font-extrabold px-6 py-3.5 rounded-xl shadow-[0_10px_22px_rgba(124,58,237,.35)] transition-colors"
+
+          {/* Builder 2 */}
+          <div className="rounded-[22px] border-[1.5px] border-border-soft bg-white dark:bg-[#181818] p-6 flex flex-col">
+            <div className="font-extrabold text-ink text-lg mt-1">⚡ Builder 2</div>
+            <div className="flex items-baseline gap-2.5 mt-2.5 mb-0.5">
+              <span className="text-base text-gray-400 line-through">₦<span>{ANCHOR_PRICE.toLocaleString()}</span></span>
+              <span className="font-display font-extrabold text-[32px] text-ink">₦<span>{BUILDER_PRICE.toLocaleString()}</span></span>
+            </div>
+            <div className="flex flex-wrap gap-1.5 mb-3.5">
+              <span className="inline-flex items-center gap-1 bg-[#EAFAF1] dark:bg-green/10 text-green font-extrabold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
+                <Tag className="w-3 h-3" /> Save ₦<span>{BUILDER_SAVINGS.toLocaleString()}</span> · 50% off
+              </span>
+              {builder2Cohort && (
+                <span className="inline-flex items-center gap-1 bg-[#F3EBFF] dark:bg-brand/15 text-brand font-bold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
+                  <CalendarDays className="w-3 h-3" /> Live cohort <span>{builder2Cohort}</span>
+                </span>
+              )}
+            </div>
+            <p className="text-[13px] text-body mb-4">Best after Builder 1 — but nothing stops you jumping straight in.</p>
+            <ul className="flex flex-col gap-2.5 mb-5 flex-1">
+              {BUILDER2_FEATURES.map((f) => (
+                <li key={f} className="flex items-start gap-2.5 text-[13px] text-body-strong"><CheckCircle2 className="w-4 h-4 text-green mt-0.5 flex-shrink-0" /> <span>{f}</span></li>
+              ))}
+            </ul>
+            <Link
+              to="/pricing"
+              className="flex items-center justify-center gap-2 w-full bg-white dark:bg-[#181818] border-[1.5px] border-border text-body-strong hover:border-brand hover:text-brand font-extrabold px-5 py-3.5 rounded-xl transition-colors"
+            >
+              Get Builder 2 →
+            </Link>
+          </div>
+
+          {/* Pro — both tracks */}
+          <div
+            className="rounded-[22px] border-[2.5px] border-brand p-6 flex flex-col relative bg-[#FAF7FF] dark:bg-[#181022]"
           >
-            Claim Builder 1 →
-          </Link>
-          <p className="flex items-start gap-1.5 text-[12px] text-body mt-3">
-            <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" /> One-time payment. You'll need your own paid Claude account to complete the builds.
+            <span className="absolute -top-3.5 right-6 bg-brand text-white text-[11px] font-extrabold px-3.5 py-1.5 rounded-full">
+              BEST VALUE
+            </span>
+            <div className="font-extrabold text-ink text-lg mt-1 flex items-center gap-1.5">
+              <Zap className="w-4 h-4 text-brand" /> Pro
+            </div>
+            <div className="font-display font-extrabold text-[32px] text-ink mt-2.5 mb-0.5">
+              ₦<span>{PRO_PRICE.toLocaleString()}</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5 mb-3.5">
+              <span className="inline-flex items-center gap-1 bg-[#EAFAF1] dark:bg-green/10 text-green font-extrabold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
+                <Tag className="w-3 h-3" /> Save ₦<span>{(BUILDER_PRICE * 2 - PRO_PRICE).toLocaleString()}</span> vs. both separately
+              </span>
+            </div>
+            <p className="text-[13px] text-body mb-4">Both tracks, one payment, no prerequisite — everything unlocks immediately.</p>
+            <ul className="flex flex-col gap-2.5 mb-5 flex-1">
+              {PRO_FEATURES.map((f) => (
+                <li key={f} className="flex items-start gap-2.5 text-[13px] text-body-strong"><CheckCircle2 className="w-4 h-4 text-green mt-0.5 flex-shrink-0" /> <span>{f}</span></li>
+              ))}
+            </ul>
+            <Link
+              to="/pricing"
+              className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-deep text-white font-extrabold px-5 py-3.5 rounded-xl shadow-[0_10px_22px_rgba(124,58,237,.35)] transition-colors"
+            >
+              Get everything →
+            </Link>
+          </div>
+        </div>
+
+        {/* Expectation-setting before checkout, not after — these are the
+            three things students actually get surprised by, and the refund
+            policy (FAQ.jsx) has no change-your-mind window to fall back on. */}
+        <div className="max-w-3xl mx-auto mt-7 flex flex-col gap-2">
+          <p className="flex items-start gap-1.5 text-[12.5px] text-body">
+            <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+            One-time payment, not a subscription. Access starts the moment you pay and runs for 6 months.
+          </p>
+          <p className="flex items-start gap-1.5 text-[12.5px] text-body">
+            <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+            You'll need your own paid Claude account (Claude Pro or higher), billed separately by Anthropic. A few
+            Builder 2 sessions also need a free API key from a third-party service — each one tells you before you start.
           </p>
         </div>
       </div>
@@ -513,7 +840,7 @@ export default function AIBuilder() {
             to="/pricing"
             className="bg-yellow text-ink font-extrabold text-base px-7 py-[15px] rounded-2xl shadow-[0_10px_20px_rgba(0,0,0,.18)] hover:brightness-95 transition-all flex-shrink-0"
           >
-            Get Builder 1 →
+            Choose your plan →
           </Link>
         </div>
       </div>

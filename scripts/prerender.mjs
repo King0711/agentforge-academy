@@ -92,6 +92,19 @@ async function main() {
           document.querySelectorAll('[data-runtime-injected]').forEach((el) => el.remove());
         });
 
+        // Drop client-only, time-varying subtrees (currently the /ai-builder
+        // cohort countdown). Puppeteer captures the *mounted* DOM, so a live
+        // clock would be frozen into a committed file — stale the moment
+        // it's written, and a hydration mismatch besides: these components
+        // render nothing on the hydration pass (useSyncExternalStore's
+        // getServerSnapshot returns null) precisely so the snapshot and the
+        // client's first render agree. Removing them here is what makes that
+        // agreement true. Mark the component's ROOT element, not a wrapper —
+        // the empty wrapper must survive to match what React renders.
+        await page.evaluate(() => {
+          document.querySelectorAll('[data-client-only]').forEach((el) => el.remove());
+        });
+
         // Routes whose markup settles on data this snapshot can't carry
         // forward opt out of hydration (see src/main.jsx). Builder session
         // pages gate on `course_content`, and useCourseContent starts at
