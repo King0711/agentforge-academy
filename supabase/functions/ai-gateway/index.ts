@@ -1,0 +1,210 @@
+// Social Dev Technologies — AI Gateway
+//
+// The single point through which every student AI request passes. Students
+// never hold an Anthropic key; they authenticate with their Supabase session
+// and this function calls Anthropic on their behalf, metering the spend.
+//
+// This function is deliberately thin. Every budget guardrail lives in Postgres
+// (see supabase/ai-credits-setup.sql) because a check-then-deduct in JS leaves
+// a race that the Builder 1 batch projects hit routinely — Gmail triage fires
+// ten calls per run, and ten concurrent requests would all read the same stale
+// balance. ai_reserve_request() holds a row lock; this file just orchestrates.
+//
+// Flow:
+//   authenticate → reserve worst case → call Anthropic → settle actual → respond
+//
+// If the reserve step throws, nothing was charged and nothing is called.
+// If Anthropic fails, settle('error') refunds the full reservation.
+
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
+const ANTHROPIC_VERSION = '2023-06-01';
+
+// Rough token estimate for the reservation. Deliberately conservative: over-
+// estimating only means a larger hold that gets refunded at settle time, while
+// under-estimating would let a request slip past the balance check. ~3.5 chars
+// per token is a safe floor for English prose and code.
+const estimateTokens = (text: string) => Math.ceil(text.length / 3.5);
+
+const cors = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...cors, 'Content-Type': 'application/json' },
+  });
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
+  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) return json({ error: 'Sign in to use AI Builder credits' }, 401);
+
+  // Client bound to the caller's JWT — auth.uid() inside the RPCs resolves to
+  // this student, and RLS applies. Never the service role: the whole point is
+  // that the database decides what this user may spend.
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_ANON_KEY')!,
+    { global: { headers: { Authorization: authHeader } } },
+  );
+
+  let body: {
+    model?: string;
+    prompt?: string;
+    system?: string;
+    max_tokens?: number;
+    project?: string;
+  };
+  try {
+    body = await req.json();
+  } catch {
+    return json({ error: 'Invalid JSON body' }, 400);
+  }
+
+  const model = body.model ?? 'claude-haiku-4-5';
+  const prompt = body.prompt;
+  if (!prompt || typeof prompt !== 'string') {
+    return json({ error: 'A `prompt` string is required' }, 400);
+  }
+
+  const estimatedInput = estimateTokens(prompt + (body.system ?? ''));
+
+  // 1. Reserve. Runs every guardrail: kill switch, entitlement, model
+  //    allow-list, tier gate, hourly rate limit, daily caps, balance —
+  //    then deducts the worst-case cost under a row lock.
+  const { data: reservation, error: reserveError } = await supabase
+    .rpc('ai_reserve_request', {
+      p_model_key: model,
+      p_estimated_input_tokens: estimatedInput,
+      p_project_slug: body.project ?? null,
+    })
+    .maybeSingle();
+
+  if (reserveError || !reservation) {
+    const message = reserveError?.message ?? 'Could not start request';
+    // An anon-key caller with no signed-in user is rejected by the function's
+    // GRANT before any of our own guards run, surfacing a raw Postgres string.
+    // Everything else is a guard message written for students to read directly
+    // — "Not enough credits (need 4, have 1)", "AI gateway is currently
+    // disabled" — so those pass through unchanged.
+    if (message.includes('permission denied')) {
+      return json({ error: 'Sign in to use AI Builder credits' }, 401);
+    }
+    return json({ error: message }, 402);
+  }
+
+  const { log_id: logId, max_tokens: modelMaxTokens } = reservation as {
+    log_id: string;
+    credits_reserved: number;
+    max_tokens: number;
+  };
+
+  // Clamp to the model's server-side ceiling. A student can ask for less but
+  // never more — the reservation was priced against modelMaxTokens, so a
+  // larger value would let real cost exceed what was held.
+  const maxTokens = Math.min(body.max_tokens ?? modelMaxTokens, modelMaxTokens);
+
+  const settle = (
+    inputTokens: number,
+    outputTokens: number,
+    status: 'success' | 'error',
+    message?: string,
+  ) =>
+    supabase.rpc('ai_settle_request', {
+      p_log_id: logId,
+      p_input_tokens: inputTokens,
+      p_output_tokens: outputTokens,
+      p_status: status,
+      p_error_message: message ?? null,
+    });
+
+  const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
+
+  // ---- Mock mode ----------------------------------------------------------
+  // With no key configured the gateway returns a canned response instead of
+  // failing. This exercises the entire path — auth, every guardrail, reserve,
+  // settle, refund — with zero provider spend, so the system can be built,
+  // merged and verified long before the Anthropic account exists. The moment
+  // ANTHROPIC_API_KEY is set, real calls take over with no code change.
+  if (!apiKey) {
+    const mockText =
+      `[mock response] The AI gateway is running without a provider key, so this ` +
+      `is placeholder text rather than a real model response. Your credits, ` +
+      `guardrails and usage log all worked correctly.`;
+    const mockOutput = estimateTokens(mockText);
+    const { data: charged } = await settle(estimatedInput, mockOutput, 'success');
+    return json({
+      text: mockText,
+      model,
+      mock: true,
+      usage: { input_tokens: estimatedInput, output_tokens: mockOutput },
+      credits_charged: charged,
+    });
+  }
+
+  // ---- Real provider call -------------------------------------------------
+  let anthropicResponse: Response;
+  try {
+    anthropicResponse = await fetch(ANTHROPIC_URL, {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': ANTHROPIC_VERSION,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTokens,
+        ...(body.system ? { system: body.system } : {}),
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+  } catch (e) {
+    // Network failure — the student is refunded in full.
+    await settle(0, 0, 'error', String(e));
+    return json({ error: 'Could not reach the AI provider. Your credits were not charged.' }, 502);
+  }
+
+  if (!anthropicResponse.ok) {
+    const detail = await anthropicResponse.text();
+    await settle(0, 0, 'error', detail.slice(0, 500));
+    // Don't leak provider error bodies to students — they can contain account
+    // and key metadata. The real detail is in ai_usage_logs for admins.
+    return json(
+      { error: 'The AI provider rejected this request. Your credits were not charged.' },
+      502,
+    );
+  }
+
+  const result = await anthropicResponse.json();
+
+  // Content is a list of blocks; concatenate the text ones. Non-text blocks
+  // (thinking, tool_use) are ignored here — this gateway serves plain
+  // completion requests only.
+  const text = (result.content ?? [])
+    .filter((b: { type: string }) => b.type === 'text')
+    .map((b: { text: string }) => b.text)
+    .join('');
+
+  const inputTokens = result.usage?.input_tokens ?? estimatedInput;
+  const outputTokens = result.usage?.output_tokens ?? 0;
+
+  // 2. Settle against real usage. Charges actual cost, refunds the rest.
+  const { data: charged } = await settle(inputTokens, outputTokens, 'success');
+
+  return json({
+    text,
+    model: result.model ?? model,
+    stop_reason: result.stop_reason,
+    usage: { input_tokens: inputTokens, output_tokens: outputTokens },
+    credits_charged: charged,
+  });
+});
