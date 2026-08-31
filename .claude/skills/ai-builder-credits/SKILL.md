@@ -118,11 +118,13 @@ Realistic consumption for one student through Builder 1:
 
 | Model | Full Builder 1 run | % of ₦50,000 revenue* |
 |---|---|---|
-| Haiku 4.5 | ~$4.00 | ~13% |
-| Sonnet 5 | ~$8.00 | ~26% |
-| Opus 5 | ~$20.00 | ~65% |
+| Haiku 4.5 | ~$4.00 | ~11% |
+| Sonnet 5 | ~$8.00 | ~21% |
+| Opus 5 | ~$20.00 | ~54% |
 
-\* at roughly ₦1,600/$1 → ~$31. Re-check the rate; it swings this table.
+\* **₦1,338.86/$1, confirmed by the owner 2026-08-31.** ₦50,000 = $37.35, ₦90,000 = $67.22.
+Gross margin on Haiku ≈ 89%. The rate moves — re-confirm before any pricing decision, and
+re-derive this table rather than trusting the percentages.
 
 **Keep the batch caps in the starter code.** The existing `maxResults=10` is correct — do not let
 it become "all unread". And use prompt caching on the repeated-document projects (FAQ chatbot, doc
