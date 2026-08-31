@@ -2,7 +2,8 @@
 //
 // The single point through which every student AI request passes. Students
 // never hold an Anthropic key; they authenticate with their Supabase session
-// and this function calls Anthropic on their behalf, metering the spend.
+// (browser) or a durable AI Builder key in X-SDT-Key (scripts), and this
+// function calls Anthropic on their behalf, metering the spend.
 //
 // This function is deliberately thin. Every budget guardrail lives in Postgres
 // (see supabase/ai-credits-setup.sql) because a check-then-deduct in JS leaves
@@ -30,7 +31,7 @@ const estimateTokens = (text: string) => Math.ceil(text.length / 3.5);
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-sdt-key',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
@@ -47,14 +48,41 @@ serve(async (req) => {
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) return json({ error: 'Sign in to use AI Builder credits' }, 401);
 
-  // Client bound to the caller's JWT — auth.uid() inside the RPCs resolves to
-  // this student, and RLS applies. Never the service role: the whole point is
-  // that the database decides what this user may spend.
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_ANON_KEY')!,
-    { global: { headers: { Authorization: authHeader } } },
-  );
+  // Two ways to authenticate, because students call this from two places.
+  //
+  // Browser code holds a Supabase session JWT, which expires in about an hour
+  // — fine for a web page, useless for a Python script on a laptop. So a
+  // student can instead send a durable `sdt_live_...` key in X-SDT-Key.
+  //
+  // The key deliberately does NOT go in Authorization: platform-level JWT
+  // verification stays ON, and a non-JWT there would be rejected before this
+  // code runs. Scripts put the (public) anon key in Authorization to satisfy
+  // that check, and their real identity in X-SDT-Key.
+  //
+  // JWT path: a client bound to the caller's token, so auth.uid() inside the
+  // RPCs resolves to them and RLS applies. Key path: resolve the key to a user
+  // with the service role, then call the *_core functions naming that user.
+  // Either way the same Postgres guardrails run — only the identity lookup
+  // differs.
+  const studentKey = req.headers.get('X-SDT-Key');
+
+  const supabase = studentKey
+    ? createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+    : createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
+        global: { headers: { Authorization: authHeader } },
+      });
+
+  let keyUserId: string | null = null;
+  if (studentKey) {
+    const { data } = await supabase.rpc('ai_resolve_student_key', { p_key: studentKey });
+    if (!data) {
+      return json(
+        { error: 'That AI Builder key is not valid. Copy a new one from your dashboard.' },
+        401,
+      );
+    }
+    keyUserId = data as string;
+  }
 
   let body: {
     model?: string;
@@ -80,13 +108,19 @@ serve(async (req) => {
   // 1. Reserve. Runs every guardrail: kill switch, entitlement, model
   //    allow-list, tier gate, hourly rate limit, daily caps, balance —
   //    then deducts the worst-case cost under a row lock.
-  const { data: reservation, error: reserveError } = await supabase
-    .rpc('ai_reserve_request', {
-      p_model_key: model,
-      p_estimated_input_tokens: estimatedInput,
-      p_project_slug: body.project ?? null,
-    })
-    .maybeSingle();
+  const { data: reservation, error: reserveError } = await (keyUserId
+    ? supabase.rpc('ai_reserve_request_core', {
+        p_user_id: keyUserId,
+        p_model_key: model,
+        p_estimated_input_tokens: estimatedInput,
+        p_project_slug: body.project ?? null,
+      })
+    : supabase.rpc('ai_reserve_request', {
+        p_model_key: model,
+        p_estimated_input_tokens: estimatedInput,
+        p_project_slug: body.project ?? null,
+      })
+  ).maybeSingle();
 
   if (reserveError || !reservation) {
     const message = reserveError?.message ?? 'Could not start request';
@@ -118,13 +152,22 @@ serve(async (req) => {
     status: 'success' | 'error',
     message?: string,
   ) =>
-    supabase.rpc('ai_settle_request', {
-      p_log_id: logId,
-      p_input_tokens: inputTokens,
-      p_output_tokens: outputTokens,
-      p_status: status,
-      p_error_message: message ?? null,
-    });
+    keyUserId
+      ? supabase.rpc('ai_settle_request_core', {
+          p_user_id: keyUserId,
+          p_log_id: logId,
+          p_input_tokens: inputTokens,
+          p_output_tokens: outputTokens,
+          p_status: status,
+          p_error_message: message ?? null,
+        })
+      : supabase.rpc('ai_settle_request', {
+          p_log_id: logId,
+          p_input_tokens: inputTokens,
+          p_output_tokens: outputTokens,
+          p_status: status,
+          p_error_message: message ?? null,
+        });
 
   const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
 
