@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { AnimatePresence, m } from 'framer-motion';
-import { Users, CalendarDays, Video, MessageSquareText, Mail, Newspaper, BookOpen, LifeBuoy, Gift, ClipboardList, ChevronDown } from 'lucide-react';
+import { Users, CalendarDays, Video, MessageSquareText, Mail, Newspaper, BookOpen, LifeBuoy, Gift, ClipboardList, ChevronDown, Zap } from 'lucide-react';
 
 const NAV_ITEMS = [
   { to: '/admin', end: true, icon: Users, label: 'Users' },
+  { to: '/admin/ai-credits', end: false, icon: Zap, label: 'AI Builder Credits' },
   { to: '/admin/cohorts', end: false, icon: CalendarDays, label: 'Cohort Schedule' },
   { to: '/admin/live-sessions', end: false, icon: Video, label: 'Live Sessions' },
   { to: '/admin/testimonials', end: false, icon: MessageSquareText, label: 'Testimonials' },
