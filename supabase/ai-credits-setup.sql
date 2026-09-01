@@ -195,9 +195,21 @@ create policy "Users can view their own AI usage"
 
 -- ------------------------------------------------------------
 -- 6. Credit granting. Called by paystack-webhook (service role) and
---    by the admin RPC. Idempotent per (user, reason): re-running the
---    same grant does nothing, so a duplicate webhook delivery cannot
---    double-credit.
+--    by the admin RPC.
+--
+--    Idempotency is WINDOWED to 24 hours, not permanent. A permanent
+--    (user, type, description) check silently broke genuine renewals: a
+--    student who buys Builder 1, then buys it again 6 months later with
+--    the same description text, would get zero credits on the renewal
+--    while their entitlement correctly renews — paid, got nothing, no
+--    error. Flagged in code review, fixed here. 24 hours is enough to
+--    absorb a retried webhook delivery (arrives within minutes) without
+--    blocking a real renewal months out. The caller should still use a
+--    description unique per real transaction (paystack-webhook embeds
+--    the Paystack transaction reference) as defense in depth — the
+--    webhook's own idempotency check on payments.provider_transaction_id
+--    already means a retried delivery never reaches this function at all
+--    for the same transaction.
 -- ------------------------------------------------------------
 create or replace function public.ai_grant_credits(
   p_user_id uuid,
@@ -218,12 +230,12 @@ begin
     raise exception 'Grant amount must be positive';
   end if;
 
-  -- Idempotency: same user + type + description is treated as one grant.
   if exists (
     select 1 from ai_credit_transactions t
     where t.user_id = p_user_id
       and t.transaction_type = p_type
       and t.description is not distinct from p_description
+      and t.created_at > now() - interval '24 hours'
   ) then
     select balance into v_after from ai_credit_wallets where user_id = p_user_id;
     return coalesce(v_after, 0);

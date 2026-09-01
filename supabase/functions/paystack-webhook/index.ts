@@ -264,6 +264,40 @@ serve(async (req) => {
     .update(entitlementUpdate)
     .eq('user_id', userId);
 
+  // AI Builder Credits — deliberately after the entitlement update and
+  // wrapped so a failure here can never undo or block it: a student who
+  // paid keeps their access even if this fails, and support can grant
+  // credits manually from /admin/ai-credits. Amounts are read from
+  // ai_platform_settings, not hardcoded, so an admin can change the
+  // allotment without a redeploy.
+  //
+  // The description embeds txId, which is unique per real transaction —
+  // that is what actually protects a genuine renewal months later from
+  // being mistaken for a duplicate, on top of ai_grant_credits' own
+  // 24-hour idempotency window (see its definition for the incident that
+  // window exists to prevent). The webhook's own idempotency check above
+  // (on payments.provider_transaction_id) already means a retried
+  // delivery never reaches this line at all for the same transaction.
+  try {
+    const grantField = { builder1: 'grant_builder1', builder2: 'grant_builder2', pro: 'grant_pro' }[plan];
+    const { data: settings } = await supabase
+      .from('ai_platform_settings')
+      .select(grantField)
+      .eq('id', true)
+      .maybeSingle();
+    const creditAmount = settings?.[grantField];
+    if (creditAmount > 0) {
+      await supabase.rpc('ai_grant_credits', {
+        p_user_id: userId,
+        p_amount: creditAmount,
+        p_type: 'initial_allocation',
+        p_description: `${PLAN_LABELS[plan] || plan} purchase ${txId}`,
+      });
+    }
+  } catch (_err) {
+    // non-fatal — see comment above
+  }
+
   const { data: paymentRow } = await supabase
     .from('payments')
     .insert({
