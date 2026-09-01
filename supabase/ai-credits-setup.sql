@@ -268,8 +268,16 @@ $$;
 --    ambiguous" before the wallet check ever runs. Same failure mode as
 --    the is_admin bug documented in admin-setup.sql; caught here by the
 --    role-simulation probe, not in review.
+--
+--    Split into a service-role CORE plus an auth.uid() WRAPPER. The
+--    gateway also authenticates scripts by a durable student API key
+--    (section 9) rather than a Supabase JWT — there is no auth.uid() in
+--    that path, so the identity has to be passed explicitly. That is only
+--    safe for service_role: an authenticated caller able to reach the core
+--    directly could name any user_id and spend someone else's credits.
 -- ------------------------------------------------------------
-create or replace function public.ai_reserve_request(
+create or replace function public.ai_reserve_request_core(
+  p_user_id uuid,
   p_model_key text,
   p_estimated_input_tokens integer,
   p_project_slug text default null
@@ -280,7 +288,6 @@ security definer
 set search_path = public
 as $$
 declare
-  v_user_id uuid := auth.uid();
   v_settings ai_platform_settings%rowtype;
   v_model ai_models%rowtype;
   v_balance integer;
@@ -291,7 +298,7 @@ declare
   v_platform_daily integer;
   v_log_id uuid;
 begin
-  if v_user_id is null then
+  if p_user_id is null then
     raise exception 'Unauthorized: sign in required';
   end if;
 
@@ -305,7 +312,7 @@ begin
   -- Entitlement gate: same rule as course_content. Admins bypass.
   if not exists (
     select 1 from entitlements e
-    where e.user_id = v_user_id
+    where e.user_id = p_user_id
       and (
         e.is_admin = true
         or (e.builder1_expires_at is not null and e.builder1_expires_at > now())
@@ -324,7 +331,7 @@ begin
   if v_model.min_tier is not null then
     if not exists (
       select 1 from entitlements e
-      where e.user_id = v_user_id
+      where e.user_id = p_user_id
         and (
           e.is_admin = true
           or (v_model.min_tier = 'builder1' and e.builder1_expires_at > now())
@@ -339,7 +346,7 @@ begin
   -- they eat the daily cap.
   select count(*) into v_recent_requests
   from ai_usage_logs l
-  where l.user_id = v_user_id
+  where l.user_id = p_user_id
     and l.model_key = p_model_key
     and l.created_at > now() - interval '1 hour';
 
@@ -358,7 +365,7 @@ begin
   -- Rolling 24h caps — per student, then platform-wide circuit breaker.
   select coalesce(sum(greatest(l.credit_cost, l.credits_reserved)), 0) into v_user_daily
   from ai_usage_logs l
-  where l.user_id = v_user_id and l.created_at > now() - interval '24 hours';
+  where l.user_id = p_user_id and l.created_at > now() - interval '24 hours';
 
   if v_user_daily + v_reserve > v_settings.daily_credit_cap_per_user then
     raise exception 'Daily credit limit reached — resets within 24 hours';
@@ -376,7 +383,7 @@ begin
   -- reading the same stale balance.
   select w.balance into v_balance
   from ai_credit_wallets w
-  where w.user_id = v_user_id
+  where w.user_id = p_user_id
   for update;
 
   if not found then
@@ -390,19 +397,36 @@ begin
   update ai_credit_wallets w
   set balance = w.balance - v_reserve,
       lifetime_spent = w.lifetime_spent + v_reserve
-  where w.user_id = v_user_id;
+  where w.user_id = p_user_id;
 
   insert into ai_credit_transactions
     (user_id, transaction_type, credit_amount, balance_before, balance_after, description)
-  values (v_user_id, 'usage', -v_reserve, v_balance, v_balance - v_reserve,
-          'Reserved for ' || p_model_key || coalesce(' · ' || p_project_slug, ''));
+  values (p_user_id, 'usage', -v_reserve, v_balance, v_balance - v_reserve,
+          'Reserved for ' || p_model_key || coalesce(' - ' || p_project_slug, ''));
 
   insert into ai_usage_logs
     (user_id, model_key, project_slug, input_tokens, credits_reserved, status)
-  values (v_user_id, p_model_key, p_project_slug, greatest(p_estimated_input_tokens, 0), v_reserve, 'reserved')
+  values (p_user_id, p_model_key, p_project_slug, greatest(p_estimated_input_tokens, 0), v_reserve, 'reserved')
   returning id into v_log_id;
 
   return query select v_log_id, v_reserve, v_model.max_tokens;
+end;
+$$;
+
+-- Browser path: auth.uid() resolves from the caller's own Supabase JWT.
+create or replace function public.ai_reserve_request(
+  p_model_key text,
+  p_estimated_input_tokens integer,
+  p_project_slug text default null
+)
+returns table (log_id uuid, credits_reserved integer, max_tokens integer)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  return query select * from public.ai_reserve_request_core(
+    auth.uid(), p_model_key, p_estimated_input_tokens, p_project_slug);
 end;
 $$;
 
@@ -410,9 +434,11 @@ $$;
 -- 8. Settle — called after the provider responds. Computes real cost
 --    from real token counts and refunds the unused reservation. On a
 --    provider error the whole reservation is refunded: a student is
---    never charged for a failed request.
+--    never charged for a failed request. Same core/wrapper split as
+--    ai_reserve_request, for the same reason.
 -- ------------------------------------------------------------
-create or replace function public.ai_settle_request(
+create or replace function public.ai_settle_request_core(
+  p_user_id uuid,
   p_log_id uuid,
   p_input_tokens integer,
   p_output_tokens integer,
@@ -425,7 +451,6 @@ security definer
 set search_path = public
 as $$
 declare
-  v_user_id uuid := auth.uid();
   v_log ai_usage_logs%rowtype;
   v_model ai_models%rowtype;
   v_settings ai_platform_settings%rowtype;
@@ -434,13 +459,13 @@ declare
   v_refund integer;
   v_balance integer;
 begin
-  select * into v_log from ai_usage_logs where id = p_log_id for update;
+  select * into v_log from ai_usage_logs l where l.id = p_log_id for update;
   if not found then
     raise exception 'Unknown usage log';
   end if;
 
   -- A caller may only settle their own reservation.
-  if v_log.user_id <> v_user_id then
+  if v_log.user_id <> p_user_id then
     raise exception 'Unauthorized';
   end if;
 
@@ -448,8 +473,8 @@ begin
     return v_log.credit_cost;  -- already settled; make this idempotent
   end if;
 
-  select * into v_settings from ai_platform_settings where id = true;
-  select * into v_model from ai_models where model_key = v_log.model_key;
+  select * into v_settings from ai_platform_settings s where s.id = true;
+  select * into v_model from ai_models m where m.model_key = v_log.model_key;
 
   if p_status = 'success' then
     v_actual_usd :=
@@ -464,34 +489,275 @@ begin
 
   v_refund := v_log.credits_reserved - v_actual;
 
-  update ai_usage_logs
+  update ai_usage_logs l
   set input_tokens = greatest(p_input_tokens, 0),
       output_tokens = greatest(p_output_tokens, 0),
       credit_cost = v_actual,
       status = p_status,
       error_message = p_error_message,
       settled_at = now()
-  where id = p_log_id;
+  where l.id = p_log_id;
 
   if v_refund > 0 then
-    update ai_credit_wallets
-    set balance = balance + v_refund,
-        lifetime_spent = greatest(0, lifetime_spent - v_refund)
-    where user_id = v_user_id
-    returning balance into v_balance;
+    update ai_credit_wallets w
+    set balance = w.balance + v_refund,
+        lifetime_spent = greatest(0, w.lifetime_spent - v_refund)
+    where w.user_id = p_user_id
+    returning w.balance into v_balance;
 
     insert into ai_credit_transactions
       (user_id, transaction_type, credit_amount, balance_before, balance_after, description)
-    values (v_user_id, 'usage_refund', v_refund, v_balance - v_refund, v_balance,
-            'Unused reservation returned · ' || v_log.model_key);
+    values (p_user_id, 'usage_refund', v_refund, v_balance - v_refund, v_balance,
+            'Unused reservation returned - ' || v_log.model_key);
   end if;
 
   return v_actual;
 end;
 $$;
 
+create or replace function public.ai_settle_request(
+  p_log_id uuid,
+  p_input_tokens integer,
+  p_output_tokens integer,
+  p_status text,
+  p_error_message text default null
+)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  return public.ai_settle_request_core(
+    auth.uid(), p_log_id, p_input_tokens, p_output_tokens, p_status, p_error_message);
+end;
+$$;
+
 -- ------------------------------------------------------------
--- 9. Admin RPCs
+-- 9. Student API keys.
+--
+--    The Builder 1 projects are Python scripts running on a student's
+--    laptop, not browser code. A Supabase session JWT expires in about an
+--    hour — fine for a web page, useless for a script. Each student gets a
+--    durable sdt_live_ key instead, pasted into .env once, and the gateway
+--    resolves it to a user_id via ai_resolve_student_key before calling
+--    the _core functions above directly.
+--
+--    Only the SHA-256 hash is stored. The plaintext key is returned once,
+--    at creation, and cannot be recovered afterward — a lost key is
+--    replaced, not looked up.
+--
+--    pgcrypto lives in the `extensions` schema on this project, not
+--    `public` — these functions correctly pin search_path = public (an
+--    unpinned search_path on a SECURITY DEFINER function is a privilege-
+--    escalation vector), so gen_random_bytes and digest must be
+--    schema-qualified explicitly or the call fails.
+-- ------------------------------------------------------------
+create table if not exists public.ai_student_keys (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  key_hash text not null unique,
+  key_prefix text not null,        -- 'sdt_live_ab12cd34' — display only
+  label text,
+  created_at timestamptz not null default now(),
+  last_used_at timestamptz,
+  revoked_at timestamptz
+);
+
+create index if not exists ai_student_keys_user_idx on public.ai_student_keys (user_id);
+
+alter table public.ai_student_keys enable row level security;
+
+drop policy if exists "Users can view their own API keys" on public.ai_student_keys;
+create policy "Users can view their own API keys"
+  on public.ai_student_keys for select
+  using (auth.uid() = user_id);
+
+create or replace function public.ai_create_student_key(p_label text default null)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare v_user_id uuid := auth.uid(); v_key text; v_active integer;
+begin
+  if v_user_id is null then raise exception 'Unauthorized: sign in required'; end if;
+
+  select count(*) into v_active from ai_student_keys k
+  where k.user_id = v_user_id and k.revoked_at is null;
+  if v_active >= 5 then
+    raise exception 'You already have 5 active keys. Revoke one before creating another.';
+  end if;
+
+  v_key := 'sdt_live_' || encode(extensions.gen_random_bytes(24), 'hex');
+
+  insert into ai_student_keys (user_id, key_hash, key_prefix, label)
+  values (v_user_id, encode(extensions.digest(v_key, 'sha256'), 'hex'), left(v_key, 17), p_label);
+
+  return v_key;
+end;
+$$;
+
+create or replace function public.ai_revoke_student_key(p_key_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update ai_student_keys k set revoked_at = now()
+  where k.id = p_key_id and k.user_id = auth.uid() and k.revoked_at is null;
+end;
+$$;
+
+-- Service-role only: the gateway calls this to turn a key into a user_id.
+-- Never granted to authenticated — it would be a key-validation oracle,
+-- letting anyone probe arbitrary strings to find a live key by trial.
+create or replace function public.ai_resolve_student_key(p_key text)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare v_user_id uuid;
+begin
+  update ai_student_keys k set last_used_at = now()
+  where k.key_hash = encode(extensions.digest(p_key, 'sha256'), 'hex') and k.revoked_at is null
+  returning k.user_id into v_user_id;
+  return v_user_id;
+end;
+$$;
+
+-- ------------------------------------------------------------
+-- 10. Curriculum rewrite draft workspace.
+--
+--    course_content has no versioning — an UPDATE is instant and global,
+--    with no staging. Rewriting the Builder 1 guides in place would change
+--    the steps under a student mid-project. This lets rewritten content be
+--    written and reviewed while ONLY admins can see it; live content is
+--    untouched until an admin explicitly publishes.
+-- ------------------------------------------------------------
+
+-- Point-in-time backup taken before any rewrite work. Restore path if a
+-- publish goes wrong: insert back into course_content from here.
+--
+-- CREATE TABLE ... AS SELECT does NOT carry RLS over from the source
+-- table. This table sat with RLS OFF for a period, meaning the paid
+-- Builder 1/2 guide content — and the admin_only tier that is explicitly
+-- meant to be unpurchasable — was readable by anyone, unauthenticated, via
+-- /rest/v1/course_content_backup_20260831. Caught by Supabase's own
+-- ERROR-level security advisor, not by review. Verified after fixing with
+-- a role-simulation probe: 0 rows to a non-admin student, 0 to anon, the
+-- full 44 rows to admin.
+create table if not exists public.course_content_backup_20260831 as
+  select * from public.course_content;
+
+alter table public.course_content_backup_20260831 enable row level security;
+
+drop policy if exists "Only admins can read the course content backup" on public.course_content_backup_20260831;
+create policy "Only admins can read the course content backup"
+  on public.course_content_backup_20260831 for select
+  using (exists (
+    select 1 from entitlements e where e.user_id = auth.uid() and e.is_admin = true
+  ));
+-- No insert/update/delete policy — it is a frozen point-in-time snapshot;
+-- writes happen only via the service role, if ever.
+
+create table if not exists public.course_content_draft (
+  course_id integer primary key,
+  what_you_build text,
+  what_you_learn jsonb,
+  session jsonb,
+  starter_code text,
+  test_it_out text,
+  troubleshooting jsonb,
+  resources jsonb,
+  tier text not null check (tier in ('builder1', 'builder2', 'admin_only')),
+  change_note text,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.course_content_draft enable row level security;
+
+-- Admins only. No tier branch at all, unlike course_content — a draft is
+-- never visible to a student regardless of what they have paid for.
+drop policy if exists "Only admins can read course content drafts" on public.course_content_draft;
+create policy "Only admins can read course content drafts"
+  on public.course_content_draft for select
+  using (exists (
+    select 1 from entitlements e where e.user_id = auth.uid() and e.is_admin = true
+  ));
+
+drop trigger if exists set_course_content_draft_updated_at on public.course_content_draft;
+create trigger set_course_content_draft_updated_at
+  before update on public.course_content_draft
+  for each row execute procedure public.set_updated_at();
+
+-- Promote a draft into live content. This is the only moment students see
+-- a change, and it is deliberately one explicit action per course.
+create or replace function public.admin_publish_course_draft(p_course_id integer)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare v_draft course_content_draft%rowtype;
+begin
+  if not exists (select 1 from entitlements ent where ent.user_id = auth.uid() and ent.is_admin = true)
+  then raise exception 'Unauthorized: Admin access required'; end if;
+
+  select * into v_draft from course_content_draft d where d.course_id = p_course_id;
+  if not found then raise exception 'No draft for course %', p_course_id; end if;
+
+  update course_content c
+  set what_you_build = v_draft.what_you_build,
+      what_you_learn = v_draft.what_you_learn,
+      session        = v_draft.session,
+      starter_code   = v_draft.starter_code,
+      test_it_out    = v_draft.test_it_out,
+      troubleshooting = v_draft.troubleshooting,
+      resources      = v_draft.resources,
+      tier           = v_draft.tier
+  where c.course_id = p_course_id;
+
+  if not found then raise exception 'No live course_content row for course %', p_course_id; end if;
+
+  delete from course_content_draft d where d.course_id = p_course_id;
+end;
+$$;
+
+create or replace function public.admin_discard_course_draft(p_course_id integer)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not exists (select 1 from entitlements ent where ent.user_id = auth.uid() and ent.is_admin = true)
+  then raise exception 'Unauthorized: Admin access required'; end if;
+
+  delete from course_content_draft d where d.course_id = p_course_id;
+end;
+$$;
+
+create or replace function public.admin_list_course_drafts()
+returns table (course_id integer, tier text, change_note text, updated_at timestamptz)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not exists (select 1 from entitlements ent where ent.user_id = auth.uid() and ent.is_admin = true)
+  then raise exception 'Unauthorized: Admin access required'; end if;
+
+  return query
+    select d.course_id, d.tier, d.change_note, d.updated_at
+    from course_content_draft d order by d.course_id;
+end;
+$$;
+
+-- ------------------------------------------------------------
+-- 11. Admin RPCs
 -- ------------------------------------------------------------
 create or replace function public.admin_set_ai_settings(
   p_gateway_enabled boolean,
@@ -636,7 +902,7 @@ end;
 $$;
 
 -- ------------------------------------------------------------
--- 10. Grants.
+-- 12. Grants.
 --
 --     Three statements per function, not one. Postgres grants EXECUTE to
 --     PUBLIC by default on CREATE FUNCTION, AND this project's ALTER
@@ -653,6 +919,17 @@ revoke execute on function public.ai_grant_credits(uuid, integer, text, text) fr
 revoke execute on function public.ai_grant_credits(uuid, integer, text, text) from anon;
 revoke execute on function public.ai_grant_credits(uuid, integer, text, text) from authenticated;
 
+-- Core reserve/settle: service-role only. An authenticated caller able to
+-- reach these directly could name any user_id and spend someone else's
+-- credits — the wrappers below are the only sanctioned entry points.
+revoke execute on function public.ai_reserve_request_core(uuid, text, integer, text) from public;
+revoke execute on function public.ai_reserve_request_core(uuid, text, integer, text) from anon;
+revoke execute on function public.ai_reserve_request_core(uuid, text, integer, text) from authenticated;
+
+revoke execute on function public.ai_settle_request_core(uuid, uuid, integer, integer, text, text) from public;
+revoke execute on function public.ai_settle_request_core(uuid, uuid, integer, integer, text, text) from anon;
+revoke execute on function public.ai_settle_request_core(uuid, uuid, integer, integer, text, text) from authenticated;
+
 -- Called by the gateway on the student's behalf (student JWT).
 revoke execute on function public.ai_reserve_request(text, integer, text) from public;
 revoke execute on function public.ai_reserve_request(text, integer, text) from anon;
@@ -661,6 +938,35 @@ grant  execute on function public.ai_reserve_request(text, integer, text) to aut
 revoke execute on function public.ai_settle_request(uuid, integer, integer, text, text) from public;
 revoke execute on function public.ai_settle_request(uuid, integer, integer, text, text) from anon;
 grant  execute on function public.ai_settle_request(uuid, integer, integer, text, text) to authenticated;
+
+-- Student key management — a student manages their own keys directly.
+revoke execute on function public.ai_create_student_key(text) from public;
+revoke execute on function public.ai_create_student_key(text) from anon;
+grant  execute on function public.ai_create_student_key(text) to authenticated;
+
+revoke execute on function public.ai_revoke_student_key(uuid) from public;
+revoke execute on function public.ai_revoke_student_key(uuid) from anon;
+grant  execute on function public.ai_revoke_student_key(uuid) to authenticated;
+
+-- Key resolution: service-role only. Granting this to authenticated would
+-- make it a key-validation oracle — anyone could probe strings to find a
+-- live key by trial and error.
+revoke execute on function public.ai_resolve_student_key(text) from public;
+revoke execute on function public.ai_resolve_student_key(text) from anon;
+revoke execute on function public.ai_resolve_student_key(text) from authenticated;
+
+-- Course draft workflow.
+revoke execute on function public.admin_publish_course_draft(integer) from public;
+revoke execute on function public.admin_publish_course_draft(integer) from anon;
+grant  execute on function public.admin_publish_course_draft(integer) to authenticated;
+
+revoke execute on function public.admin_discard_course_draft(integer) from public;
+revoke execute on function public.admin_discard_course_draft(integer) from anon;
+grant  execute on function public.admin_discard_course_draft(integer) to authenticated;
+
+revoke execute on function public.admin_list_course_drafts() from public;
+revoke execute on function public.admin_list_course_drafts() from anon;
+grant  execute on function public.admin_list_course_drafts() to authenticated;
 
 revoke execute on function public.admin_set_ai_settings(boolean, integer, integer, integer, integer, integer) from public;
 revoke execute on function public.admin_set_ai_settings(boolean, integer, integer, integer, integer, integer) from anon;
