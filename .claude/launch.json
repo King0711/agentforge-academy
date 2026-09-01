@@ -12,6 +12,23 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["vite", "preview", "--port", "4174", "--strictPort"],
       "port": 4174
+    },
+    {
+      "name": "sdt-email-triage-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "../sdt-email-triage", "run", "dev", "--", "--port", "5174", "--strictPort"],
+      "port": 5174
+    },
+    {
+      "name": "starter-social-post-generator",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m", "streamlit", "run",
+        "supabase/starter-projects/social-post-generator/app.py",
+        "--server.port", "8501",
+        "--server.headless", "true"
+      ],
+      "port": 8501
     }
   ]
 }
