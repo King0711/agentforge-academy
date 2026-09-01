@@ -26,9 +26,16 @@ create table if not exists public.ai_platform_settings (
   usd_per_credit numeric not null default 0.002 check (usd_per_credit > 0),
   -- Credits granted when a paid entitlement activates. A setting, not a
   -- constant, so the allotment changes without a code deploy.
-  grant_builder1 integer not null default 2000 check (grant_builder1 >= 0),
-  grant_builder2 integer not null default 2000 check (grant_builder2 >= 0),
-  grant_pro      integer not null default 4000 check (grant_pro >= 0),
+  --
+  -- 1,500 across all three tiers is a live test value (down from
+  -- 2,000/2,000/4,000), tied to evaluating a price cut from N50,000 to
+  -- N25,000. Admin-only visibility while this is being tested — see the
+  -- SELECT policy below — and per-tier differentiation (Builder 2's real
+  -- avg max_tokens runs ~49% higher than Builder 1's, per the cost model)
+  -- is a deliberately deferred follow-up, not decided yet.
+  grant_builder1 integer not null default 1500 check (grant_builder1 >= 0),
+  grant_builder2 integer not null default 1500 check (grant_builder2 >= 0),
+  grant_pro      integer not null default 1500 check (grant_pro >= 0),
   -- Per-student ceiling on credits burned in a rolling 24h. Stops one
   -- student draining a whole allotment (and a whole day's budget) in a
   -- single runaway loop, without lowering their total.
@@ -44,12 +51,17 @@ insert into public.ai_platform_settings (id) values (true) on conflict (id) do n
 
 alter table public.ai_platform_settings enable row level security;
 
--- Readable by any signed-in user (the dashboard shows whether the gateway
--- is live). No client write policy — admin RPC only.
-create policy "Signed-in users can read AI platform settings"
+-- Admin-only read. Originally readable by any signed-in user (reasoning:
+-- a future student dashboard could show gateway status), but no such
+-- page exists yet, and while pricing/credit amounts are actively being
+-- tested pre-launch, least-privilege wins — loosen deliberately later if
+-- a real student-facing surface needs it, not by leaving this open by
+-- default. No client write policy at all — admin RPC only.
+create policy "Only admins can read AI platform settings"
   on public.ai_platform_settings for select
-  to authenticated
-  using (true);
+  using (exists (
+    select 1 from entitlements e where e.user_id = auth.uid() and e.is_admin = true
+  ));
 
 drop trigger if exists set_ai_platform_settings_updated_at on public.ai_platform_settings;
 create trigger set_ai_platform_settings_updated_at
@@ -78,12 +90,15 @@ create table if not exists public.ai_models (
 
 alter table public.ai_models enable row level security;
 
--- Active models are readable so the UI can render a picker. Inactive rows
--- stay hidden. No client write policy — admin RPC only.
-create policy "Signed-in users can read active AI models"
+-- Admin-only read, same reasoning and same timing as ai_platform_settings
+-- above: built for a future model-picker UI that doesn't exist yet, and
+-- nothing currently depends on broader access. No client write policy —
+-- admin RPC only.
+create policy "Only admins can read AI models"
   on public.ai_models for select
-  to authenticated
-  using (is_active = true);
+  using (exists (
+    select 1 from entitlements e where e.user_id = auth.uid() and e.is_admin = true
+  ));
 
 drop trigger if exists set_ai_models_updated_at on public.ai_models;
 create trigger set_ai_models_updated_at
@@ -94,14 +109,15 @@ create trigger set_ai_models_updated_at
 --
 -- Haiku is the only ACTIVE model for the first cohort. The Builder 1
 -- projects are classify / summarise / extract / rewrite tasks, well within
--- its competence, and a full pass costs ~1,560 of the 2,000-credit
--- allotment. Sonnet roughly doubles per-request cost — a full pass would
--- need ~3,100 credits and exhaust the allotment before the course ends —
--- so it ships INACTIVE and can be switched on from the admin panel once
--- real consumption data exists.
+-- its competence, and a full pass costs ~1,560 credits on Haiku — already
+-- tight against the 1,500-credit test allotment above (see that field's
+-- comment), let alone Sonnet's roughly double per-request cost. Sonnet
+-- ships INACTIVE and can be switched on from the admin panel once real
+-- consumption data exists and the allotment question is settled.
 --
 -- Opus is deliberately absent entirely: at ~$0.021/request it would consume
--- ~65% of course revenue, which is not viable for included credits.
+-- a large majority of course revenue even at the original N50,000 price,
+-- which is not viable for included credits at any allotment considered.
 insert into public.ai_models
   (model_key, display_name, input_usd_per_mtok, output_usd_per_mtok, max_tokens, rate_limit_per_hour, min_tier, is_active)
 values
