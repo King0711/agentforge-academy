@@ -1,0 +1,37 @@
+Weekly Product Sync - Sept 1
+
+Attendees: Amaka, Tunde, Chidi, Priya (dialed in late)
+
+Amaka: ok let's get started, we're behind on the onboarding redesign.
+Tunde: yeah the Figma files are done, dev just hasn't picked it up yet
+Chidi: I can start on it Monday if nobody else is on it
+Amaka: sounds good, go ahead Chidi
+
+Amaka: also, we need to decide on the pricing page - do we keep the
+old three-tier layout or switch to the new single-price page marketing
+sent over?
+Tunde: I vote we switch, the old one is confusing people, support tickets
+about pricing are up like 30% this month
+Chidi: agreed, let's switch
+Amaka: ok, decision made - we're moving to the single-price layout
+
+Priya joins late: sorry I'm late, what did I miss
+
+Amaka: quick recap - Chidi's starting the onboarding redesign Monday,
+and we're switching the pricing page to the single-price layout
+
+Tunde: one more thing, someone needs to email the beta testers about
+the pricing change before we ship it, don't want them blindsided
+Amaka: good call
+Chidi: I don't think that's on me, I'm heads down on onboarding
+Tunde: I can't this week either, I'm out Thursday and Friday
+Amaka: ...ok someone needs to own that, let's figure it out after the call
+
+Amaka: last thing - can we get the pricing switch live by end of month?
+Tunde: should be doable, maybe the 28th
+Amaka: let's lock the 28th as the target then
+
+Priya: quick question, are we still doing the quarterly review next week?
+Amaka: yes, same time, I'll send the invite
+
+Amaka: ok that's everything, thanks all
