@@ -1,0 +1,12 @@
+PyPDF2
+python-docx
+requests
+beautifulsoup4
+python-dotenv
+
+# fpdf2 is ONLY used by detector.py's self-test, to generate a real minimal
+# PDF so the PDF extraction path gets tested against an actual file instead
+# of being eyeballed. The app itself never writes PDFs - students only ever
+# hand it one. If you're just running main.py on your own documents, you can
+# skip installing fpdf2.
+fpdf2
