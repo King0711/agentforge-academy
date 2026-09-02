@@ -15,6 +15,13 @@
 export const ANCHOR_PRICE = 100000;
 export const BUILDER_PRICE = 25000;
 export const BUILDER_SAVINGS = ANCHOR_PRICE - BUILDER_PRICE;
+// Computed, not hardcoded — Pricing.jsx and TheOfferSlide.jsx used to have
+// a literal "50% off" string next to this, which was correct back when
+// BUILDER_PRICE was N50,000 (50% off N100,000) but silently went wrong the
+// moment the price cut to N25,000 made the real number 75%. Shipped live
+// before being caught. Compute it instead so a future price change can't
+// repeat the same drift.
+export const BUILDER_SAVINGS_PERCENT = Math.round((BUILDER_SAVINGS / ANCHOR_PRICE) * 100);
 // PRO_PRICE recomputed to preserve the original ~10% bundle discount off
 // buying both tracks separately (was N10,000 off N100,000; now N5,000 off
 // N50,000) rather than left at N90,000, which would have made Pro cost
