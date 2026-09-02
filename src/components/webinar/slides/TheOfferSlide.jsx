@@ -6,8 +6,10 @@ import { useCohortSchedule } from '../../../hooks/useCohortSchedule';
 import { agents } from '../../../data/agents';
 
 const builder1Count = agents.filter((a) => a.difficulty === 'Builder 1').length;
+// Duplicated from src/data/pricing.js rather than imported (pre-existing,
+// not introduced here) — keep in sync by hand until this is fixed to import.
 const ANCHOR_PRICE = 100000;
-const BUILDER_PRICE = 50000;
+const BUILDER_PRICE = 25000;
 const BUILDER_SAVINGS = ANCHOR_PRICE - BUILDER_PRICE;
 
 const FEATURES = [

@@ -306,8 +306,8 @@ export const webinarSlides = [
     notes: {
       objective: 'Present the Builder 1 offer with zero ambiguity — price, inclusions, what happens next. Keep this under 5 minutes: you\'ve already sold them, now you\'re just explaining how to buy.',
       talkingPoints: [
-        "Don't rush straight into the number. Say what's included first — walk the list — THEN pause, a real 5 seconds, no talking, then say: \"If that's the future you want... Builder 1 is where we start.\" Only then reveal ₦50,000. Inclusions → pause → price, never price → inclusions.",
-        'Once you reveal it: state the price out loud, then the anchor: ₦100,000 value, ₦50,000 today, one-time, not a subscription',
+        "Don't rush straight into the number. Say what's included first — walk the list — THEN pause, a real 5 seconds, no talking, then say: \"If that's the future you want... Builder 1 is where we start.\" Only then reveal ₦25,000. Inclusions → pause → price, never price → inclusions.",
+        'Once you reveal it: state the price out loud, then the anchor: ₦100,000 value, ₦25,000 today, one-time, not a subscription',
         'Say plainly what happens after payment: sign up, pay, Session 1 unlocks immediately — no waiting for a cohort',
         "Mention once: Builder 2 is there when you're ready for it",
       ],
