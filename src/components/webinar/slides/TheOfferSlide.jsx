@@ -11,6 +11,11 @@ const builder1Count = agents.filter((a) => a.difficulty === 'Builder 1').length;
 const ANCHOR_PRICE = 100000;
 const BUILDER_PRICE = 25000;
 const BUILDER_SAVINGS = ANCHOR_PRICE - BUILDER_PRICE;
+// Computed, not hardcoded — this used to be a literal "50% off" next to it,
+// correct when BUILDER_PRICE was N50,000 but silently wrong the moment the
+// price cut made the real number 75%. Shipped live once already; see
+// pricing.js for the same fix on the main site.
+const BUILDER_SAVINGS_PERCENT = Math.round((BUILDER_SAVINGS / ANCHOR_PRICE) * 100);
 
 const FEATURES = [
   `${builder1Count} Builder 1 agent sessions`,
@@ -62,7 +67,7 @@ export default function TheOfferSlide() {
           </div>
           <div className="flex flex-wrap gap-1.5 mb-4">
             <span className="inline-flex items-center gap-1 bg-[#EAFAF1] dark:bg-green/10 text-green font-extrabold text-[11.5px] px-2.5 py-1 rounded-full">
-              <Tag className="w-3 h-3" /> Save ₦{BUILDER_SAVINGS.toLocaleString()} · 50% off
+              <Tag className="w-3 h-3" /> Save ₦{BUILDER_SAVINGS.toLocaleString()} · {BUILDER_SAVINGS_PERCENT}% off
             </span>
             {builder1Cohort && (
               <span className="inline-flex items-center gap-1 bg-[#F3EBFF] dark:bg-brand/15 text-brand font-bold text-[11.5px] px-2.5 py-1 rounded-full">

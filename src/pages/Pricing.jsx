@@ -8,7 +8,7 @@ import { usePro } from '../hooks/usePro';
 import { useCohortSchedule } from '../hooks/useCohortSchedule';
 import { supabase } from '../lib/supabaseClient';
 import { agents } from '../data/agents';
-import { ANCHOR_PRICE, BUILDER_PRICE, BUILDER_SAVINGS, PRO_PRICE } from '../data/pricing';
+import { ANCHOR_PRICE, BUILDER_PRICE, BUILDER_SAVINGS, BUILDER_SAVINGS_PERCENT, PRO_PRICE } from '../data/pricing';
 import { usePageSeo } from '../hooks/usePageSeo';
 
 const builder1Count = agents.filter((a) => a.difficulty === 'Builder 1').length;
@@ -159,7 +159,7 @@ export default function Pricing() {
           </div>
           <div className="flex flex-wrap gap-1.5 mb-3.5">
             <span className="inline-flex items-center gap-1 bg-[#EAFAF1] dark:bg-green/10 text-green font-extrabold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
-              <Tag className="w-3 h-3" /> Save ₦<span>{BUILDER_SAVINGS.toLocaleString()}</span> · 50% off
+              <Tag className="w-3 h-3" /> Save ₦<span>{BUILDER_SAVINGS.toLocaleString()}</span> · <span>{BUILDER_SAVINGS_PERCENT}</span>% off
             </span>
             {builder1Cohort && (
               <span className="inline-flex items-center gap-1 bg-[#F3EBFF] dark:bg-brand/15 text-brand font-bold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
@@ -209,7 +209,7 @@ export default function Pricing() {
           </div>
           <div className="flex flex-wrap gap-1.5 mb-3.5">
             <span className="inline-flex items-center gap-1 bg-[#EAFAF1] dark:bg-green/10 text-green font-extrabold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
-              <Tag className="w-3 h-3" /> Save ₦<span>{BUILDER_SAVINGS.toLocaleString()}</span> · 50% off
+              <Tag className="w-3 h-3" /> Save ₦<span>{BUILDER_SAVINGS.toLocaleString()}</span> · <span>{BUILDER_SAVINGS_PERCENT}</span>% off
             </span>
             {builder2Cohort && (
               <span className="inline-flex items-center gap-1 bg-[#F3EBFF] dark:bg-brand/15 text-brand font-bold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
