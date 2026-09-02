@@ -11,10 +11,15 @@ const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 // Expected NGN prices — must match Pricing.jsx and create-paystack-checkout
 // exactly. The ₦100,000 shown struck through on the Builder cards is a
 // marketing anchor, never a real charge amount — never add it here.
+//
+// Cut from 50000/50000/90000 to 25000/25000/45000 (2026-09-02), matching
+// create-paystack-checkout exactly — these two constants must move
+// together or a real payment gets flagged 'flagged_unrecognized_amount'
+// and no entitlement or credits are granted despite the charge succeeding.
 const PRICES = {
-  builder1: 50000,
-  builder2: 50000,
-  pro: 90000,
+  builder1: 25000,
+  builder2: 25000,
+  pro: 45000,
 };
 const AMOUNT_TOLERANCE = 1;
 

@@ -11,11 +11,18 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '
 // Prices in NGN (major units). Paystack settles in NGN even for
 // international card holders — it handles FX conversion on its end, so
 // there's no separate USD price. Keep these in sync with Pricing.jsx and
-// the amount check in paystack-webhook.
+// the amount check in paystack-webhook — this constant is what's actually
+// sent to Paystack (see amountNaira below), so a mismatch with the
+// webhook's own PRICES means a real charge gets flagged as unrecognized.
+//
+// Cut from 50000/50000/90000 to 25000/25000/45000 (2026-09-02). Pro kept
+// at a ~10% discount off buying both tracks separately, same ratio as
+// before, rather than left at 90000 (which would cost more than the two
+// tracks bought individually).
 const PRICES = {
-  builder1: 50000,
-  builder2: 50000,
-  pro: 90000,
+  builder1: 25000,
+  builder2: 25000,
+  pro: 45000,
 };
 
 // This function is called directly from the browser (Pricing.jsx via
