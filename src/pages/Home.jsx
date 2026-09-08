@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { m } from 'framer-motion';
-import { Code2, Bot, KeyRound, MessageCircle, Video, CalendarDays, PlayCircle, Send, CheckCheck } from 'lucide-react';
+import { Code2, Bot, KeyRound, MessageCircle, Video, CalendarDays, PlayCircle, Send, CheckCheck, Sparkles, ArrowRight } from 'lucide-react';
 import AgentCard from '../components/AgentCard';
 import YouTubeFacade from '../components/YouTubeFacade';
 import TestimonialsSection from '../components/TestimonialsSection';
@@ -9,7 +9,7 @@ import { departments, isVisibleToPublic } from '../data/departments';
 import { usePro } from '../hooks/usePro';
 import { useTheme } from '../context/ThemeContext';
 import { useCohortSchedule } from '../hooks/useCohortSchedule';
-import { ANCHOR_PRICE, BUILDER_PRICE } from '../data/pricing';
+import { ANCHOR_PRICE, BUILDER_PRICE, VIBECODING_PRICE } from '../data/pricing';
 
 // Returns a display string for a cohort start date, or null if it's unset or
 // already in the past — same rule Pricing.jsx uses, duplicated rather than
@@ -117,6 +117,32 @@ const YOUTUBE_VIDEO_ID = 'MYcREKgdAV4';
 // Advanced/World Class are admin-only — every public-facing count and grid
 // on this marketing page is based on the public catalog only.
 const publicAgents = agents.filter((a) => isVisibleToPublic(a.difficulty));
+
+// Two distinct product lines — not tiers of one ladder, see business-model.md.
+// Equal visual weight (same card treatment, same border thickness) so
+// neither reads as the "real" product with the other bolted on.
+const PROGRAMS = [
+  {
+    to: '/ai-builder',
+    icon: Bot,
+    accent: 'green',
+    tag: 'Automation Builder',
+    title: 'Build AI agents for real work',
+    text: `${publicAgents.length} guided, self-paced builds — Gmail triage, WhatsApp bots, invoice processing, and more. Ship a portfolio of working agents.`,
+    bullets: ['Self-paced, 6 months access', 'Runs on your own free Gemini key', 'Portfolio write-up every session'],
+    price: `From ₦${BUILDER_PRICE.toLocaleString()}`,
+  },
+  {
+    to: '/vibe-coding',
+    icon: Sparkles,
+    accent: 'brand',
+    tag: 'Vibe Coding Bootcamp',
+    title: 'Build your own web app with AI',
+    text: '4 weeks, 8 live classes. Go from an idea to a deployed website, web app, and AI-powered product — no coding experience required.',
+    bullets: ['Live instructor-led classes', 'Portfolio site, to-do app, Supabase CRUD app + more', 'Certificate of completion'],
+    price: `₦${VIBECODING_PRICE.toLocaleString()} one-time`,
+  },
+];
 
 const HOW_IT_WORKS = [
   { num: 1, bg: '#7C3AED', fg: '#fff', title: 'Pick a session', text: `${publicAgents.length} guided builds across Builder 1 and Builder 2. Each has a time estimate and clear outcomes.` },
@@ -349,6 +375,58 @@ export default function Home({ progress, onSelectAgent }) {
               <h3 className="font-display font-bold text-lg text-ink mt-4 mb-2">{step.title}</h3>
               <p className="text-sm leading-relaxed text-body m-0">{step.text}</p>
             </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Two programs ── */}
+      <div className="px-4 sm:px-6 lg:px-[5vw] pt-2 pb-14 max-w-6xl mx-auto">
+        <h2 className="font-display font-extrabold text-[30px] text-ink tracking-[-.8px] text-center m-0">Two ways to build with AI</h2>
+        <p className="text-center text-body mt-2 mb-7">Pick the path that fits — automate real work, or ship your own web app from scratch</p>
+        <div className="grid sm:grid-cols-2 gap-5">
+          {PROGRAMS.map((program) => (
+            <Link
+              key={program.to}
+              to={program.to}
+              className={`bg-white dark:bg-[#181818] rounded-[20px] p-6.5 transition-colors ${
+                program.accent === 'green'
+                  ? 'border-[2px] border-green hover:border-green'
+                  : 'border-[2px] border-brand hover:border-brand'
+              }`}
+            >
+              <span
+                className={`inline-flex items-center gap-1.5 font-bold text-[11px] px-2.5 py-1 rounded-full mb-4 ${
+                  program.accent === 'green'
+                    ? 'bg-[#EAFAF1] dark:bg-green/10 text-green'
+                    : 'bg-[#F3EBFF] dark:bg-brand/15 text-brand'
+                }`}
+              >
+                {program.tag}
+              </span>
+              <div
+                className={`w-12 h-12 rounded-[14px] flex items-center justify-center mb-4 ${
+                  program.accent === 'green' ? 'bg-[#EAFAF1] dark:bg-green/10 text-green' : 'bg-[#F3EBFF] dark:bg-brand/15 text-brand'
+                }`}
+              >
+                <program.icon className="w-6 h-6" />
+              </div>
+              <h3 className="font-display font-bold text-xl text-ink mb-2">{program.title}</h3>
+              <p className="text-sm leading-relaxed text-body mb-4">{program.text}</p>
+              <ul className="flex flex-col gap-1.5 mb-5">
+                {program.bullets.map((b) => (
+                  <li key={b} className="flex items-start gap-2 text-[12.5px] text-body-strong">
+                    <CheckCheck className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${program.accent === 'green' ? 'text-green' : 'text-brand'}`} />
+                    <span>{b}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex items-center justify-between pt-4 border-t border-border-soft">
+                <span className="font-display font-extrabold text-ink">{program.price}</span>
+                <span className={`inline-flex items-center gap-1.5 font-bold text-sm ${program.accent === 'green' ? 'text-green' : 'text-brand'}`}>
+                  Explore <ArrowRight className="w-3.5 h-3.5" />
+                </span>
+              </div>
+            </Link>
           ))}
         </div>
       </div>
