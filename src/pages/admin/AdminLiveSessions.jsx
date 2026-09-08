@@ -18,6 +18,8 @@ function formatSessionDate(isoString) {
   return new Date(isoString).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
 }
 
+const TIER_LABELS = { builder1: 'Builder 1', builder2: 'Builder 2', vibecoding: 'Vibe Coding' };
+
 export default function AdminLiveSessions() {
   const { showToast } = useOutletContext();
   const [sessions, setSessions] = useState([]);
@@ -134,6 +136,7 @@ export default function AdminLiveSessions() {
           >
             <option value="builder1">Builder 1</option>
             <option value="builder2">Builder 2</option>
+            <option value="vibecoding">Vibe Coding</option>
           </select>
           <input
             type="datetime-local"
@@ -201,7 +204,7 @@ export default function AdminLiveSessions() {
             <div key={s.id} className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border-soft last:border-b-0 flex-wrap">
               <div className="min-w-0">
                 <p className="font-semibold text-ink truncate">
-                  {s.title} <span className="text-xs font-normal text-gray-400">· {s.tier === 'builder1' ? 'Builder 1' : 'Builder 2'}</span>
+                  {s.title} <span className="text-xs font-normal text-gray-400">· {TIER_LABELS[s.tier] || s.tier}</span>
                 </p>
                 <p className="text-xs text-body">
                   {formatSessionDate(s.session_date)}

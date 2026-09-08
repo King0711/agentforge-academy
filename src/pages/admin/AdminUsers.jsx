@@ -4,7 +4,7 @@ import { m } from 'framer-motion';
 import {
   Users, Shield, Zap, GraduationCap, Search, RefreshCw, Download,
   CheckCircle2, XCircle, Crown, AlertCircle, Loader2, Mail, ChevronDown, Sparkles,
-  Filter, ArrowUpDown, Hammer, Rocket,
+  Filter, ArrowUpDown, Hammer, Rocket, Code2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -137,10 +137,11 @@ function PlanBadge({ user }) {
 
 function UserRow({
   u, index, expanded, onToggleExpand, actionLoading,
-  onToggleBuilder1, onToggleBuilder2, onTogglePro, onToggleAdmin, currentUserId,
+  onToggleBuilder1, onToggleBuilder2, onTogglePro, onToggleAdmin, onToggleVibeCoding, currentUserId,
 }) {
   const hasB1 = isActive(u.builder1_expires_at);
   const hasB2 = isActive(u.builder2_expires_at);
+  const hasVibeCoding = isActive(u.vibecoding_expires_at);
   const userIsPro = hasB1 && hasB2;
   return (
     <>
@@ -171,9 +172,18 @@ function UserRow({
           </div>
         </td>
 
-        {/* Plan */}
+        {/* Plan — Vibe Coding is a separate product, shown alongside rather
+            than folded into PlanBadge's builder1/builder2/pro chain, since a
+            user can hold both an automation plan and Vibe Coding at once. */}
         <td className="px-5 py-4">
-          <PlanBadge user={u} />
+          <div className="flex flex-wrap items-center gap-1.5">
+            <PlanBadge user={u} />
+            {hasVibeCoding && (
+              <span className="inline-flex items-center gap-1 text-xs font-bold bg-[#EAFAF1] dark:bg-green/10 text-green border border-green/20 px-2 py-0.5 rounded-full">
+                Vibe Coding
+              </span>
+            )}
+          </div>
         </td>
 
         {/* Progress */}
@@ -267,6 +277,25 @@ function UserRow({
                   <CheckCircle2 className="w-3 h-3" /> Pro
                 </>
               )}
+            </button>
+
+            {/* Toggle Vibe Coding — separate product from builder1/builder2/Pro */}
+            <button
+              onClick={() => onToggleVibeCoding(u.id, hasVibeCoding)}
+              disabled={!!actionLoading || u.is_admin}
+              title={hasVibeCoding ? 'Revoke Vibe Coding' : 'Grant Vibe Coding'}
+              className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-40 ${
+                hasVibeCoding
+                  ? 'bg-[#EAFAF1] dark:bg-green/10 text-green hover:bg-[#FDEEF4] dark:hover:bg-rose/10 hover:text-rose'
+                  : 'bg-[#FAF8FF] dark:bg-white/5 text-body-strong hover:bg-[#EAFAF1] dark:hover:bg-green/10 hover:text-green'
+              }`}
+            >
+              {actionLoading === u.id + '_vibecoding' ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <Code2 className="w-3 h-3" />
+              )}
+              Vibe Coding
             </button>
 
             {/* Toggle Admin */}
@@ -412,6 +441,26 @@ export default function AdminUsers() {
         u.id === targetId ? { ...u, builder2_expires_at: expiry } : u
       ));
       showToast(!currentActive ? 'Builder 2 access granted (6 months).' : 'Builder 2 access revoked.');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const toggleVibeCoding = async (targetId, currentActive) => {
+    setActionLoading(targetId + '_vibecoding');
+    try {
+      const { error: err } = await supabase.rpc('admin_set_user_vibecoding', {
+        target_user_id: targetId,
+        set_active: !currentActive,
+      });
+      if (err) throw err;
+      const expiry = !currentActive ? new Date(Date.now() + 182 * 24 * 60 * 60 * 1000).toISOString() : null;
+      setUsers((prev) => prev.map((u) =>
+        u.id === targetId ? { ...u, vibecoding_expires_at: expiry } : u
+      ));
+      showToast(!currentActive ? 'Vibe Coding access granted (6 months).' : 'Vibe Coding access revoked.');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -590,6 +639,7 @@ export default function AdminUsers() {
                     onToggleBuilder1={toggleBuilder1}
                     onToggleBuilder2={toggleBuilder2}
                     onTogglePro={togglePro}
+                    onToggleVibeCoding={toggleVibeCoding}
                     onToggleAdmin={toggleAdmin}
                     currentUserId={user?.id}
                   />

@@ -46,6 +46,7 @@ export const routes = [
   '/faq',
   '/whatsapp-bot-guide',
   '/ai-builder',
+  '/vibe-coding',
   '/builder-1-guide',
   '/session/build-real-product',
   '/legal/terms',

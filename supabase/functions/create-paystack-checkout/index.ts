@@ -19,10 +19,18 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '
 // at a ~10% discount off buying both tracks separately, same ratio as
 // before, rather than left at 90000 (which would cost more than the two
 // tracks bought individually).
+//
+// vibecoding (added 2026-09-08) is the separate live-cohort Vibe Coding
+// bootcamp, not a tier of the builder1/builder2/pro ladder above — it's
+// priced independently and happens to land at the same amount as
+// builder1/builder2. That's fine: the webhook's resolvePlan() trusts the
+// metadata.plan set below for exact identification, only falling back to
+// amount-only matching (pro-only) for metadata-less payments.
 const PRICES = {
   builder1: 25000,
   builder2: 25000,
   pro: 45000,
+  vibecoding: 25000,
 };
 
 // This function is called directly from the browser (Pricing.jsx via

@@ -16,7 +16,9 @@ const links = [
   // navigation affordance, not a tab switcher that would hide one of them
   // from crawlers.
   { label: 'Learn', children: [{ to: '/guides', label: 'Guides' }, { to: '/news', label: 'AI News' }] },
-  { to: '/pricing', label: 'Pricing' },
+  // Two separate product lines (automation classes vs. the live Vibe Coding
+  // bootcamp) — same dropdown pattern as "Learn" above, not a tab switcher.
+  { label: 'Programs', children: [{ to: '/pricing', label: 'Automation Builder' }, { to: '/vibe-coding', label: 'Vibe Coding Bootcamp' }] },
 ];
 
 export default function Navbar() {

@@ -16,10 +16,15 @@ const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 // create-paystack-checkout exactly — these two constants must move
 // together or a real payment gets flagged 'flagged_unrecognized_amount'
 // and no entitlement or credits are granted despite the charge succeeding.
+//
+// vibecoding (added 2026-09-08) — the separate live-cohort Vibe Coding
+// bootcamp. Same price as builder1/builder2 is fine: resolvePlan() below
+// trusts metadata.plan first, and checkout always sets it.
 const PRICES = {
   builder1: 25000,
   builder2: 25000,
   pro: 45000,
+  vibecoding: 25000,
 };
 const AMOUNT_TOLERANCE = 1;
 
@@ -34,7 +39,7 @@ const AMOUNT_TOLERANCE = 1;
 // the listed price (minus AMOUNT_TOLERANCE for rounding).
 const FEE_CEILING_MULTIPLIER = 1.06;
 
-const PLAN_LABELS = { builder1: 'Builder 1', builder2: 'Builder 2', pro: 'Pro' };
+const PLAN_LABELS = { builder1: 'Builder 1', builder2: 'Builder 2', pro: 'Pro', vibecoding: 'Vibe Coding Bootcamp' };
 
 function emailShell(innerHtml) {
   return `
@@ -74,7 +79,7 @@ async function sendResendEmail(to, subject, html) {
 async function buildCohortLines(supabase, plan) {
   const tiers = plan === 'pro' ? ['builder1', 'builder2'] : [plan];
   const { data } = await supabase.from('cohort_schedule').select('tier, start_date').in('tier', tiers);
-  const labels = { builder1: 'Builder 1', builder2: 'Builder 2' };
+  const labels = { builder1: 'Builder 1', builder2: 'Builder 2', vibecoding: 'Vibe Coding Bootcamp' };
   const today = new Date(new Date().toDateString());
   const lines = (data || [])
     .filter((row) => row.start_date && new Date(`${row.start_date}T00:00:00`) >= today)
@@ -88,18 +93,32 @@ async function buildCohortLines(supabase, plan) {
   return `<ul style="font-size:14px;color:#3A3358;line-height:1.7;padding-left:20px;margin:16px 0;">${lines.join('')}</ul>`;
 }
 
-function welcomeHtml(name, planLabel, cohortLines) {
+// vibecoding gets its own bullet list: it's live-taught (join links/replays
+// live on the dashboard, not a self-paced build queue), doesn't require any
+// specific paid AI tool (dropped 2026-09-08 — see business-model.md), and
+// has a prompt library instead of per-session portfolio write-up prompts.
+// builder1/builder2/pro keep the original bullets unchanged.
+function welcomeHtml(name, planLabel, cohortLines, plan) {
+  const bullets = plan === 'vibecoding'
+    ? `
+      <li>Your live classes and replays are on your dashboard under Live Sessions.</li>
+      <li>The prompt library (8 reusable prompts for the bootcamp) is also on your dashboard.</li>
+      <li>Stuck on something? Reach us on WhatsApp: <a href="https://wa.me/2349066006963" style="color:#7C3AED;">wa.me/2349066006963</a></li>
+    `
+    : `
+      <li>You'll need your own paid Claude account (Claude Pro or higher) to follow the builds — billed separately by Anthropic.</li>
+      <li>Every session ends with a portfolio write-up prompt — that's what makes this resume-ready, don't skip it.</li>
+      <li>Stuck on a build? Reach us on WhatsApp: <a href="https://wa.me/2349066006963" style="color:#7C3AED;">wa.me/2349066006963</a></li>
+    `;
   return `
     <p style="font-size:15px;color:#1A1333;">Hey ${name},</p>
     <p style="font-size:15px;color:#3A3358;line-height:1.6;">
       You're in! Your <strong>${planLabel}</strong> access is live right now, for the next 6 months.
     </p>
     ${cohortLines}
-    <p style="font-size:15px;color:#3A3358;line-height:1.6;">A few things before you start building:</p>
+    <p style="font-size:15px;color:#3A3358;line-height:1.6;">A few things before you start:</p>
     <ul style="font-size:14px;color:#3A3358;line-height:1.7;padding-left:20px;">
-      <li>You'll need your own paid Claude account (Claude Pro or higher) to follow the builds — billed separately by Anthropic.</li>
-      <li>Every session ends with a portfolio write-up prompt — that's what makes this resume-ready, don't skip it.</li>
-      <li>Stuck on a build? Reach us on WhatsApp: <a href="https://wa.me/2349066006963" style="color:#7C3AED;">wa.me/2349066006963</a></li>
+      ${bullets}
     </ul>
     <div style="text-align:center;margin:28px 0;">
       <a href="https://socialdevtechnologies.com/dashboard"
@@ -262,6 +281,8 @@ serve(async (req) => {
     entitlementUpdate.builder1_expires_at = expiresAtIso;
   } else if (plan === 'builder2') {
     entitlementUpdate.builder2_expires_at = expiresAtIso;
+  } else if (plan === 'vibecoding') {
+    entitlementUpdate.vibecoding_expires_at = expiresAtIso;
   }
 
   await supabase
@@ -369,7 +390,7 @@ serve(async (req) => {
         const planLabel = PLAN_LABELS[plan] || plan;
         const cohortLines = await buildCohortLines(supabase, plan);
         const subject = `Welcome to ${planLabel} — you're in!`;
-        const ok = await sendResendEmail(recipientEmail, subject, emailShell(welcomeHtml(name, planLabel, cohortLines)));
+        const ok = await sendResendEmail(recipientEmail, subject, emailShell(welcomeHtml(name, planLabel, cohortLines, plan)));
         if (ok) {
           await supabase.from('email_log').insert({
             user_id: userId,

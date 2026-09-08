@@ -30,3 +30,8 @@ export const BUILDER_SAVINGS_PERCENT = Math.round((BUILDER_SAVINGS / ANCHOR_PRIC
 // specific number is a default applied to avoid shipping that break, not
 // an explicit instruction -- easy to override.
 export const PRO_PRICE = 45000;
+
+// Vibe Coding bootcamp — a separate live-cohort product, not a tier of the
+// builder1/builder2/pro ladder above. Priced independently; happens to land
+// at the same amount as a single builder track. Added 2026-09-08.
+export const VIBECODING_PRICE = 25000;
