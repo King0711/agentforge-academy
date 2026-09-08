@@ -16,10 +16,15 @@ const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 // create-paystack-checkout exactly — these two constants must move
 // together or a real payment gets flagged 'flagged_unrecognized_amount'
 // and no entitlement or credits are granted despite the charge succeeding.
+//
+// vibecoding (added 2026-09-08) — the separate live-cohort Vibe Coding
+// bootcamp. Same price as builder1/builder2 is fine: resolvePlan() below
+// trusts metadata.plan first, and checkout always sets it.
 const PRICES = {
   builder1: 25000,
   builder2: 25000,
   pro: 45000,
+  vibecoding: 25000,
 };
 const AMOUNT_TOLERANCE = 1;
 
@@ -34,7 +39,7 @@ const AMOUNT_TOLERANCE = 1;
 // the listed price (minus AMOUNT_TOLERANCE for rounding).
 const FEE_CEILING_MULTIPLIER = 1.06;
 
-const PLAN_LABELS = { builder1: 'Builder 1', builder2: 'Builder 2', pro: 'Pro' };
+const PLAN_LABELS = { builder1: 'Builder 1', builder2: 'Builder 2', pro: 'Pro', vibecoding: 'Vibe Coding Bootcamp' };
 
 function emailShell(innerHtml) {
   return `
@@ -74,7 +79,7 @@ async function sendResendEmail(to, subject, html) {
 async function buildCohortLines(supabase, plan) {
   const tiers = plan === 'pro' ? ['builder1', 'builder2'] : [plan];
   const { data } = await supabase.from('cohort_schedule').select('tier, start_date').in('tier', tiers);
-  const labels = { builder1: 'Builder 1', builder2: 'Builder 2' };
+  const labels = { builder1: 'Builder 1', builder2: 'Builder 2', vibecoding: 'Vibe Coding Bootcamp' };
   const today = new Date(new Date().toDateString());
   const lines = (data || [])
     .filter((row) => row.start_date && new Date(`${row.start_date}T00:00:00`) >= today)
@@ -262,6 +267,8 @@ serve(async (req) => {
     entitlementUpdate.builder1_expires_at = expiresAtIso;
   } else if (plan === 'builder2') {
     entitlementUpdate.builder2_expires_at = expiresAtIso;
+  } else if (plan === 'vibecoding') {
+    entitlementUpdate.vibecoding_expires_at = expiresAtIso;
   }
 
   await supabase

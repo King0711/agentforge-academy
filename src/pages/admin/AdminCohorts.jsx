@@ -32,7 +32,7 @@ function CohortDateRow({ label, value, onChange, onSave, saving }) {
 
 export default function AdminCohorts() {
   const { showToast } = useOutletContext();
-  const [cohortDates, setCohortDates] = useState({ builder1: '', builder2: '' });
+  const [cohortDates, setCohortDates] = useState({ builder1: '', builder2: '', vibecoding: '' });
   const [cohortSaving, setCohortSaving] = useState(null);
   const [error, setError] = useState('');
 
@@ -40,7 +40,7 @@ export default function AdminCohorts() {
     try {
       const { data, error: err } = await supabase.from('cohort_schedule').select('tier, start_date');
       if (err) throw err;
-      const next = { builder1: '', builder2: '' };
+      const next = { builder1: '', builder2: '', vibecoding: '' };
       for (const row of data || []) {
         next[row.tier] = row.start_date || '';
       }
@@ -62,7 +62,8 @@ export default function AdminCohorts() {
         .update({ start_date: cohortDates[tier] || null })
         .eq('tier', tier);
       if (err) throw err;
-      showToast(`${tier === 'builder1' ? 'Builder 1' : 'Builder 2'} cohort date saved.`);
+      const tierLabels = { builder1: 'Builder 1', builder2: 'Builder 2', vibecoding: 'Vibe Coding' };
+      showToast(`${tierLabels[tier] || tier} cohort date saved.`);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -100,6 +101,13 @@ export default function AdminCohorts() {
           onChange={(v) => setCohortDates((prev) => ({ ...prev, builder2: v }))}
           onSave={() => saveCohortDate('builder2')}
           saving={cohortSaving === 'builder2'}
+        />
+        <CohortDateRow
+          label="Vibe Coding"
+          value={cohortDates.vibecoding}
+          onChange={(v) => setCohortDates((prev) => ({ ...prev, vibecoding: v }))}
+          onSave={() => saveCohortDate('vibecoding')}
+          saving={cohortSaving === 'vibecoding'}
         />
       </div>
       <p className="text-xs text-gray-400 mb-2">

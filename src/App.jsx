@@ -17,6 +17,7 @@ import About from './pages/About';
 import FAQ from './pages/FAQ';
 import WhatsAppBotGuide from './pages/WhatsAppBotGuide';
 import AIBuilder from './pages/AIBuilder';
+import VibeCoding from './pages/VibeCoding';
 import Builder1Guide from './pages/Builder1Guide';
 import PortfolioSessionGuide from './pages/PortfolioSessionGuide';
 import DailyNewsSessionGuide from './pages/DailyNewsSessionGuide';
@@ -62,6 +63,9 @@ const Certificates = lazy(() => import('./pages/Certificates'));
 const CertificateView = lazy(() => import('./pages/CertificateView'));
 const VerifyCertificate = lazy(() => import('./pages/VerifyCertificate'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const VibeCodingClasses = lazy(() => import('./pages/VibeCodingClasses'));
+const VibeCodingClass = lazy(() => import('./pages/VibeCodingClass'));
+const VibeCodingPrompts = lazy(() => import('./pages/VibeCodingPrompts'));
 // Full-screen keynote — deliberately excluded from prerendering (keyboard
 // nav + fullscreen state have no business being static-snapshotted) and
 // renders its own chrome, so AppShell below skips Navbar/Footer for it.
@@ -175,6 +179,10 @@ function AppShell() {
             <Route path="/faq" element={<FAQ />} />
             <Route path="/whatsapp-bot-guide" element={<WhatsAppBotGuide />} />
             <Route path="/ai-builder" element={<AIBuilder />} />
+            <Route path="/vibe-coding" element={<VibeCoding />} />
+            <Route path="/vibe-coding/classes" element={<Suspense fallback={null}><VibeCodingClasses /></Suspense>} />
+            <Route path="/vibe-coding/class/:classNumber" element={<Suspense fallback={null}><VibeCodingClass /></Suspense>} />
+            <Route path="/vibe-coding/prompts" element={<Suspense fallback={null}><VibeCodingPrompts /></Suspense>} />
             <Route path="/builder-1-guide" element={<Builder1Guide />} />
             <Route path="/session/build-real-product" element={<PortfolioSessionGuide />} />
             <Route path="/session/daily-news-agent" element={<DailyNewsSessionGuide />} />
