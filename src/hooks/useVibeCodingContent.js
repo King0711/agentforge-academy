@@ -2,65 +2,12 @@ import { useEffect, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 
 /**
- * Fetches the gated content (topics, session sections, assignment, challenge
- * features) for a single Vibe Coding class from Supabase. RLS on
- * `vibecoding_content` enforces the paywall server-side — a request without
- * an active vibecoding_expires_at entitlement returns zero rows, surfaced
- * here as `locked: true`. Mirrors useCourseContent.js, but there is no
- * draft/staging table for this content — it's inserted straight into the
- * live table (see supabase/course-content-drafts/vibecoding-class-*.sql).
- */
-export function useVibeCodingContent(classNumber) {
-  const [content, setContent] = useState(null);
-  const [loading, setLoading] = useState(Boolean(classNumber));
-  const [locked, setLocked] = useState(false);
-
-  useEffect(() => {
-    if (!classNumber || !isSupabaseConfigured) {
-      setContent(null);
-      setLocked(false);
-      setLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-    setLoading(true);
-    setLocked(false);
-    setContent(null);
-
-    supabase
-      .from('vibecoding_content')
-      .select('title, topics, session, assignment, challenge_features, resources')
-      .eq('class_number', classNumber)
-      .maybeSingle()
-      .then(({ data, error }) => {
-        if (cancelled) return;
-        if (error || !data) {
-          setLocked(true);
-        } else {
-          setContent({
-            title: data.title,
-            topics: data.topics,
-            session: data.session,
-            assignment: data.assignment,
-            challengeFeatures: data.challenge_features,
-            resources: data.resources,
-          });
-        }
-        setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [classNumber]);
-
-  return { content, loading, locked };
-}
-
-/**
- * Fetches the whole Vibe Coding prompt library (8 reusable prompts, not
- * tied to any one class). Same RLS gating as class content.
+ * Fetches the whole Vibe Coding prompt library (8 reusable prompts used
+ * throughout the live-taught bootcamp — not tied to any one class, since
+ * class content itself isn't pre-published on the site; students get it
+ * live and via replays under /dashboard/live-sessions and /dashboard/replays,
+ * gated the same way as the automation tiers' live sessions). RLS on
+ * `vibecoding_prompts` enforces the paywall server-side.
  */
 export function useVibeCodingPrompts() {
   const [prompts, setPrompts] = useState(null);

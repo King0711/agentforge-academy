@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { m } from 'framer-motion';
 import {
   CheckCircle2, ArrowRight, CalendarDays, Info, CircleHelp, Loader2, AlertCircle, Timer,
-  Sparkles, Code2, Database, Rocket, GraduationCap, Wrench,
+  Code2, Database, Rocket, Wrench,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { usePro } from '../hooks/usePro';
@@ -51,7 +51,6 @@ const WHO_FOR = [
 ];
 
 const TOOLKIT = [
-  { icon: Sparkles, name: 'Claude Pro', text: 'Your primary AI development partner — required, purchased separately.' },
   { icon: Code2, name: 'Visual Studio Code', text: 'Your development environment for creating and editing projects.' },
   { icon: Wrench, name: 'GitHub', text: 'Learn the basics of saving and managing your project code.' },
   { icon: Database, name: 'Supabase', text: 'Learn how to add a real database to your applications.' },
@@ -68,11 +67,9 @@ const WEEKS = [
 const FAQS = [
   { q: 'Is this course suitable for complete beginners?', a: 'Yes. The bootcamp is designed for beginners and explains the fundamentals before moving into more advanced projects.' },
   { q: 'Do I need to know how to code?', a: 'No professional coding experience is required — just willingness to learn basic concepts like HTML, CSS, JavaScript, and databases.' },
-  { q: 'Do I need Claude Pro?', a: 'Yes. Claude Pro is the primary AI tool used throughout the bootcamp and is purchased separately from the course fee.' },
-  { q: 'Do I need to pay for other tools?', a: 'The course minimizes additional costs — GitHub, Supabase, and deployment platforms all have free options suitable for learning.' },
+  { q: 'Do I need to pay for tools?', a: 'The course minimizes additional costs — GitHub, Supabase, and deployment platforms all have free options suitable for learning.' },
   { q: 'What if I miss a live class?', a: 'Class recordings are available so you can catch up, though attending live is strongly recommended.' },
-  { q: 'How long will I have access?', a: "You'll have access for 6 months — lessons, recordings, resources, and your projects." },
-  { q: 'Will I become a professional developer after four weeks?', a: "No — four weeks isn't enough for that. The goal is a practical AI-assisted workflow and real projects to keep building on." },
+  { q: 'How long will I have access?', a: "You'll have access for 6 months — live classes, recordings, resources, and your projects." },
   { q: 'Do I get a certificate?', a: 'Yes. Students who complete the bootcamp requirements receive a certificate of completion.' },
 ];
 
@@ -215,7 +212,7 @@ export default function VibeCoding() {
             className="text-[17px] leading-relaxed text-body mt-5 max-w-lg mx-auto"
           >
             Turn your ideas into real websites, web applications, and AI-powered products — even if you've never
-            been a professional programmer. Learn to use Claude as your AI development partner.
+            been a professional programmer. Learn to use AI as your development partner.
           </m.p>
 
           <m.div
@@ -347,7 +344,7 @@ export default function VibeCoding() {
       {/* Toolkit */}
       <div className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto">
         <SectionHeading eyebrow="Your AI development toolkit">The tools you'll use</SectionHeading>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3 max-w-5xl mx-auto">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 max-w-4xl mx-auto">
           {TOOLKIT.map((t) => (
             <div key={t.name} className="bg-white dark:bg-[#181818] border-[1.5px] border-border-soft rounded-2xl p-4 text-center">
               <div className="w-9 h-9 mx-auto rounded-lg bg-[#F3EBFF] dark:bg-brand/15 text-brand flex items-center justify-center mb-2.5"><t.icon className="w-4.5 h-4.5" /></div>
@@ -356,24 +353,6 @@ export default function VibeCoding() {
             </div>
           ))}
         </div>
-        <p className="flex items-start justify-center gap-1.5 text-[12.5px] text-body mt-6 max-w-lg mx-auto text-center">
-          <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-          Claude Pro is required for the main classroom workflow and is purchased separately from the bootcamp fee.
-        </p>
-      </div>
-
-      {/* What you will NOT be promised — honest expectation-setting */}
-      <div className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-3xl mx-auto text-center">
-        <div className="flex items-center justify-center gap-2 mb-3">
-          <GraduationCap className="w-5 h-5 text-brand" />
-          <span className="text-[13px] font-bold uppercase tracking-wide text-brand">What you won't be promised</span>
-        </div>
-        <p className="text-[15px] text-body leading-relaxed max-w-xl mx-auto">
-          We won't tell you that you'll become a professional software engineer in four weeks. That's not realistic.
-          Instead, you'll leave with something more practical: <span className="text-ink font-bold">a repeatable
-          AI-assisted workflow for turning your ideas into real websites and web applications</span> — plus projects
-          you can keep improving after the bootcamp.
-        </p>
       </div>
 
       {/* FAQ */}
@@ -440,10 +419,10 @@ export default function VibeCoding() {
 
           {hasVibeCoding ? (
             <Link
-              to="/vibe-coding/classes"
+              to="/dashboard/live-sessions"
               className="flex items-center justify-center gap-2 w-full bg-green text-white font-extrabold px-5 py-3.5 rounded-xl transition-colors"
             >
-              You're enrolled — go to your classes →
+              You're enrolled — go to your live classes →
             </Link>
           ) : (
             <button
@@ -458,8 +437,7 @@ export default function VibeCoding() {
 
           <p className="flex items-start gap-1.5 text-[12px] text-body mt-4">
             <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-            One-time payment, not a subscription. Claude Pro is not included — students need their own subscription,
-            billed separately by Anthropic.
+            One-time payment, not a subscription. Access starts the moment you pay.
           </p>
         </div>
       </div>

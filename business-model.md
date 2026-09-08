@@ -7,7 +7,7 @@ Last updated: 2026-09-08
 The business now runs two distinct arms, with different pricing, tooling assumptions, and delivery formats. They are not competing tiers of one ladder — no need for price parity or a shared AI-tool policy between them.
 
 1. **Automation classes** (below, "AI Builder Academy") — self-paced, project-based AI agent builds. Students bring their own free Gemini API key; no paid AI subscription required.
-2. **Vibe Coding classes** — a live, cohort-taught bootcamp teaching general AI-assisted web development (not agent-building). ₦25,000 one-time, 4 weeks, 8 live classes, 6 months access. Requires the student's own **Claude Pro** subscription, purchased separately — this is a deliberate difference from the automation arm, not an inconsistency: the bootcamp's live, synchronous format is built around a shared primary AI tool so the instructor can guide everyone through the same workflow.
+2. **Vibe Coding classes** — a live, cohort-taught bootcamp teaching general AI-assisted web development (not agent-building). ₦25,000 one-time, 4 weeks, 8 live classes, 6 months access. No specific paid AI subscription is required or promoted — same no-paid-tool-dependency posture as the automation arm.
 
 ## Automation classes ("AI Builder Academy")
 
@@ -62,8 +62,9 @@ The business now runs two distinct arms, with different pricing, tooling assumpt
 ### Context
 
 - Live, instructor-led bootcamp — general AI-assisted web development (portfolio site → to-do app → expense tracker → Supabase-backed CRUD app → AI-powered app → own capstone product), not agent-building. Beginner-friendly; no prior coding experience required.
-- 4 weeks, 8 live classes (2/week, 2–2.5 hours each), 6 months access to recordings/materials.
-- **Requires the student's own Claude Pro subscription** (or higher), billed separately by Anthropic — not bundled into the course fee. This is the one place this arm's AI-tool policy diverges from the automation arm's free-Gemini-key model, and that's by design: a live, synchronous class benefits from everyone using the same primary tool.
+- 4 weeks, 8 live classes (2/week, 2–2.5 hours each), 6 months access to recordings.
+- No specific paid AI tool is required or marketed (dropped 2026-09-08 — the bootcamp no longer names or requires a particular subscription).
+- Class content is **not** pre-published as written pages on the site — it's delivered live and via replays through the existing `live_sessions` table/dashboard (same mechanism the automation arm's live cohort already uses), gated to paying Vibe Coding students only. The only Vibe-Coding-specific content on the site is the prompt library (8 reusable prompts), which is standalone reference material independent of any one class.
 
 ### Pricing
 

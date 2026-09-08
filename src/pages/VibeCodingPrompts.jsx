@@ -42,8 +42,8 @@ export default function VibeCodingPrompts() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-      <Link to="/vibe-coding/classes" className="inline-flex items-center gap-1.5 text-sm font-semibold text-body hover:text-brand transition-colors mb-6">
-        <ArrowLeft className="w-4 h-4" /> All classes
+      <Link to="/vibe-coding" className="inline-flex items-center gap-1.5 text-sm font-semibold text-body hover:text-brand transition-colors mb-6">
+        <ArrowLeft className="w-4 h-4" /> Vibe Coding Bootcamp
       </Link>
 
       <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-ink mb-2">Prompt library</h1>
