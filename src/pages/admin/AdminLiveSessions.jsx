@@ -3,7 +3,29 @@ import { useOutletContext } from 'react-router-dom';
 import { Video, Save, Trash2, Loader2, AlertCircle, Pencil, X } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
-const emptyForm = { id: null, tier: 'builder1', title: '', description: '', session_date: '', join_link: '', recording_url: '', recording_passcode: '' };
+const emptyForm = { id: null, tier: 'builder1', title: '', description: '', session_date: '', join_link: '', recording_url: '', recording_passcode: '', resourcesText: '' };
+
+// Resources are edited as plain text, one per line ("Title | https://url"),
+// and parsed to/from the jsonb array `live_sessions.resources` stores —
+// same lightweight text<->structured-data convention AdminGuides.jsx uses
+// for its body_blocks, rather than a dynamic add/remove-row form.
+function resourcesToText(resources) {
+  if (!Array.isArray(resources)) return '';
+  return resources.map((r) => `${r.title} | ${r.url}`).join('\n');
+}
+
+function textToResources(text) {
+  const rows = text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [title, url] = line.split('|').map((s) => s.trim());
+      return title && url ? { title, url } : null;
+    })
+    .filter(Boolean);
+  return rows.length > 0 ? rows : null;
+}
 
 // Converts a Postgres timestamptz into the value <input type="datetime-local">
 // expects (local time, no timezone/seconds) and back.
@@ -56,6 +78,7 @@ export default function AdminLiveSessions() {
       join_link: session.join_link || '',
       recording_url: session.recording_url || '',
       recording_passcode: session.recording_passcode || '',
+      resourcesText: resourcesToText(session.resources),
     });
   };
 
@@ -77,6 +100,7 @@ export default function AdminLiveSessions() {
         p_join_link: form.join_link.trim() || null,
         p_recording_url: form.recording_url.trim() || null,
         p_recording_passcode: form.recording_passcode.trim() || null,
+        p_resources: textToResources(form.resourcesText),
       });
       if (err) throw err;
       showToast(form.id ? 'Session updated.' : 'Session created.');
@@ -181,6 +205,13 @@ export default function AdminLiveSessions() {
           placeholder="Recording passcode (optional) — from Zoom's Share dialog, not the sharing-info text block"
           className="w-full px-3 py-2 rounded-lg border border-border text-sm text-ink bg-white dark:bg-[#0A090F] focus:outline-none focus:ring-2 focus:ring-brand/40"
         />
+        <textarea
+          value={form.resourcesText}
+          onChange={(e) => setForm((f) => ({ ...f, resourcesText: e.target.value }))}
+          placeholder={'Resources (optional) — one per line, "Title | https://url"\ne.g. Slide deck | https://docs.google.com/...'}
+          rows={3}
+          className="w-full px-3 py-2 rounded-lg border border-border text-sm text-ink bg-white dark:bg-[#0A090F] focus:outline-none focus:ring-2 focus:ring-brand/40 resize-none font-mono"
+        />
 
         <button
           type="submit"
@@ -211,6 +242,7 @@ export default function AdminLiveSessions() {
                   {s.join_link && ' · has join link'}
                   {s.recording_url && ' · has replay'}
                   {s.recording_passcode && ' · has passcode'}
+                  {s.resources?.length > 0 && ` · ${s.resources.length} resource${s.resources.length === 1 ? '' : 's'}`}
                 </p>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { PlayCircle, Lock, Loader2, Copy, Check } from 'lucide-react';
 
+const TIER_LABELS = { builder1: 'Builder 1', builder2: 'Builder 2', vibecoding: 'Vibe Coding' };
+
 function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
@@ -41,7 +43,7 @@ function ReplayCard({ session }) {
         </div>
         <div className="min-w-0">
           <p className="font-bold text-ink truncate">{session.title}</p>
-          <p className="text-xs text-gray-400 mt-0.5">{formatDate(session.session_date)} · {session.tier === 'builder1' ? 'Builder 1' : 'Builder 2'}</p>
+          <p className="text-xs text-gray-400 mt-0.5">{formatDate(session.session_date)} · {TIER_LABELS[session.tier] || session.tier}</p>
         </div>
       </div>
       {available ? (

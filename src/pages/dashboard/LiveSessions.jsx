@@ -1,6 +1,8 @@
 import { useOutletContext } from 'react-router-dom';
 import { Video, Calendar, Loader2 } from 'lucide-react';
 
+const TIER_LABELS = { builder1: 'Builder 1', builder2: 'Builder 2', vibecoding: 'Vibe Coding' };
+
 function formatDay(dateStr) {
   return new Date(dateStr).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
 }
@@ -18,7 +20,7 @@ function SessionCard({ session }) {
         <div className="min-w-0">
           <p className="font-bold text-ink truncate">{session.title}</p>
           {session.description && <p className="text-sm text-body truncate">{session.description}</p>}
-          <p className="text-xs text-gray-400 mt-0.5">{formatTime(session.session_date)} · {session.tier === 'builder1' ? 'Builder 1' : 'Builder 2'}</p>
+          <p className="text-xs text-gray-400 mt-0.5">{formatTime(session.session_date)} · {TIER_LABELS[session.tier] || session.tier}</p>
         </div>
       </div>
       {session.join_link ? (

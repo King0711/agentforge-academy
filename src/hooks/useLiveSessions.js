@@ -22,7 +22,7 @@ export function useLiveSessions(user) {
     setLoading(true);
     const { data, error } = await supabase
       .from('live_sessions')
-      .select('id, tier, title, description, session_date, join_link, recording_url, recording_passcode')
+      .select('id, tier, title, description, session_date, join_link, recording_url, recording_passcode, resources')
       .order('session_date', { ascending: true });
     if (!error) setSessions(data || []);
     setNow(Date.now());
