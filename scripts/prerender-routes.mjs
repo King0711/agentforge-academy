@@ -49,6 +49,7 @@ export const routes = [
   '/vibe-coding',
   '/builder-1-guide',
   '/session/build-real-product',
+  '/session/daily-news-agent',
   '/legal/terms',
   '/legal/privacy',
   ...builder1Slugs.map((slug) => `/builder-1/${slug}`),
