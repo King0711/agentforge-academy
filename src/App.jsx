@@ -64,6 +64,9 @@ const CertificateView = lazy(() => import('./pages/CertificateView'));
 const VerifyCertificate = lazy(() => import('./pages/VerifyCertificate'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const VibeCodingPrompts = lazy(() => import('./pages/VibeCodingPrompts'));
+// Private, auth-gated course content (recording links, passcodes) — must
+// never be prerendered/eager-imported, same reasoning as StudentDashboard.
+const VibeCodingCourse = lazy(() => import('./pages/VibeCodingCourse'));
 // Full-screen keynote — deliberately excluded from prerendering (keyboard
 // nav + fullscreen state have no business being static-snapshotted) and
 // renders its own chrome, so AppShell below skips Navbar/Footer for it.
@@ -179,6 +182,7 @@ function AppShell() {
             <Route path="/ai-builder" element={<AIBuilder />} />
             <Route path="/vibe-coding" element={<VibeCoding />} />
             <Route path="/vibe-coding/prompts" element={<Suspense fallback={null}><VibeCodingPrompts /></Suspense>} />
+            <Route path="/vibe-coding/course" element={<Suspense fallback={null}><VibeCodingCourse /></Suspense>} />
             <Route path="/builder-1-guide" element={<Builder1Guide />} />
             <Route path="/session/build-real-product" element={<PortfolioSessionGuide />} />
             <Route path="/session/daily-news-agent" element={<DailyNewsSessionGuide />} />

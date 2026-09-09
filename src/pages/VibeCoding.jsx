@@ -419,10 +419,10 @@ export default function VibeCoding() {
 
           {hasVibeCoding ? (
             <Link
-              to="/dashboard/live-sessions"
+              to="/vibe-coding/course"
               className="flex items-center justify-center gap-2 w-full bg-green text-white font-extrabold px-5 py-3.5 rounded-xl transition-colors"
             >
-              You're enrolled — go to your live classes →
+              You're enrolled — go to your classes →
             </Link>
           ) : (
             <button
