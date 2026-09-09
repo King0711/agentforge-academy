@@ -1,10 +1,13 @@
-import { useState } from 'react';
-import { useOutletContext, Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Sparkles, Lock, Loader2, CheckCircle2, Circle, Video, PlayCircle, ExternalLink,
-  Copy, Check, Calendar, BookOpen,
+  Copy, Check, Calendar, BookOpen, ListChecks,
 } from 'lucide-react';
-import { usePro } from '../../hooks/usePro';
+import { useAuth } from '../context/AuthContext';
+import { usePro } from '../hooks/usePro';
+import { useLiveSessions } from '../hooks/useLiveSessions';
+import { usePageSeo } from '../hooks/usePageSeo';
 
 // Fixed at 2 classes/week (4 weeks, 8 classes total — see the bootcamp
 // curriculum). live_sessions has no explicit week column, so this groups
@@ -72,6 +75,12 @@ function OutlineItem({ session, index, isSelected, onSelect }) {
   );
 }
 
+// Zoom's own recording page renders inside this iframe — its download
+// button (if shown at all) is governed by Zoom's own recording-sharing
+// settings, not by anything here. Turn off "allow viewers to download" on
+// the Zoom side (account-wide or per share link) if that matters — no
+// amount of iframe/JS on our end can remove a button Zoom's own page
+// renders inside its own document.
 function EmbedArea({ session }) {
   const isPast = new Date(session.session_date) < new Date();
   const hasReplay = Boolean(session.recording_url);
@@ -129,6 +138,22 @@ function EmbedArea({ session }) {
       <h2 className="font-display font-bold text-lg text-ink mt-5">{session.title}</h2>
       {session.description && <p className="text-sm text-body leading-relaxed mt-1.5">{session.description}</p>}
 
+      {session.topics?.length > 0 && (
+        <div className="mt-5">
+          <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-brand mb-2">
+            <ListChecks className="w-3.5 h-3.5" /> Topics
+          </p>
+          <ul className="flex flex-col gap-1.5">
+            {session.topics.map((t) => (
+              <li key={t} className="flex items-start gap-2 text-[13px] text-body-strong">
+                <Circle className="w-1.5 h-1.5 mt-1.5 fill-gray-400 text-gray-400 flex-shrink-0" />
+                <span>{t}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {session.resources?.length > 0 && (
         <div className="mt-5">
           <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-brand mb-2">
@@ -154,32 +179,54 @@ function EmbedArea({ session }) {
   );
 }
 
+// Standalone page — same pattern as Builder 1/2's own course pages
+// (BuilderSession.jsx): normal site Navbar/Footer, own route, not nested
+// inside StudentDashboard's grid (which otherwise reserves space for the
+// "Jump back in" widget on every /dashboard/* page regardless of content).
 export default function VibeCodingCourse() {
-  const { liveSessions } = useOutletContext();
+  const { user } = useAuth();
   const { hasVibeCoding, isAdmin, proLoading } = usePro();
+  const liveSessions = useLiveSessions(user);
   const [selectedId, setSelectedId] = useState(null);
 
-  if (proLoading || liveSessions.loading) {
-    return (
-      <div className="flex justify-center py-16">
-        <Loader2 className="w-6 h-6 animate-spin text-brand" />
-      </div>
-    );
-  }
+  usePageSeo({
+    title: 'Your Classes — Vibe Coding Bootcamp | Social Dev Technologies',
+    description: 'Your Vibe Coding Bootcamp classes, replays, and resources.',
+  });
 
-  if (!hasVibeCoding && !isAdmin) {
-    return (
-      <div className="rounded-2xl border-2 border-dashed border-border p-10 text-center">
-        <Lock className="w-8 h-8 text-brand mx-auto mb-3" />
-        <p className="text-ink font-bold">This is Vibe Coding Bootcamp content</p>
-        <p className="text-sm text-body mt-1 mb-4">Join the launch cohort to unlock your classes.</p>
-        <Link to="/vibe-coding#pricing" className="inline-flex items-center gap-2 bg-brand hover:bg-brand-deep text-white font-bold px-5 py-2.5 rounded-xl transition-colors">
-          See the offer
-        </Link>
-      </div>
-    );
-  }
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
+  const loading = proLoading || liveSessions.loading;
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+      <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-ink mb-6 flex items-center gap-3">
+        <Sparkles className="w-7 h-7 text-brand" /> Vibe Coding Bootcamp
+      </h1>
+
+      {loading ? (
+        <div className="flex justify-center py-16">
+          <Loader2 className="w-6 h-6 animate-spin text-brand" />
+        </div>
+      ) : !hasVibeCoding && !isAdmin ? (
+        <div className="rounded-2xl border-2 border-dashed border-border p-10 text-center">
+          <Lock className="w-8 h-8 text-brand mx-auto mb-3" />
+          <p className="text-ink font-bold">This is Vibe Coding Bootcamp content</p>
+          <p className="text-sm text-body mt-1 mb-4">Join the launch cohort to unlock your classes.</p>
+          <Link to="/vibe-coding#pricing" className="inline-flex items-center gap-2 bg-brand hover:bg-brand-deep text-white font-bold px-5 py-2.5 rounded-xl transition-colors">
+            See the offer
+          </Link>
+        </div>
+      ) : (
+        <VibeCodingCourseBody liveSessions={liveSessions} selectedId={selectedId} setSelectedId={setSelectedId} />
+      )}
+    </div>
+  );
+}
+
+function VibeCodingCourseBody({ liveSessions, selectedId, setSelectedId }) {
   const sessions = liveSessions.sessions
     .filter((s) => s.tier === 'vibecoding')
     .slice()
@@ -187,15 +234,10 @@ export default function VibeCodingCourse() {
 
   if (sessions.length === 0) {
     return (
-      <div>
-        <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-ink mb-6 flex items-center gap-3">
-          <Sparkles className="w-7 h-7 text-brand" /> Vibe Coding Bootcamp
-        </h1>
-        <div className="rounded-2xl border-2 border-dashed border-border p-10 text-center">
-          <Calendar className="w-8 h-8 text-gray-300 mx-auto mb-3" />
-          <p className="text-ink font-bold">No classes scheduled yet</p>
-          <p className="text-sm text-body mt-1">Your classes will show up here as they're scheduled.</p>
-        </div>
+      <div className="rounded-2xl border-2 border-dashed border-border p-10 text-center">
+        <Calendar className="w-8 h-8 text-gray-300 mx-auto mb-3" />
+        <p className="text-ink font-bold">No classes scheduled yet</p>
+        <p className="text-sm text-body mt-1">Your classes will show up here as they're scheduled.</p>
       </div>
     );
   }
@@ -211,38 +253,32 @@ export default function VibeCodingCourse() {
   const selected = sessions.find((s) => s.id === selectedId) || defaultSession;
 
   return (
-    <div>
-      <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-ink mb-6 flex items-center gap-3">
-        <Sparkles className="w-7 h-7 text-brand" /> Vibe Coding Bootcamp
-      </h1>
+    <div className="grid lg:grid-cols-[320px_1fr] gap-6 items-start">
+      {/* Right on desktop, but comes first in DOM so mobile shows video before outline */}
+      <div className="order-1 lg:order-2 lg:col-start-2">
+        <EmbedArea session={selected} />
+      </div>
 
-      <div className="grid lg:grid-cols-[320px_1fr] gap-6 items-start">
-        {/* Right on desktop, but comes first in DOM so mobile shows video before outline */}
-        <div className="order-1 lg:order-2 lg:col-start-2">
-          <EmbedArea session={selected} />
-        </div>
-
-        <div className="order-2 lg:order-1 lg:col-start-1 rounded-2xl border-[1.5px] border-border-soft bg-white dark:bg-[#181818] overflow-hidden">
-          {weeks.map((w) => (
-            <div key={w.week} className="border-b border-border-soft last:border-b-0">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-gray-400 px-3.5 pt-3.5 pb-1.5">Week {w.week}</p>
-              <div className="px-1.5 pb-1.5 flex flex-col gap-0.5">
-                {w.sessions.map((s) => {
-                  const index = sessions.indexOf(s);
-                  return (
-                    <OutlineItem
-                      key={s.id}
-                      session={s}
-                      index={index}
-                      isSelected={s.id === selected.id}
-                      onSelect={() => setSelectedId(s.id)}
-                    />
-                  );
-                })}
-              </div>
+      <div className="order-2 lg:order-1 lg:col-start-1 rounded-2xl border-[1.5px] border-border-soft bg-white dark:bg-[#181818] overflow-hidden lg:sticky lg:top-24">
+        {weeks.map((w) => (
+          <div key={w.week} className="border-b border-border-soft last:border-b-0">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-gray-400 px-3.5 pt-3.5 pb-1.5">Week {w.week}</p>
+            <div className="px-1.5 pb-1.5 flex flex-col gap-0.5">
+              {w.sessions.map((s) => {
+                const index = sessions.indexOf(s);
+                return (
+                  <OutlineItem
+                    key={s.id}
+                    session={s}
+                    index={index}
+                    isSelected={s.id === selected.id}
+                    onSelect={() => setSelectedId(s.id)}
+                  />
+                );
+              })}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </div>
   );

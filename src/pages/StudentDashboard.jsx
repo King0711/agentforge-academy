@@ -7,7 +7,6 @@ import JumpBackInCard from '../components/dashboard/JumpBackInCard';
 import Home from './dashboard/Home';
 import LiveSessions from './dashboard/LiveSessions';
 import Replays from './dashboard/Replays';
-import VibeCodingCourse from './dashboard/VibeCodingCourse';
 import Account from './dashboard/Account';
 import Help from './dashboard/Help';
 import Refer from './dashboard/Refer';
@@ -37,7 +36,6 @@ export default function StudentDashboard({ progress, onSelectAgent }) {
                 <Route index element={<Home />} />
                 <Route path="live-sessions" element={<LiveSessions />} />
                 <Route path="replays" element={<Replays />} />
-                <Route path="vibe-coding" element={<VibeCodingCourse />} />
                 <Route path="account" element={<Account />} />
                 <Route path="refer" element={<Refer />} />
                 <Route path="help" element={<Help />} />

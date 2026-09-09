@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { Video, Save, Trash2, Loader2, AlertCircle, Pencil, X } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
-const emptyForm = { id: null, tier: 'builder1', title: '', description: '', session_date: '', join_link: '', recording_url: '', recording_passcode: '', resourcesText: '' };
+const emptyForm = { id: null, tier: 'builder1', title: '', description: '', session_date: '', join_link: '', recording_url: '', recording_passcode: '', resourcesText: '', topicsText: '' };
 
 // Resources are edited as plain text, one per line ("Title | https://url"),
 // and parsed to/from the jsonb array `live_sessions.resources` stores —
@@ -24,6 +24,16 @@ function textToResources(text) {
       return title && url ? { title, url } : null;
     })
     .filter(Boolean);
+  return rows.length > 0 ? rows : null;
+}
+
+// Topics — one per line, no structure needed beyond that.
+function topicsToText(topics) {
+  return Array.isArray(topics) ? topics.join('\n') : '';
+}
+
+function textToTopics(text) {
+  const rows = text.split('\n').map((line) => line.trim()).filter(Boolean);
   return rows.length > 0 ? rows : null;
 }
 
@@ -79,6 +89,7 @@ export default function AdminLiveSessions() {
       recording_url: session.recording_url || '',
       recording_passcode: session.recording_passcode || '',
       resourcesText: resourcesToText(session.resources),
+      topicsText: topicsToText(session.topics),
     });
   };
 
@@ -101,6 +112,7 @@ export default function AdminLiveSessions() {
         p_recording_url: form.recording_url.trim() || null,
         p_recording_passcode: form.recording_passcode.trim() || null,
         p_resources: textToResources(form.resourcesText),
+        p_topics: textToTopics(form.topicsText),
       });
       if (err) throw err;
       showToast(form.id ? 'Session updated.' : 'Session created.');
@@ -206,6 +218,13 @@ export default function AdminLiveSessions() {
           className="w-full px-3 py-2 rounded-lg border border-border text-sm text-ink bg-white dark:bg-[#0A090F] focus:outline-none focus:ring-2 focus:ring-brand/40"
         />
         <textarea
+          value={form.topicsText}
+          onChange={(e) => setForm((f) => ({ ...f, topicsText: e.target.value }))}
+          placeholder={'Topics (optional) — one per line'}
+          rows={3}
+          className="w-full px-3 py-2 rounded-lg border border-border text-sm text-ink bg-white dark:bg-[#0A090F] focus:outline-none focus:ring-2 focus:ring-brand/40 resize-none"
+        />
+        <textarea
           value={form.resourcesText}
           onChange={(e) => setForm((f) => ({ ...f, resourcesText: e.target.value }))}
           placeholder={'Resources (optional) — one per line, "Title | https://url"\ne.g. Slide deck | https://docs.google.com/...'}
@@ -243,6 +262,7 @@ export default function AdminLiveSessions() {
                   {s.recording_url && ' · has replay'}
                   {s.recording_passcode && ' · has passcode'}
                   {s.resources?.length > 0 && ` · ${s.resources.length} resource${s.resources.length === 1 ? '' : 's'}`}
+                  {s.topics?.length > 0 && ` · ${s.topics.length} topic${s.topics.length === 1 ? '' : 's'}`}
                 </p>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
