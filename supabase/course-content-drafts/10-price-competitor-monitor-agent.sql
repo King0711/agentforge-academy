@@ -12,11 +12,11 @@ values (
   "Schedule a Python script to run unattended, and know why it can silently stop"
 ]$wyl$::jsonb,
   $sess${
-  "model": "Claude Haiku 4.5 (via your AI Builder credits)",
-  "totalTime": "150 min",
-  "buildCount": 5,
+  "model": "Gemini 3.6 Flash or Claude Haiku 4.5 (your choice - see sdt_ai.py setup)",
+  "totalTime": "165 min",
+  "buildCount": 6,
   "whatYouNeed": [
-    "Your AI Builder key (Credits page on your dashboard)",
+    "A free Gemini API key (aistudio.google.com/apikey) OR your AI Builder key (Credits page on your dashboard)",
     "Python 3.10+ installed",
     "Basic HTML/CSS selector knowledge",
     "1-3 competitor product pages you want to track, plus a few minutes with browser dev tools to find their price elements"
@@ -31,6 +31,29 @@ values (
   "builds": [
     {
       "number": 1,
+      "title": "Connect your AI Builder credits",
+      "time": "15 min",
+      "description": "Set up the one file every build in this project calls to reach the AI, before writing the scraper and diff logic that use it.",
+      "steps": [
+        {
+          "instruction": "Create a project folder. Inside it, create `requirements.txt` with this content, then run `pip install -r requirements.txt`:",
+          "prompt": "requests\nbeautifulsoup4\npython-dotenv\n",
+          "verify": "pip install finishes with no errors, and `pip show requests` prints a real version number."
+        },
+        {
+          "instruction": "Create `sdt_ai.py` with this code — copy it exactly, you'll never edit it. This is the ONLY file that talks to the AI in this whole project:",
+          "prompt": "\"\"\"\nSocial Dev AI Builder - your connection to the AI.\n\nYou have TWO ways to power this file. Pick ONE and set it in your .env:\n\n  AI_PROVIDER=gemini    -> uses YOUR OWN free Google Gemini API key\n  AI_PROVIDER=credits   -> uses your AI Builder credits from this course\n\nEvery project in this course calls ask_ai(...) the exact same way no\nmatter which one you pick - this file is the only place that changes.\n\nSETUP - OPTION 1: your own free Gemini key (recommended, no course\ncredits spent):\n\n  1. Go to https://aistudio.google.com/apikey and click \"Create API key\"\n     (needs a free Google account, no credit card)\n  2. In the same folder as this file, create a file named exactly: .env\n  3. Put these two lines inside it:\n\n         AI_PROVIDER=gemini\n         GEMINI_API_KEY=paste_your_own_key_here\n\nSETUP - OPTION 2: your AI Builder credits from this course:\n\n  1. Open your dashboard on socialdevtechnologies.com\n  2. Go to Credits, and click \"Copy my AI Builder key\"\n  3. In your .env file, put these two lines instead:\n\n         AI_PROVIDER=credits\n         SDT_API_KEY=sdt_live_paste_your_own_key_here\n\nNever share either key or put it on GitHub. Each one spends YOUR\nquota - Gemini's free tier, or your course credits.\n\nThat's it. Every project in this course reuses this same file.\n\"\"\"\n\nimport os\n\nimport requests\nfrom dotenv import load_dotenv\n\n# Reads the .env file sitting next to your project and loads your keys.\nload_dotenv()\n\nGEMINI_MODEL = \"gemini-3.6-flash\"\nGEMINI_URL = (\n    f\"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent\"\n)\n\n# Where AI Builder credit requests go. This is Social Dev's server, not\n# an AI company's - it checks your credits, then talks to Claude for you.\nGATEWAY_URL = \"https://qkrfpuckvymjpewcszgs.supabase.co/functions/v1/ai-gateway\"\n\n# This one is safe to have in the code - it is a public key that only\n# identifies the Social Dev project, not you. Your personal key is the\n# one in .env.\nPUBLIC_PROJECT_KEY = (\n    \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.\"\n    \"eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrcmZwdWNrdnltanBld2NzemdzIiwicm9sZSI6ImFub24i\"\n    \"LCJpYXQiOjE3ODExMDk1MTQsImV4cCI6MjA5NjY4NTUxNH0.\"\n    \"Pv8MYd0zAQyk7tiConCLSUindSpMS83r4lY8dFU_5yE\"\n)\n\n\nclass AIError(Exception):\n    \"\"\"Something went wrong talking to the AI. The message explains what.\"\"\"\n\n\ndef _get_provider():\n    \"\"\"\n    Reads AI_PROVIDER from .env. Falls back to guessing from whichever key\n    is actually present, so forgetting to set AI_PROVIDER explicitly\n    doesn't crash a setup that only has one key configured.\n    \"\"\"\n    provider = os.environ.get(\"AI_PROVIDER\", \"\").strip().lower()\n    if provider in (\"gemini\", \"credits\"):\n        return provider\n\n    if os.environ.get(\"GEMINI_API_KEY\"):\n        return \"gemini\"\n    if os.environ.get(\"SDT_API_KEY\"):\n        return \"credits\"\n\n    raise AIError(\n        \"No AI provider configured.\\n\"\n        \"Add ONE of these pairs to your .env file:\\n\\n\"\n        \"    AI_PROVIDER=gemini\\n\"\n        \"    GEMINI_API_KEY=paste_your_free_key_here\\n\\n\"\n        \"  ...or...\\n\\n\"\n        \"    AI_PROVIDER=credits\\n\"\n        \"    SDT_API_KEY=sdt_live_paste_your_own_key_here\\n\\n\"\n        \"Get a free Gemini key at https://aistudio.google.com/apikey\"\n    )\n\n\ndef _ask_gemini(prompt, system=None, max_tokens=1000):\n    api_key = os.environ.get(\"GEMINI_API_KEY\")\n    if not api_key:\n        raise AIError(\n            \"AI_PROVIDER is set to gemini but no GEMINI_API_KEY was found.\\n\"\n            \"Get a free key at https://aistudio.google.com/apikey and add \"\n            \"it to .env:\\n\"\n            \"    GEMINI_API_KEY=paste_your_own_key_here\"\n        )\n\n    payload = {\n        \"contents\": [{\"role\": \"user\", \"parts\": [{\"text\": prompt}]}],\n        \"generationConfig\": {\"maxOutputTokens\": max_tokens},\n    }\n    if system:\n        payload[\"systemInstruction\"] = {\"parts\": [{\"text\": system}]}\n\n    try:\n        response = requests.post(\n            GEMINI_URL,\n            params={\"key\": api_key},\n            json=payload,\n            timeout=90,\n        )\n    except requests.RequestException:\n        raise AIError(\n            \"Could not reach Gemini. Check your internet connection and try again.\"\n        )\n\n    try:\n        data = response.json()\n    except ValueError:\n        raise AIError(f\"Unexpected reply from Gemini (status {response.status_code}).\")\n\n    if \"error\" in data:\n        raise AIError(data[\"error\"].get(\"message\", str(data[\"error\"])))\n\n    candidates = data.get(\"candidates\") or []\n    if not candidates:\n        raise AIError(\n            \"Gemini returned no candidates - this usually means the prompt \"\n            \"tripped a safety filter. Try rephrasing it.\"\n        )\n\n    candidate = candidates[0]\n    parts = candidate.get(\"content\", {}).get(\"parts\", [])\n    text = \"\".join(part.get(\"text\", \"\") for part in parts)\n\n    if not text and candidate.get(\"finishReason\") == \"MAX_TOKENS\":\n        raise AIError(\n            \"Gemini ran out of room before finishing its answer. Raise \"\n            \"max_tokens and try again.\"\n        )\n\n    usage = data.get(\"usageMetadata\", {})\n    return {\n        \"text\": text,\n        \"credits_charged\": None,\n        \"input_tokens\": usage.get(\"promptTokenCount\"),\n        \"output_tokens\": usage.get(\"candidatesTokenCount\"),\n    }\n\n\ndef _ask_credits(prompt, system=None, max_tokens=1000, project=None):\n    api_key = os.environ.get(\"SDT_API_KEY\")\n    if not api_key:\n        raise AIError(\n            \"AI_PROVIDER is set to credits but no SDT_API_KEY was found.\\n\"\n            \"Copy your key from the Credits page on your dashboard and add \"\n            \"it to .env:\\n\"\n            \"    SDT_API_KEY=sdt_live_paste_your_own_key_here\"\n        )\n\n    payload = {\"prompt\": prompt, \"max_tokens\": max_tokens}\n    if system:\n        payload[\"system\"] = system\n    if project:\n        payload[\"project\"] = project\n\n    try:\n        response = requests.post(\n            GATEWAY_URL,\n            headers={\n                \"Authorization\": f\"Bearer {PUBLIC_PROJECT_KEY}\",\n                \"X-SDT-Key\": api_key,\n                \"Content-Type\": \"application/json\",\n            },\n            json=payload,\n            timeout=90,\n        )\n    except requests.RequestException:\n        raise AIError(\n            \"Could not reach the AI server. Check your internet connection \"\n            \"and try again. You were not charged any credits.\"\n        )\n\n    try:\n        data = response.json()\n    except ValueError:\n        raise AIError(f\"Unexpected reply from the AI server (status {response.status_code}).\")\n\n    # The server explains problems in plain English - show that message as-is\n    # rather than a status code, because it is written to be read by you.\n    if \"error\" in data:\n        raise AIError(data[\"error\"])\n\n    return data\n\n\ndef ask_ai_detailed(prompt, system=None, max_tokens=1000, project=None):\n    \"\"\"\n    Same as ask_ai, but returns the whole reply as a dict. When you're on\n    AI_PROVIDER=credits, result[\"credits_charged\"] tells you the cost; on\n    AI_PROVIDER=gemini it's always None since Gemini's free tier has no\n    per-request credit cost.\n\n        result = ask_ai_detailed(\"Summarise this\", max_tokens=200)\n        print(result[\"text\"])\n    \"\"\"\n    provider = _get_provider()\n    if provider == \"gemini\":\n        return _ask_gemini(prompt, system=system, max_tokens=max_tokens)\n    return _ask_credits(prompt, system=system, max_tokens=max_tokens, project=project)\n\n\ndef ask_ai(prompt, system=None, max_tokens=1000, project=None):\n    \"\"\"\n    Send a question to the AI and get the answer back as text.\n\n        answer = ask_ai(\"Write a haiku about Lagos traffic\")\n        print(answer)\n\n    prompt      - what you want the AI to do. This is the important part.\n    system      - optional. Sets the AI's role, e.g. \"You are a careful editor.\"\n    max_tokens  - roughly how long the answer may be. 1000 is plenty for most.\n    project     - optional label, only used on AI_PROVIDER=credits, so you can\n                  see usage per project later.\n\n    Works identically whichever provider your .env is set to - every\n    project in this course calls this one function and never needs to\n    know which AI is actually answering.\n\n    Returns the AI's answer as a plain string.\n    Raises AIError with a readable message if something is wrong.\n    \"\"\"\n    return ask_ai_detailed(prompt, system=system, max_tokens=max_tokens, project=project)[\"text\"]\n\n\nif __name__ == \"__main__\":\n    # Running this file directly checks that your setup works.\n    print(\"Testing your AI Builder connection...\\n\")\n    try:\n        provider = _get_provider()\n        result = ask_ai_detailed(\"Say hello in exactly five words.\", max_tokens=50)\n        print(f\"Provider: {provider}\")\n        print(\"The AI said:\", result[\"text\"])\n        if result[\"credits_charged\"] is not None:\n            print(\"Credits used:\", result[\"credits_charged\"])\n        print(\"\\nYour setup works. You are ready to build.\")\n    except AIError as problem:\n        print(\"Setup problem:\\n\")\n        print(problem)\n",
+          "verify": "Nothing to check yet — you'll test this file once your .env is filled in, in the next step."
+        },
+        {
+          "instruction": "Create `.env` in the same folder with this content. Pick ONE AI option (Gemini or AI Builder credits) below.",
+          "prompt": "# OPTION 1: your own free Gemini key (recommended - no course credits spent)\n# Get one free at https://aistudio.google.com/apikey - no credit card needed\nAI_PROVIDER=gemini\nGEMINI_API_KEY=paste_your_own_key_here\n\n# OPTION 2: this course's AI Builder credits (comment OPTION 1 out above,\n# uncomment these two lines instead)\n# Get yours from your dashboard: Credits -> Copy my AI Builder key\n# AI_PROVIDER=credits\n# SDT_API_KEY=sdt_live_paste_your_own_key_here\n",
+          "verify": "Run `python sdt_ai.py` - it should print which provider you're using, then `The AI said: ...`, and end with `Your setup works. You are ready to build.` If you see `No AI provider configured` instead, check that .env sits next to sdt_ai.py and that AI_PROVIDER plus its matching key are both uncommented."
+        }
+      ]
+    },
+    {
+      "number": 2,
       "title": "Scrape one product page",
       "time": "35 min",
       "description": "Before you can detect a change, you need code that reliably reads a product's name and price off a page -- and a way to test that logic without depending on a live website's HTML staying still for months.",
@@ -44,7 +67,7 @@ values (
       "goFurther": "Break it on purpose: point `scrape_product()` at a URL that returns a 404, and separately at a real page whose selectors don't match anything you expect. Both raise a clear ValueError -- that's the try/except and the None-check doing their job. Now think about a THIRD case those checks can't catch: a page that loads its price with JavaScript returns a normal 200 with real HTML, it just never contains the number your browser shows you, because requests never runs JavaScript. Nothing in this file can detect that -- it's why picking the right kind of target page matters more than the code."
     },
     {
-      "number": 2,
+      "number": 3,
       "title": "Detect what changed",
       "time": "25 min",
       "description": "A scrape by itself tells you nothing -- it's only useful compared against yesterday's. This file stores a snapshot and produces a list of exactly what's different, as a pure function you can test with two dictionaries you write yourself.",
@@ -58,7 +81,7 @@ values (
       "goFurther": "Track price history over time instead of just the latest value: append each new price to a list in the snapshot rather than overwriting it. You'd then have enough data to chart a price trend, not just spot the most recent jump."
     },
     {
-      "number": 3,
+      "number": 4,
       "title": "Turn changes into an alert",
       "time": "30 min",
       "description": "A list of {\"type\": \"price_changed\", ...} dictionaries means nothing to a business owner skimming their inbox. This file asks the AI to turn that structured diff into two or three plain-English sentences.",
@@ -72,7 +95,7 @@ values (
       "goFurther": "Temporarily set MAX_TOKENS to 60 and run main.py against a real change. Watch the alert get cut off mid-sentence. That's the cost/quality tradeoff MAX_TOKENS makes concrete -- put it back to 400 once you've seen it."
     },
     {
-      "number": 4,
+      "number": 5,
       "title": "Wire it together and put it on a schedule",
       "time": "25 min",
       "description": "Now connect scrape -> compare -> summarize into one script you can run by hand or hand off to a scheduler.",
@@ -86,8 +109,8 @@ values (
       "goFurther": "Add a second entry to TARGETS with a deliberately wrong selector, then run main.py. Confirm the good target still gets checked and reported -- one broken target should never take down the whole run, which is why the scraping loop catches ValueError per-target instead of letting one failure stop the script."
     },
     {
-      "number": 5,
-      "phaseLabel": "\ud83c\udfaf Challenge",
+      "number": 6,
+      "phaseLabel": "🎯 Challenge",
       "title": "Challenge: score how big a price change is",
       "time": "35 min",
       "description": "Anyone can print \"price changed\". The real test of whether you understand this tool is whether you can turn that into a number a business owner can act on without reading the details -- deciding a 2% bump isn't worth an urgent alert but a 30% jump is.",

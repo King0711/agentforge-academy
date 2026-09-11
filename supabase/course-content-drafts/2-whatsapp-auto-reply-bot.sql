@@ -12,11 +12,11 @@ values (
   "Deploy an always-on Flask service to Railway"
 ]$wyl$::jsonb,
   $sess${
-  "model": "Claude Haiku 4.5 (via your AI Builder credits)",
-  "totalTime": "155 min",
-  "buildCount": 6,
+  "model": "Gemini 3.6 Flash or Claude Haiku 4.5 (your choice - see sdt_ai.py setup)",
+  "totalTime": "170 min",
+  "buildCount": 7,
   "whatYouNeed": [
-    "Your AI Builder key (Credits page on your dashboard)",
+    "A free Gemini API key (aistudio.google.com/apikey) OR your AI Builder key (Credits page on your dashboard)",
     "Python 3.10+ installed",
     "A free Twilio account (twilio.com)",
     "Your phone, to test WhatsApp messages",
@@ -33,6 +33,29 @@ values (
   "builds": [
     {
       "number": 1,
+      "title": "Connect your AI Builder credits",
+      "time": "15 min",
+      "description": "Before wiring up Twilio, set up the one file every build in this project calls to reach the AI - so the builds ahead have something real to import.",
+      "steps": [
+        {
+          "instruction": "Create a project folder. Inside it, create `requirements.txt` with this content, then run `pip install -r requirements.txt`:",
+          "prompt": "flask\nrequests\npython-dotenv\n",
+          "verify": "pip install finishes with no errors, and `pip show flask` prints a real version number."
+        },
+        {
+          "instruction": "Create `sdt_ai.py` with this code — copy it exactly, you'll never edit it. This is the ONLY file that talks to the AI in this whole project:",
+          "prompt": "\"\"\"\nSocial Dev AI Builder - your connection to the AI.\n\nYou have TWO ways to power this file. Pick ONE and set it in your .env:\n\n  AI_PROVIDER=gemini    -> uses YOUR OWN free Google Gemini API key\n  AI_PROVIDER=credits   -> uses your AI Builder credits from this course\n\nEvery project in this course calls ask_ai(...) the exact same way no\nmatter which one you pick - this file is the only place that changes.\n\nSETUP - OPTION 1: your own free Gemini key (recommended, no course\ncredits spent):\n\n  1. Go to https://aistudio.google.com/apikey and click \"Create API key\"\n     (needs a free Google account, no credit card)\n  2. In the same folder as this file, create a file named exactly: .env\n  3. Put these two lines inside it:\n\n         AI_PROVIDER=gemini\n         GEMINI_API_KEY=paste_your_own_key_here\n\nSETUP - OPTION 2: your AI Builder credits from this course:\n\n  1. Open your dashboard on socialdevtechnologies.com\n  2. Go to Credits, and click \"Copy my AI Builder key\"\n  3. In your .env file, put these two lines instead:\n\n         AI_PROVIDER=credits\n         SDT_API_KEY=sdt_live_paste_your_own_key_here\n\nNever share either key or put it on GitHub. Each one spends YOUR\nquota - Gemini's free tier, or your course credits.\n\nThat's it. Every project in this course reuses this same file.\n\"\"\"\n\nimport os\n\nimport requests\nfrom dotenv import load_dotenv\n\n# Reads the .env file sitting next to your project and loads your keys.\nload_dotenv()\n\nGEMINI_MODEL = \"gemini-3.6-flash\"\nGEMINI_URL = (\n    f\"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent\"\n)\n\n# Where AI Builder credit requests go. This is Social Dev's server, not\n# an AI company's - it checks your credits, then talks to Claude for you.\nGATEWAY_URL = \"https://qkrfpuckvymjpewcszgs.supabase.co/functions/v1/ai-gateway\"\n\n# This one is safe to have in the code - it is a public key that only\n# identifies the Social Dev project, not you. Your personal key is the\n# one in .env.\nPUBLIC_PROJECT_KEY = (\n    \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.\"\n    \"eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrcmZwdWNrdnltanBld2NzemdzIiwicm9sZSI6ImFub24i\"\n    \"LCJpYXQiOjE3ODExMDk1MTQsImV4cCI6MjA5NjY4NTUxNH0.\"\n    \"Pv8MYd0zAQyk7tiConCLSUindSpMS83r4lY8dFU_5yE\"\n)\n\n\nclass AIError(Exception):\n    \"\"\"Something went wrong talking to the AI. The message explains what.\"\"\"\n\n\ndef _get_provider():\n    \"\"\"\n    Reads AI_PROVIDER from .env. Falls back to guessing from whichever key\n    is actually present, so forgetting to set AI_PROVIDER explicitly\n    doesn't crash a setup that only has one key configured.\n    \"\"\"\n    provider = os.environ.get(\"AI_PROVIDER\", \"\").strip().lower()\n    if provider in (\"gemini\", \"credits\"):\n        return provider\n\n    if os.environ.get(\"GEMINI_API_KEY\"):\n        return \"gemini\"\n    if os.environ.get(\"SDT_API_KEY\"):\n        return \"credits\"\n\n    raise AIError(\n        \"No AI provider configured.\\n\"\n        \"Add ONE of these pairs to your .env file:\\n\\n\"\n        \"    AI_PROVIDER=gemini\\n\"\n        \"    GEMINI_API_KEY=paste_your_free_key_here\\n\\n\"\n        \"  ...or...\\n\\n\"\n        \"    AI_PROVIDER=credits\\n\"\n        \"    SDT_API_KEY=sdt_live_paste_your_own_key_here\\n\\n\"\n        \"Get a free Gemini key at https://aistudio.google.com/apikey\"\n    )\n\n\ndef _ask_gemini(prompt, system=None, max_tokens=1000):\n    api_key = os.environ.get(\"GEMINI_API_KEY\")\n    if not api_key:\n        raise AIError(\n            \"AI_PROVIDER is set to gemini but no GEMINI_API_KEY was found.\\n\"\n            \"Get a free key at https://aistudio.google.com/apikey and add \"\n            \"it to .env:\\n\"\n            \"    GEMINI_API_KEY=paste_your_own_key_here\"\n        )\n\n    payload = {\n        \"contents\": [{\"role\": \"user\", \"parts\": [{\"text\": prompt}]}],\n        \"generationConfig\": {\"maxOutputTokens\": max_tokens},\n    }\n    if system:\n        payload[\"systemInstruction\"] = {\"parts\": [{\"text\": system}]}\n\n    try:\n        response = requests.post(\n            GEMINI_URL,\n            params={\"key\": api_key},\n            json=payload,\n            timeout=90,\n        )\n    except requests.RequestException:\n        raise AIError(\n            \"Could not reach Gemini. Check your internet connection and try again.\"\n        )\n\n    try:\n        data = response.json()\n    except ValueError:\n        raise AIError(f\"Unexpected reply from Gemini (status {response.status_code}).\")\n\n    if \"error\" in data:\n        raise AIError(data[\"error\"].get(\"message\", str(data[\"error\"])))\n\n    candidates = data.get(\"candidates\") or []\n    if not candidates:\n        raise AIError(\n            \"Gemini returned no candidates - this usually means the prompt \"\n            \"tripped a safety filter. Try rephrasing it.\"\n        )\n\n    candidate = candidates[0]\n    parts = candidate.get(\"content\", {}).get(\"parts\", [])\n    text = \"\".join(part.get(\"text\", \"\") for part in parts)\n\n    if not text and candidate.get(\"finishReason\") == \"MAX_TOKENS\":\n        raise AIError(\n            \"Gemini ran out of room before finishing its answer. Raise \"\n            \"max_tokens and try again.\"\n        )\n\n    usage = data.get(\"usageMetadata\", {})\n    return {\n        \"text\": text,\n        \"credits_charged\": None,\n        \"input_tokens\": usage.get(\"promptTokenCount\"),\n        \"output_tokens\": usage.get(\"candidatesTokenCount\"),\n    }\n\n\ndef _ask_credits(prompt, system=None, max_tokens=1000, project=None):\n    api_key = os.environ.get(\"SDT_API_KEY\")\n    if not api_key:\n        raise AIError(\n            \"AI_PROVIDER is set to credits but no SDT_API_KEY was found.\\n\"\n            \"Copy your key from the Credits page on your dashboard and add \"\n            \"it to .env:\\n\"\n            \"    SDT_API_KEY=sdt_live_paste_your_own_key_here\"\n        )\n\n    payload = {\"prompt\": prompt, \"max_tokens\": max_tokens}\n    if system:\n        payload[\"system\"] = system\n    if project:\n        payload[\"project\"] = project\n\n    try:\n        response = requests.post(\n            GATEWAY_URL,\n            headers={\n                \"Authorization\": f\"Bearer {PUBLIC_PROJECT_KEY}\",\n                \"X-SDT-Key\": api_key,\n                \"Content-Type\": \"application/json\",\n            },\n            json=payload,\n            timeout=90,\n        )\n    except requests.RequestException:\n        raise AIError(\n            \"Could not reach the AI server. Check your internet connection \"\n            \"and try again. You were not charged any credits.\"\n        )\n\n    try:\n        data = response.json()\n    except ValueError:\n        raise AIError(f\"Unexpected reply from the AI server (status {response.status_code}).\")\n\n    # The server explains problems in plain English - show that message as-is\n    # rather than a status code, because it is written to be read by you.\n    if \"error\" in data:\n        raise AIError(data[\"error\"])\n\n    return data\n\n\ndef ask_ai_detailed(prompt, system=None, max_tokens=1000, project=None):\n    \"\"\"\n    Same as ask_ai, but returns the whole reply as a dict. When you're on\n    AI_PROVIDER=credits, result[\"credits_charged\"] tells you the cost; on\n    AI_PROVIDER=gemini it's always None since Gemini's free tier has no\n    per-request credit cost.\n\n        result = ask_ai_detailed(\"Summarise this\", max_tokens=200)\n        print(result[\"text\"])\n    \"\"\"\n    provider = _get_provider()\n    if provider == \"gemini\":\n        return _ask_gemini(prompt, system=system, max_tokens=max_tokens)\n    return _ask_credits(prompt, system=system, max_tokens=max_tokens, project=project)\n\n\ndef ask_ai(prompt, system=None, max_tokens=1000, project=None):\n    \"\"\"\n    Send a question to the AI and get the answer back as text.\n\n        answer = ask_ai(\"Write a haiku about Lagos traffic\")\n        print(answer)\n\n    prompt      - what you want the AI to do. This is the important part.\n    system      - optional. Sets the AI's role, e.g. \"You are a careful editor.\"\n    max_tokens  - roughly how long the answer may be. 1000 is plenty for most.\n    project     - optional label, only used on AI_PROVIDER=credits, so you can\n                  see usage per project later.\n\n    Works identically whichever provider your .env is set to - every\n    project in this course calls this one function and never needs to\n    know which AI is actually answering.\n\n    Returns the AI's answer as a plain string.\n    Raises AIError with a readable message if something is wrong.\n    \"\"\"\n    return ask_ai_detailed(prompt, system=system, max_tokens=max_tokens, project=project)[\"text\"]\n\n\nif __name__ == \"__main__\":\n    # Running this file directly checks that your setup works.\n    print(\"Testing your AI Builder connection...\\n\")\n    try:\n        provider = _get_provider()\n        result = ask_ai_detailed(\"Say hello in exactly five words.\", max_tokens=50)\n        print(f\"Provider: {provider}\")\n        print(\"The AI said:\", result[\"text\"])\n        if result[\"credits_charged\"] is not None:\n            print(\"Credits used:\", result[\"credits_charged\"])\n        print(\"\\nYour setup works. You are ready to build.\")\n    except AIError as problem:\n        print(\"Setup problem:\\n\")\n        print(problem)\n",
+          "verify": "Nothing to check yet — you'll test this file once your .env is filled in, in the next step."
+        },
+        {
+          "instruction": "Create `.env` in the same folder with this content. Pick ONE AI option (Gemini or AI Builder credits) below.",
+          "prompt": "# OPTION 1: your own free Gemini key (recommended - no course credits spent)\n# Get one free at https://aistudio.google.com/apikey - no credit card needed\nAI_PROVIDER=gemini\nGEMINI_API_KEY=paste_your_own_key_here\n\n# OPTION 2: this course's AI Builder credits (comment OPTION 1 out above,\n# uncomment these two lines instead)\n# Get yours from your dashboard: Credits -> Copy my AI Builder key\n# AI_PROVIDER=credits\n# SDT_API_KEY=sdt_live_paste_your_own_key_here\n",
+          "verify": "Run `python sdt_ai.py` - it should print which provider you're using, then `The AI said: ...`, and end with `Your setup works. You are ready to build.` If you see `No AI provider configured` instead, check that .env sits next to sdt_ai.py and that AI_PROVIDER plus its matching key are both uncommented."
+        }
+      ]
+    },
+    {
+      "number": 2,
       "title": "Connect your number to WhatsApp",
       "time": "20 min",
       "description": "Twilio's WhatsApp sandbox is free and takes minutes to set up — but it only reaches your computer once you tunnel your local server to the internet, which is what ngrok is for.",
@@ -42,14 +65,14 @@ values (
           "verify": "Twilio's console shows your sandbox number and confirms “You are all set! Your sandbox can now send/receive messages.”"
         },
         {
-          "instruction": "Install ngrok (ngrok.com/download), then run `ngrok http 3000` in a terminal. Keep this running — Build 4 points Twilio at whatever URL it gives you.",
+          "instruction": "Install ngrok (ngrok.com/download), then run `ngrok http 3000` in a terminal. Keep this running — Build 5 points Twilio at whatever URL it gives you.",
           "verify": "You see an ngrok session screen with a “Forwarding” line showing a URL like https://abcd1234.ngrok-free.app -> http://localhost:3000."
         }
       ],
       "goFurther": "Once you're happy with the bot, look into a static ngrok domain (or a real Twilio WhatsApp number) so you don't have to update the webhook URL every time you restart ngrok."
     },
     {
-      "number": 2,
+      "number": 3,
       "title": "Give your bot a persona",
       "time": "20 min",
       "description": "Before writing any prompt logic, decide who is replying. This is the file you'll keep coming back to — it's the entire difference between a generic chatbot and one that sounds like you.",
@@ -67,7 +90,7 @@ values (
       "goFurther": "Add a second persona dict (e.g. AFTER_HOURS_PERSONA) with stricter rules for messages that arrive outside business hours, and have reply.py pick which one to use based on the time of day."
     },
     {
-      "number": 3,
+      "number": 4,
       "title": "Write the reply brain",
       "time": "35 min",
       "description": "This is the file that actually thinks: it takes persona.py's rules plus the incoming message and turns them into one prompt, sends it through your AI Builder credits, and hands back plain text — no markers to parse, because a WhatsApp reply is a single message, not five platform-specific posts like the Social Post Generator.",
@@ -85,7 +108,7 @@ values (
       "goFurther": "Try lowering MAX_REPLY_TOKENS to 20 and asking a longer question — watch the reply get cut off mid-sentence. This is the tradeoff every project in this course makes: a lower max_tokens is cheaper per reply, but too low starts truncating real answers."
     },
     {
-      "number": 4,
+      "number": 5,
       "title": "Build the webhook and go live",
       "time": "40 min",
       "description": "app.py is what actually talks to Twilio: it receives the raw form-encoded payload Twilio sends on every message, calls reply.py to think of an answer, and wraps it in the exact XML format (TwiML) Twilio expects back. test_app.py proves all of that works before you spend a single credit or send a single real WhatsApp message.",
@@ -101,24 +124,24 @@ values (
           "verify": "Run `python test_app.py` — you should see: Status code: 200 / Content-Type: text/xml / ...then PASS: valid TwiML containing the expected reply. followed by a second PASS for the empty-message check."
         },
         {
-          "instruction": "Now start the real thing: run `python app.py`, then in the Twilio Console set your Sandbox's “When a message comes in” webhook to your ngrok URL from Build 1 plus /whatsapp (e.g. https://abcd1234.ngrok-free.app/whatsapp). Send a real WhatsApp message to your sandbox number.",
+          "instruction": "Now start the real thing: run `python app.py`, then in the Twilio Console set your Sandbox's “When a message comes in” webhook to your ngrok URL from Build 2 plus /whatsapp (e.g. https://abcd1234.ngrok-free.app/whatsapp). Send a real WhatsApp message to your sandbox number.",
           "verify": "You get an automatic reply on WhatsApp within a few seconds, written in your persona's voice — and it now shows up as a real request in your ngrok terminal window, not just in test_app.py."
         }
       ],
       "goFurther": "Break it on purpose: temporarily edit generate_reply in reply.py to `return \"\"` right before it calls the AI (simulating the AI coming back with nothing), restart app.py, and message your sandbox number again. Look at what WhatsApp shows you — probably nothing, or a blank bubble. Now look at _twiml_response in app.py: it wraps message_text in <Message> with no check for empty. Nothing in this project currently defends against a blank AI reply reaching a real customer — that's a gap worth closing before you'd trust this with a client, e.g. by adding `if not reply_text: reply_text = \"Sorry, could you rephrase that?\"` inside generate_reply."
     },
     {
-      "number": 5,
+      "number": 6,
       "title": "Deploy so it runs 24/7",
       "time": "20 min",
       "description": "Your laptop closing shouldn't mean your bot stops replying. Railway keeps app.py running permanently, on a public URL Twilio can always reach.",
       "steps": [
         {
-          "instruction": "Push this project to a new GitHub repo (`git init`, `git add .`, `git commit -m \"whatsapp bot\"`, create a repo on GitHub, then `git remote add origin <url>` and `git push -u origin main`). Do not commit your `.env` file — only `.env.example` should ever be pushed.",
-          "verify": "Your GitHub repo shows app.py, reply.py, persona.py, sdt_ai.py, requirements.txt, and .env.example — but NOT .env."
+          "instruction": "Create a `.gitignore` file in the same folder with one line: `.env` — this tells git to never track it, so your API key can't end up on GitHub by accident. Then push this project to a new GitHub repo (`git init`, `git add .`, `git commit -m \"whatsapp bot\"`, create a repo on GitHub, then `git remote add origin <url>` and `git push -u origin main`).",
+          "verify": "Your GitHub repo shows app.py, reply.py, persona.py, sdt_ai.py, requirements.txt, and .gitignore — but NOT .env. If .env shows up anyway, run `git rm --cached .env`, commit, and push again."
         },
         {
-          "instruction": "In Railway (railway.app), create a New Project > Deploy from GitHub repo, and select this repo. In the project's Variables tab, add SDT_API_KEY with your real key — Railway's environment, not your local .env, is what the deployed bot reads.",
+          "instruction": "In Railway (railway.app), create a New Project > Deploy from GitHub repo, and select this repo. In the project's Variables tab, add AI_PROVIDER and your matching key (GEMINI_API_KEY or SDT_API_KEY) as real environment variables — Railway's environment, not your local .env, is what the deployed bot reads.",
           "verify": "Railway's build log finishes with your app listening, and the project's generated public URL responds (even a 404 on / is fine — it means the server is up; /whatsapp is a POST-only route)."
         },
         {
@@ -129,7 +152,7 @@ values (
       "goFurther": "🛠️ Add a lightweight persistence layer (even a single JSON file, or a Supabase table if you're comfortable) so CONVERSATION_HISTORY survives a Railway redeploy instead of resetting to empty every time."
     },
     {
-      "number": 6,
+      "number": 7,
       "phaseLabel": "🎯 Challenge",
       "title": "Challenge: teach your bot to hand off",
       "time": "20 min",
@@ -166,11 +189,11 @@ values (
   },
   {
     "issue": "A WhatsApp message arrives completely blank",
-    "fix": "This happens when the AI returns an empty string and app.py's _twiml_response wraps it in <Message> with no check (see the Build 4 ‘break it on purpose’ exercise). Add a fallback inside generate_reply, e.g. `if not reply_text: reply_text = \"Sorry, could you rephrase that?\"`, so an empty AI reply never reaches a real customer."
+    "fix": "This happens when the AI returns an empty string and app.py's _twiml_response wraps it in <Message> with no check (see the Build 5 ‘break it on purpose’ exercise). Add a fallback inside generate_reply, e.g. `if not reply_text: reply_text = \"Sorry, could you rephrase that?\"`, so an empty AI reply never reaches a real customer."
   },
   {
     "issue": "App works locally but crashes immediately after deploying to Railway",
-    "fix": "Environment variables in .env are NOT deployed — .env is meant to stay on your own machine and out of git. Add SDT_API_KEY as an actual environment variable inside the Railway dashboard's Variables tab."
+    "fix": "Environment variables in .env are NOT deployed — .env is meant to stay on your own machine and out of git. Add AI_PROVIDER and your key (GEMINI_API_KEY or SDT_API_KEY) as actual environment variables inside the Railway dashboard's Variables tab."
   }
 ]$tsh$::jsonb,
   $res$[

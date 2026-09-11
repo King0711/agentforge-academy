@@ -12,11 +12,11 @@ values (
   "Recognize and defend against LLM hallucination through prompt design, not code"
 ]$wyl$::jsonb,
   $sess${
-  "model": "Claude Haiku 4.5 (via your AI Builder credits)",
-  "totalTime": "120 min",
-  "buildCount": 4,
+  "model": "Gemini 3.6 Flash or Claude Haiku 4.5 (your choice - see sdt_ai.py setup)",
+  "totalTime": "135 min",
+  "buildCount": 5,
   "whatYouNeed": [
-    "Your AI Builder key (Credits page on your dashboard)",
+    "A free Gemini API key (aistudio.google.com/apikey) OR your AI Builder key (Credits page on your dashboard)",
     "Python 3.10+ installed",
     "A free Streamlit Cloud account (share.streamlit.io) - only needed for the deploy step"
   ],
@@ -31,6 +31,29 @@ values (
   "builds": [
     {
       "number": 1,
+      "title": "Connect your AI Builder credits",
+      "time": "15 min",
+      "description": "Set up the one file every build in this project calls to reach the AI, before writing the chatbot that actually uses it.",
+      "steps": [
+        {
+          "instruction": "Create a project folder. Inside it, create `requirements.txt` with this content, then run `pip install -r requirements.txt`:",
+          "prompt": "streamlit\nrequests\npython-dotenv\n",
+          "verify": "pip install finishes with no errors, and `pip show streamlit` prints a real version number."
+        },
+        {
+          "instruction": "Create `sdt_ai.py` with this code — copy it exactly, you'll never edit it. This is the ONLY file that talks to the AI in this whole project:",
+          "prompt": "\"\"\"\nSocial Dev AI Builder - your connection to the AI.\n\nYou have TWO ways to power this file. Pick ONE and set it in your .env:\n\n  AI_PROVIDER=gemini    -> uses YOUR OWN free Google Gemini API key\n  AI_PROVIDER=credits   -> uses your AI Builder credits from this course\n\nEvery project in this course calls ask_ai(...) the exact same way no\nmatter which one you pick - this file is the only place that changes.\n\nSETUP - OPTION 1: your own free Gemini key (recommended, no course\ncredits spent):\n\n  1. Go to https://aistudio.google.com/apikey and click \"Create API key\"\n     (needs a free Google account, no credit card)\n  2. In the same folder as this file, create a file named exactly: .env\n  3. Put these two lines inside it:\n\n         AI_PROVIDER=gemini\n         GEMINI_API_KEY=paste_your_own_key_here\n\nSETUP - OPTION 2: your AI Builder credits from this course:\n\n  1. Open your dashboard on socialdevtechnologies.com\n  2. Go to Credits, and click \"Copy my AI Builder key\"\n  3. In your .env file, put these two lines instead:\n\n         AI_PROVIDER=credits\n         SDT_API_KEY=sdt_live_paste_your_own_key_here\n\nNever share either key or put it on GitHub. Each one spends YOUR\nquota - Gemini's free tier, or your course credits.\n\nThat's it. Every project in this course reuses this same file.\n\"\"\"\n\nimport os\n\nimport requests\nfrom dotenv import load_dotenv\n\n# Reads the .env file sitting next to your project and loads your keys.\nload_dotenv()\n\nGEMINI_MODEL = \"gemini-3.6-flash\"\nGEMINI_URL = (\n    f\"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent\"\n)\n\n# Where AI Builder credit requests go. This is Social Dev's server, not\n# an AI company's - it checks your credits, then talks to Claude for you.\nGATEWAY_URL = \"https://qkrfpuckvymjpewcszgs.supabase.co/functions/v1/ai-gateway\"\n\n# This one is safe to have in the code - it is a public key that only\n# identifies the Social Dev project, not you. Your personal key is the\n# one in .env.\nPUBLIC_PROJECT_KEY = (\n    \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.\"\n    \"eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrcmZwdWNrdnltanBld2NzemdzIiwicm9sZSI6ImFub24i\"\n    \"LCJpYXQiOjE3ODExMDk1MTQsImV4cCI6MjA5NjY4NTUxNH0.\"\n    \"Pv8MYd0zAQyk7tiConCLSUindSpMS83r4lY8dFU_5yE\"\n)\n\n\nclass AIError(Exception):\n    \"\"\"Something went wrong talking to the AI. The message explains what.\"\"\"\n\n\ndef _get_provider():\n    \"\"\"\n    Reads AI_PROVIDER from .env. Falls back to guessing from whichever key\n    is actually present, so forgetting to set AI_PROVIDER explicitly\n    doesn't crash a setup that only has one key configured.\n    \"\"\"\n    provider = os.environ.get(\"AI_PROVIDER\", \"\").strip().lower()\n    if provider in (\"gemini\", \"credits\"):\n        return provider\n\n    if os.environ.get(\"GEMINI_API_KEY\"):\n        return \"gemini\"\n    if os.environ.get(\"SDT_API_KEY\"):\n        return \"credits\"\n\n    raise AIError(\n        \"No AI provider configured.\\n\"\n        \"Add ONE of these pairs to your .env file:\\n\\n\"\n        \"    AI_PROVIDER=gemini\\n\"\n        \"    GEMINI_API_KEY=paste_your_free_key_here\\n\\n\"\n        \"  ...or...\\n\\n\"\n        \"    AI_PROVIDER=credits\\n\"\n        \"    SDT_API_KEY=sdt_live_paste_your_own_key_here\\n\\n\"\n        \"Get a free Gemini key at https://aistudio.google.com/apikey\"\n    )\n\n\ndef _ask_gemini(prompt, system=None, max_tokens=1000):\n    api_key = os.environ.get(\"GEMINI_API_KEY\")\n    if not api_key:\n        raise AIError(\n            \"AI_PROVIDER is set to gemini but no GEMINI_API_KEY was found.\\n\"\n            \"Get a free key at https://aistudio.google.com/apikey and add \"\n            \"it to .env:\\n\"\n            \"    GEMINI_API_KEY=paste_your_own_key_here\"\n        )\n\n    payload = {\n        \"contents\": [{\"role\": \"user\", \"parts\": [{\"text\": prompt}]}],\n        \"generationConfig\": {\"maxOutputTokens\": max_tokens},\n    }\n    if system:\n        payload[\"systemInstruction\"] = {\"parts\": [{\"text\": system}]}\n\n    try:\n        response = requests.post(\n            GEMINI_URL,\n            params={\"key\": api_key},\n            json=payload,\n            timeout=90,\n        )\n    except requests.RequestException:\n        raise AIError(\n            \"Could not reach Gemini. Check your internet connection and try again.\"\n        )\n\n    try:\n        data = response.json()\n    except ValueError:\n        raise AIError(f\"Unexpected reply from Gemini (status {response.status_code}).\")\n\n    if \"error\" in data:\n        raise AIError(data[\"error\"].get(\"message\", str(data[\"error\"])))\n\n    candidates = data.get(\"candidates\") or []\n    if not candidates:\n        raise AIError(\n            \"Gemini returned no candidates - this usually means the prompt \"\n            \"tripped a safety filter. Try rephrasing it.\"\n        )\n\n    candidate = candidates[0]\n    parts = candidate.get(\"content\", {}).get(\"parts\", [])\n    text = \"\".join(part.get(\"text\", \"\") for part in parts)\n\n    if not text and candidate.get(\"finishReason\") == \"MAX_TOKENS\":\n        raise AIError(\n            \"Gemini ran out of room before finishing its answer. Raise \"\n            \"max_tokens and try again.\"\n        )\n\n    usage = data.get(\"usageMetadata\", {})\n    return {\n        \"text\": text,\n        \"credits_charged\": None,\n        \"input_tokens\": usage.get(\"promptTokenCount\"),\n        \"output_tokens\": usage.get(\"candidatesTokenCount\"),\n    }\n\n\ndef _ask_credits(prompt, system=None, max_tokens=1000, project=None):\n    api_key = os.environ.get(\"SDT_API_KEY\")\n    if not api_key:\n        raise AIError(\n            \"AI_PROVIDER is set to credits but no SDT_API_KEY was found.\\n\"\n            \"Copy your key from the Credits page on your dashboard and add \"\n            \"it to .env:\\n\"\n            \"    SDT_API_KEY=sdt_live_paste_your_own_key_here\"\n        )\n\n    payload = {\"prompt\": prompt, \"max_tokens\": max_tokens}\n    if system:\n        payload[\"system\"] = system\n    if project:\n        payload[\"project\"] = project\n\n    try:\n        response = requests.post(\n            GATEWAY_URL,\n            headers={\n                \"Authorization\": f\"Bearer {PUBLIC_PROJECT_KEY}\",\n                \"X-SDT-Key\": api_key,\n                \"Content-Type\": \"application/json\",\n            },\n            json=payload,\n            timeout=90,\n        )\n    except requests.RequestException:\n        raise AIError(\n            \"Could not reach the AI server. Check your internet connection \"\n            \"and try again. You were not charged any credits.\"\n        )\n\n    try:\n        data = response.json()\n    except ValueError:\n        raise AIError(f\"Unexpected reply from the AI server (status {response.status_code}).\")\n\n    # The server explains problems in plain English - show that message as-is\n    # rather than a status code, because it is written to be read by you.\n    if \"error\" in data:\n        raise AIError(data[\"error\"])\n\n    return data\n\n\ndef ask_ai_detailed(prompt, system=None, max_tokens=1000, project=None):\n    \"\"\"\n    Same as ask_ai, but returns the whole reply as a dict. When you're on\n    AI_PROVIDER=credits, result[\"credits_charged\"] tells you the cost; on\n    AI_PROVIDER=gemini it's always None since Gemini's free tier has no\n    per-request credit cost.\n\n        result = ask_ai_detailed(\"Summarise this\", max_tokens=200)\n        print(result[\"text\"])\n    \"\"\"\n    provider = _get_provider()\n    if provider == \"gemini\":\n        return _ask_gemini(prompt, system=system, max_tokens=max_tokens)\n    return _ask_credits(prompt, system=system, max_tokens=max_tokens, project=project)\n\n\ndef ask_ai(prompt, system=None, max_tokens=1000, project=None):\n    \"\"\"\n    Send a question to the AI and get the answer back as text.\n\n        answer = ask_ai(\"Write a haiku about Lagos traffic\")\n        print(answer)\n\n    prompt      - what you want the AI to do. This is the important part.\n    system      - optional. Sets the AI's role, e.g. \"You are a careful editor.\"\n    max_tokens  - roughly how long the answer may be. 1000 is plenty for most.\n    project     - optional label, only used on AI_PROVIDER=credits, so you can\n                  see usage per project later.\n\n    Works identically whichever provider your .env is set to - every\n    project in this course calls this one function and never needs to\n    know which AI is actually answering.\n\n    Returns the AI's answer as a plain string.\n    Raises AIError with a readable message if something is wrong.\n    \"\"\"\n    return ask_ai_detailed(prompt, system=system, max_tokens=max_tokens, project=project)[\"text\"]\n\n\nif __name__ == \"__main__\":\n    # Running this file directly checks that your setup works.\n    print(\"Testing your AI Builder connection...\\n\")\n    try:\n        provider = _get_provider()\n        result = ask_ai_detailed(\"Say hello in exactly five words.\", max_tokens=50)\n        print(f\"Provider: {provider}\")\n        print(\"The AI said:\", result[\"text\"])\n        if result[\"credits_charged\"] is not None:\n            print(\"Credits used:\", result[\"credits_charged\"])\n        print(\"\\nYour setup works. You are ready to build.\")\n    except AIError as problem:\n        print(\"Setup problem:\\n\")\n        print(problem)\n",
+          "verify": "Nothing to check yet — you'll test this file once your .env is filled in, in the next step."
+        },
+        {
+          "instruction": "Create `.env` in the same folder with this content. Pick ONE AI option (Gemini or AI Builder credits) below.",
+          "prompt": "# OPTION 1: your own free Gemini key (recommended - no course credits spent)\n# Get one free at https://aistudio.google.com/apikey - no credit card needed\nAI_PROVIDER=gemini\nGEMINI_API_KEY=paste_your_own_key_here\n\n# OPTION 2: this course's AI Builder credits (comment OPTION 1 out above,\n# uncomment these two lines instead)\n# Get yours from your dashboard: Credits -> Copy my AI Builder key\n# AI_PROVIDER=credits\n# SDT_API_KEY=sdt_live_paste_your_own_key_here\n",
+          "verify": "Run `python sdt_ai.py` - it should print which provider you're using, then `The AI said: ...`, and end with `Your setup works. You are ready to build.` If you see `No AI provider configured` instead, check that .env sits next to sdt_ai.py and that AI_PROVIDER plus its matching key are both uncommented."
+        }
+      ]
+    },
+    {
+      "number": 2,
       "title": "Give the bot something to know",
       "time": "20 min",
       "description": "The FAQ file is the entire brain of this bot. Before any AI is involved, there needs to be real content sitting on disk that Python can reliably read - get that right first and everything downstream is simple.",
@@ -49,7 +72,7 @@ values (
       "goFurther": "Add a few more Q&A pairs of your own to faq.md - no code changes needed, faq.py picks up whatever is in the file at load time."
     },
     {
-      "number": 2,
+      "number": 3,
       "title": "Build the chatbot's brain",
       "time": "30 min",
       "description": "This is where the actual defense against hallucination lives: the instructions you write here decide whether the bot admits it doesn't know something or confidently invents an answer.",
@@ -63,7 +86,7 @@ values (
       "goFurther": "Change the wording in SYSTEM_INSTRUCTIONS to answer in a different tone (more formal, or bilingual) and see how the AI's real answers change."
     },
     {
-      "number": 3,
+      "number": 4,
       "title": "Build the chat interface and put it online",
       "time": "40 min",
       "description": "Turn the chatbot function into something a real customer could actually talk to, with memory of what they already asked, then make it reachable by anyone with a link.",
@@ -75,14 +98,14 @@ values (
         },
         {
           "instruction": "Push your project to GitHub, then deploy it on Streamlit Cloud:",
-          "prompt": "git init\ngit add app.py chatbot.py faq.py faq.md sdt_ai.py requirements.txt .env.example README.md\ngit commit -m \"Simple FAQ Chatbot\"\ngit branch -M main\ngit remote add origin https://github.com/<your-username>/<your-repo>.git\ngit push -u origin main\n\n# Never run \"git add .env\" and never commit your real key - only\n# .env.example (which has no real key in it) should ever reach GitHub.\n\nThen on share.streamlit.io: click \"New app\", pick your repo and branch, set the main file path to app.py, and click Deploy. Once it's building, open your app's Settings -> Secrets and paste:\n\nSDT_API_KEY = \"sdt_live_your_real_key_here\"\n\n(sdt_ai.py reads SDT_API_KEY from the environment, and Streamlit exposes anything you put in Secrets as an environment variable the same way it exposes a local .env - so no code change is needed to deploy.)",
+          "prompt": "echo .env > .gitignore\ngit init\ngit add app.py chatbot.py faq.py faq.md sdt_ai.py requirements.txt .gitignore\ngit commit -m \"Simple FAQ Chatbot\"\ngit branch -M main\ngit remote add origin https://github.com/<your-username>/<your-repo>.git\ngit push -u origin main\n\n# .gitignore stops .env - and your real key inside it - from ever being\n# tracked by git. Run \"git status\" before pushing and confirm .env does\n# NOT appear as a file git wants to add.\n\nThen on share.streamlit.io: click \"New app\", pick your repo and branch, set the main file path to app.py, and click Deploy. Once it's building, open your app's Settings -> Secrets and paste:\n\nAI_PROVIDER = \"gemini\"\nGEMINI_API_KEY = \"your_real_key_here\"\n\n# ...or, if using AI Builder credits instead, comment the two lines above out and use:\n# AI_PROVIDER = \"credits\"\n# SDT_API_KEY = \"sdt_live_your_real_key_here\"\n\n(sdt_ai.py reads AI_PROVIDER and your key from the environment, and Streamlit exposes anything you put in Secrets as an environment variable the same way it exposes a local .env - so no code change is needed to deploy.)",
           "verify": "Visit your live Streamlit Cloud URL and ask the same FAQ question you tested locally - you should get an answer the same way it worked on your machine. (The first load after a period of inactivity can take about 30 seconds on the free tier - that's normal, not a bug.)"
         }
       ],
       "goFurther": "🛠️ Break it on purpose: ask the deployed bot something totally unrelated to the business, like \"What's the capital of France?\". It should decline rather than guess - if it doesn't, tighten the wording in SYSTEM_INSTRUCTIONS (chatbot.py) and redeploy."
     },
     {
-      "number": 4,
+      "number": 5,
       "phaseLabel": "🎯 Challenge",
       "title": "Challenge: make it actually yours",
       "time": "30 min",
@@ -123,8 +146,8 @@ values (
     "fix": "faq.py looks for faq.md next to its own file location, not your terminal's current folder - so this usually means faq.md was renamed, moved, or the two files ended up in different folders. Keep faq.md in the same folder as faq.py."
   },
   {
-    "issue": "Getting an AIError that says \"No SDT_API_KEY found\"",
-    "fix": "Your .env file is either missing, misnamed, or not in the same folder as sdt_ai.py. Copy .env.example to a new file named exactly .env (not .env.example or .env.txt), and paste your real key from the Credits page after SDT_API_KEY=."
+    "issue": "Getting an AIError that says \"No AI provider configured\"",
+    "fix": "Your .env file is either missing, misnamed, or not in the same folder as sdt_ai.py. Create a file named exactly .env (not .env.example or .env.txt), and set AI_PROVIDER plus its matching key (GEMINI_API_KEY for the free Gemini path, or SDT_API_KEY for AI Builder credits)."
   }
 ]$tsh$::jsonb,
   $res$[
