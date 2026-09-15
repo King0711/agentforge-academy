@@ -25,9 +25,11 @@ import WebinarSurvey from './pages/WebinarSurvey';
 // /news and /guides are the one group of PUBLIC routes safe to lazy-load.
 // The eager-import rule above exists because a lazy component introduces a
 // Suspense boundary, and Suspense can't hydrate against a plain Puppeteer
-// snapshot (React #418). These four never hydrate: their SSR functions emit
-// data-ssr-stub="1", which main.jsx uses to pick createRoot over
-// hydrateRoot, so there's no snapshot to reconcile against. Splitting them
+// snapshot (React #418) — moot now that main.jsx always uses createRoot
+// (never hydrateRoot, see that file), but these four still have their own
+// reason to skip Suspense-vs-snapshot risk: their SSR functions emit
+// data-ssr-stub="1" hand-written HTML, not real React output, so there was
+// never a snapshot to reconcile against in the first place. Splitting them
 // out keeps four page components (plus the guide renderer and the prompt
 // generator) out of the entry bundle for the ~everyone who lands elsewhere.
 const News = lazy(() => import('./pages/News'));
