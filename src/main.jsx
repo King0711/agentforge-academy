@@ -1,5 +1,5 @@
 import { StrictMode } from 'react'
-import { createRoot, hydrateRoot } from 'react-dom/client'
+import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 
@@ -21,22 +21,35 @@ const app = (
   </StrictMode>
 )
 
-// Prerendered routes (see scripts/prerender.mjs) ship real markup inside
-// #root at build time — hydrate that instead of discarding and re-rendering,
-// so visitors see real content instantly with no flash. In dev mode (and for
-// any route that isn't prerendered) #root starts empty, so this falls back
-// to a normal client-only render.
+// Always a clean createRoot — never hydrateRoot. #root ships real markup on
+// prerendered/crawler-stub routes, but none of it can be hydrated against:
 //
-// data-ssr-stub opts a route OUT of hydration even though #root is non-
-// empty: api/news-article.js, api/news-index.js, and api/webinar.js inject
-// hand-written HTML stubs for crawlers (not real React output — these are
-// plain serverless functions with no React renderer), so the markup never
-// matches what the client would actually render. Attempting to hydrate
-// against it throws a React #418 mismatch error and forces a disruptive
-// full-subtree teardown/rebuild instead of a clean replace — confirmed via
-// Lighthouse as the direct cause of a CLS 0.651 layout shift on /news/:slug.
-if (rootEl.hasChildNodes() && !rootEl.hasAttribute('data-ssr-stub')) {
-  hydrateRoot(rootEl, app)
-} else {
-  createRoot(rootEl).render(app)
-}
+//   1. api/news-article.js, api/news-index.js, api/webinar.js, and
+//      api/guide-article.js/api/guides-index.js inject hand-written HTML
+//      stubs (marked data-ssr-stub) for crawlers — not real React output, so
+//      the markup never matches what the client renders.
+//
+//   2. scripts/prerender.mjs snapshots are real React output, but from a
+//      LIVE, animating page — framer-motion writes inline styles
+//      continuously, so whatever frame Puppeteer caught gets baked into the
+//      committed file (verifiably, e.g. `transform: translateX(0.55724px)`).
+//      React's first client render emits each component's `initial` styles
+//      instead, which can't match those sub-pixel values, so hydrateRoot
+//      failed with React #418 on every visit and React discarded the whole
+//      prerendered tree and rebuilt it client-side.
+//
+// That teardown-and-rebuild isn't just wasted work for human visitors —
+// Googlebot's rendering pass executes this same JS and judges the page on
+// the post-rebuild DOM, not the raw HTML. Caught mid-teardown (or before
+// useAuth/usePro/useCohortSchedule resolve), the page can look empty enough
+// to get flagged a soft 404 — confirmed 2026-09-16 on /vibe-coding via
+// Search Console, despite the served HTML being fully populated.
+//
+// This exact fix shipped once before (2026-08-19) and was reverted minutes
+// later with no recorded reason — which is how the regression above went
+// unnoticed. Re-running the prerender does NOT fix it; it just bakes a
+// different random frame. hydrateRoot only becomes viable again if mount
+// animations are dropped from prerendered routes, making the first client
+// render deterministic. Until then, createRoot is correct, not a shortcut —
+// don't reintroduce hydrateRoot without solving that first.
+createRoot(rootEl).render(app)
