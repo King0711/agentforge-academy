@@ -17,6 +17,7 @@
 //   practice    { n, title, text }               — numbered best-practice item
 //   widget      { name }                         — an interactive React island
 //   cta         { to, label, tier?, eyebrow?, text }
+//   table       { caption?, header[], rows[][] }  — comparison table, **bold** per cell
 
 export function escapeHtml(str) {
   return String(str ?? '')
@@ -67,6 +68,12 @@ export function renderGuideBlocksToHtml(blocks) {
           }</p>`;
         case 'practice':
           return `<h3>${escapeHtml(block.title)}</h3><p>${renderInline(block.text)}</p>`;
+        case 'table':
+          return `${block.caption ? `<p><strong>${escapeHtml(block.caption)}</strong></p>` : ''}<table><thead><tr>${
+            (block.header || []).map((h) => `<th>${renderInline(h)}</th>`).join('')
+          }</tr></thead><tbody>${
+            (block.rows || []).map((r) => `<tr>${r.map((c) => `<td>${renderInline(c)}</td>`).join('')}</tr>`).join('')
+          }</tbody></table>`;
         case 'cta':
           return `<p><a href="${escapeHtml(block.to)}">${escapeHtml(block.label)}</a> — ${renderInline(block.text)}</p>`;
         // Interactive islands have no meaningful server-rendered form; the
