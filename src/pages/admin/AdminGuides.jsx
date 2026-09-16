@@ -21,6 +21,10 @@ import ImageUploadField from '../../components/admin/ImageUploadField';
 //   [widget:prompt-generator]     -> embeds an interactive widget
 //   [cta:/path|Label|Builder 1]   -> call-to-action (tier optional)
 //   - item                        -> checklist (all lines must start "- ")
+//   table: Caption (optional)     -> comparison table — a caption line (optional)
+//   | Col A | Col B |                followed by a header row, a required
+//   | --- | --- |                    "|---|---|" separator row, then data rows
+//   | cell | cell |                  (all pipe-delimited, **bold** supported per cell)
 //   anything else                 -> paragraph (**bold** supported)
 // Exported for round-trip verification — a lossy text<->blocks conversion
 // would silently corrupt a guide the first time an admin saves it.
@@ -43,6 +47,16 @@ export function blocksToText(blocks) {
         case 'cta': return `[cta:${b.to}|${b.label}|${b.tier || ''}|${b.eyebrow || ''}]\n${b.text}`;
         case 'checklist':
         case 'list': return (b.items || []).map((i) => `- ${i}`).join('\n');
+        case 'table': {
+          const capLine = b.caption ? `table: ${b.caption}\n` : '';
+          const sep = `| ${(b.header || []).map(() => '---').join(' | ')} |`;
+          const rows = [
+            `| ${(b.header || []).join(' | ')} |`,
+            sep,
+            ...(b.rows || []).map((r) => `| ${r.join(' | ')} |`),
+          ];
+          return `${capLine}${rows.join('\n')}`;
+        }
         default: return b.text;
       }
     })
@@ -106,6 +120,23 @@ export function textToBlocks(text) {
         };
         if (ctaMatch[3]?.trim()) block.tier = ctaMatch[3].trim();
         if (ctaMatch[4]?.trim()) block.eyebrow = ctaMatch[4].trim();
+        return block;
+      }
+
+      const tableCaptionMatch = first.match(/^table:\s*(.*)$/i);
+      const tableLines = tableCaptionMatch ? lines.slice(1) : lines;
+      const parseRow = (l) => l.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim());
+      const isSeparatorRow = (l) => {
+        const cells = parseRow(l);
+        return cells.length > 0 && cells.every((c) => /^:?-+:?$/.test(c));
+      };
+      if (tableLines[0]?.trim().startsWith('|') && tableLines[1] && isSeparatorRow(tableLines[1])) {
+        const block = {
+          type: 'table',
+          header: parseRow(tableLines[0]),
+          rows: tableLines.slice(2).filter((l) => l.trim()).map(parseRow),
+        };
+        if (tableCaptionMatch?.[1]?.trim()) block.caption = tableCaptionMatch[1].trim();
         return block;
       }
 
@@ -349,7 +380,7 @@ export default function AdminGuides() {
               rows={16}
               value={form.bodyText}
               onChange={(e) => setForm((f) => ({ ...f, bodyText: e.target.value }))}
-              placeholder={'Blank line between blocks.\n\nintro: Opening line under the title\n# Eyebrow | Section heading\n## Bold subheading\n### 1. A numbered best practice\nIts explanation on the next line.\n- checklist item\n> a quote\n!tip Title | callout text\n!warn Title | warning callout\nlink: /some-page | Link text   (optional line under a callout)\n[widget:prompt-generator]\n[cta:/catalog|Button label|Builder 1|Eyebrow]\nCTA description on the next line.\n\nAnything else is a paragraph. Use **bold** for emphasis.'}
+              placeholder={'Blank line between blocks.\n\nintro: Opening line under the title\n# Eyebrow | Section heading\n## Bold subheading\n### 1. A numbered best practice\nIts explanation on the next line.\n- checklist item\n> a quote\n!tip Title | callout text\n!warn Title | warning callout\nlink: /some-page | Link text   (optional line under a callout)\n[widget:prompt-generator]\n[cta:/catalog|Button label|Builder 1|Eyebrow]\nCTA description on the next line.\ntable: Optional caption\n| | Column A | Column B |\n| --- | --- | --- |\n| **Row label** | cell | cell |\n\nAnything else is a paragraph. Use **bold** for emphasis.'}
             />
           </div>
 

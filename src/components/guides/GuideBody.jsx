@@ -132,6 +132,39 @@ export default function GuideBody({ blocks }) {
               </ul>
             );
 
+          case 'table':
+            return (
+              <div key={i} className="my-5">
+                {block.caption && (
+                  <p className="text-[13px] font-bold text-ink mb-2"><Rich text={block.caption} /></p>
+                )}
+                <div className="overflow-x-auto rounded-xl border border-border">
+                  <table className="w-full text-[14px] border-collapse">
+                    <thead>
+                      <tr className="bg-border-soft">
+                        {(block.header || []).map((h, ci) => (
+                          <th key={ci} scope="col" className="text-left font-bold text-ink px-4 py-2.5 border-b border-border whitespace-nowrap">
+                            <Rich text={h} />
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(block.rows || []).map((row, ri) => (
+                        <tr key={ri} className="border-t border-border">
+                          {row.map((cell, ci) => (
+                            <td key={ci} className="px-4 py-2.5 text-body-strong align-top">
+                              <Rich text={cell} />
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+
           case 'quote':
             return (
               <blockquote key={i} className="border-l-[3px] border-brand pl-4 italic text-body-strong my-4">
