@@ -1,19 +1,19 @@
 # Calendar & Task Prioritizer Agent — starter project
 
 Build a morning agent that reads today's Google Calendar events and your
-open tasks, and uses Claude to turn both into a time-blocked plan for the day.
+open tasks, and uses Gemini to turn both into a time-blocked plan for the day.
 
 ## Setup
 
 1. `pip install -r requirements.txt`
 2. Copy `.env.example` to `.env`
-3. Paste your AI Builder key from your dashboard (Credits → Copy my key)
+3. Get a free key at https://aistudio.google.com/apikey and paste it into `.env`
 4. Follow Build 2 in the course guide to download `credentials.json` from
    Google Cloud Console and put it in this same folder
 5. `python main.py`
 
-No AI subscription and no API key from any AI company is needed. Your
-AI Builder credits come with the course.
+No paid subscription is needed - just a free Gemini API key from Google AI
+Studio.
 
 ## The files
 

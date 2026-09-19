@@ -101,11 +101,9 @@ def ask_faq_bot(faq_text, question, history=None):
     """
     prompt = build_prompt(faq_text, question, history)
 
-    # max_tokens caps the answer length, which caps what this costs you.
-    # 300 is generous for a short support answer - FAQ answers are not
-    # essays, and a shorter cap also means a lower worst-case credit
-    # reservation on every single question (see ai_reserve_request in the
-    # AI Builder credits system: it reserves against max_tokens up front).
+    # max_tokens caps the answer length. 300 is generous for a short
+    # support answer - FAQ answers are not essays, and keeping requests
+    # small also helps you stay under the free tier's per-minute rate limit.
     return ask_ai(
         prompt,
         max_tokens=300,

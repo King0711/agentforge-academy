@@ -6,11 +6,11 @@ Build a tool that turns any article into five ready-to-post social updates.
 
 1. `pip install -r requirements.txt`
 2. Copy `.env.example` to `.env`
-3. Paste your AI Builder key from your dashboard (Credits → Copy my key)
+3. Get a free key at https://aistudio.google.com/apikey and paste it into `.env`
 4. `streamlit run app.py`
 
-No AI subscription and no API key from any AI company is needed. Your
-AI Builder credits come with the course.
+No paid subscription is needed - just a free Gemini API key from Google AI
+Studio.
 
 ## The files
 

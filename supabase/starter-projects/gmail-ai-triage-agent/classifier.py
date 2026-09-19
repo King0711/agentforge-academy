@@ -1,7 +1,7 @@
 """
 Step 2 of the Gmail AI Triage Agent.
 
-This file asks Claude to do two things in a single call: decide how
+This file asks the AI to do two things in a single call: decide how
 urgent an email is, and draft a short reply if one is worth writing.
 Asking both questions in one request (instead of a classify call followed
 by a separate draft-a-reply call) is a deliberate cost choice, not just a
