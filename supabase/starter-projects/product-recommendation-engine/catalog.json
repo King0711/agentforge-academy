@@ -1,0 +1,8 @@
+[
+  {"sku": "BASIC-1", "name": "Starter Plan", "description": "Core features for small teams", "price_tier": "low"},
+  {"sku": "PRO-1", "name": "Analytics Pro", "description": "Advanced dashboards and reporting", "price_tier": "mid"},
+  {"sku": "PRO-2", "name": "Automation Suite", "description": "Workflow automation tools", "price_tier": "mid"},
+  {"sku": "ENT-1", "name": "Enterprise SSO", "description": "Single sign-on and audit logs", "price_tier": "high"},
+  {"sku": "ENT-2", "name": "Dedicated Support", "description": "24/7 priority support line", "price_tier": "high"},
+  {"sku": "ADDON-1", "name": "API Access", "description": "Programmatic access to your data", "price_tier": "low"}
+]

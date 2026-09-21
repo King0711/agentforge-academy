@@ -1,0 +1,6 @@
+PyPDF2
+gspread
+google-auth
+watchdog
+requests
+python-dotenv
