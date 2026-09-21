@@ -1,0 +1,5 @@
+flask
+pyjwt
+cryptography
+requests
+python-dotenv
