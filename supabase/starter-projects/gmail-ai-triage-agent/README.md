@@ -8,14 +8,13 @@ anything that needs one.
 
 1. `pip install -r requirements.txt`
 2. Copy `.env.example` to `.env`
-3. Paste your AI Builder key from your dashboard (Credits → Copy my key)
+3. Add your AI key to `.env` - a free Gemini key (aistudio.google.com/apikey) or your own Claude/Anthropic key (console.anthropic.com/settings/keys)
 4. Follow the Google Cloud steps in Build 2 of the session guide to get
    `credentials.json`, then run `python gmail_client.py` once on its own
    to check the parsing (no Google account needed for that part)
 5. `python main.py` to triage your real inbox
 
-No AI subscription and no API key from any AI company is needed. Your
-AI Builder credits come with the course.
+You pick which AI powers this project - Gemini's free tier costs nothing, or use your own Claude/Anthropic account if you already have one. See `sdt_ai.py` for full setup steps.
 
 ## The files
 
@@ -34,4 +33,4 @@ AI Builder credits come with the course.
 | `token.json` | Created automatically the first time you log in |
 
 Both live next to `gmail_client.py`. Neither is an AI Builder credential —
-they only grant access to your Gmail account, not your credits.
+they only grant access to your Gmail account, not your AI key.

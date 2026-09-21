@@ -103,9 +103,8 @@ def ask_faq_bot(faq_text, question, history=None):
 
     # max_tokens caps the answer length, which caps what this costs you.
     # 300 is generous for a short support answer - FAQ answers are not
-    # essays, and a shorter cap also means a lower worst-case credit
-    # reservation on every single question (see ai_reserve_request in the
-    # AI Builder credits system: it reserves against max_tokens up front).
+    # essays, and a shorter cap also keeps usage down whether you're on
+    # Gemini's free tier or paying per token on your own Claude account.
     return ask_ai(
         prompt,
         max_tokens=300,
