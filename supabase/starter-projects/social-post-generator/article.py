@@ -16,10 +16,10 @@ BROWSER_HEADER = {"User-Agent": "Mozilla/5.0"}
 # Stop after this many characters.
 #
 # This is a MONEY decision, not a technical one. Everything you send to
-# the AI costs credits, and a long article costs more than a short one.
-# 6000 characters is roughly 2-3 pages - plenty for the AI to understand
-# what an article is about. Sending the whole thing would cost several
-# times more and produce almost the same posts.
+# the AI costs you - free-tier quota on Gemini, or real tokens on your
+# own Claude account. 6000 characters is roughly 2-3 pages - plenty for
+# the AI to understand what an article is about. Sending the whole thing
+# would cost several times more and produce almost the same posts.
 MAX_CHARACTERS = 6000
 
 # Parts of a page that are never the article.
