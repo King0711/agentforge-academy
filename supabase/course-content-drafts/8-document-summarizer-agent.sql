@@ -1,7 +1,7 @@
 insert into public.course_content_draft (course_id, what_you_build, what_you_learn, session, starter_code, test_it_out, troubleshooting, resources, tier, change_note)
 values (
   8,
-  $wyb$A Python command-line tool that detects whether a document is a PDF, Word file, plain text file, or web link, extracts its text, and sends it through your AI Builder credits to produce a structured summary: 3-6 key points, a list of action items, and a one-paragraph executive brief written for someone with 15 seconds to read it. The AI's reply is parsed with the same forgiving bracket-marker format used across every project in this course, so a slightly-off reply degrades gracefully instead of crashing your program.$wyb$,
+  $wyb$A Python command-line tool that detects whether a document is a PDF, Word file, plain text file, or web link, extracts its text, and sends it to your own AI key to produce a structured summary: 3-6 key points, a list of action items, and a one-paragraph executive brief written for someone with 15 seconds to read it. The AI's reply is parsed with the same forgiving bracket-marker format used across every project in this course, so a slightly-off reply degrades gracefully instead of crashing your program.$wyb$,
   $wyl$[
   "Detect a document's type from its file extension or a URL",
   "Extract plain text from PDF, DOCX, TXT, and web pages",
@@ -12,17 +12,17 @@ values (
   "Wire multiple files together into one command-line tool"
 ]$wyl$::jsonb,
   $sess${
-  "model": "Claude Haiku 4.5 (via your AI Builder credits)",
-  "totalTime": "120 min",
-  "buildCount": 4,
+  "model": "Gemini 3.6 Flash or Claude Haiku 4.5 (your choice - see sdt_ai.py setup)",
+  "totalTime": "135 min",
+  "buildCount": 5,
   "whatYouNeed": [
-    "Your AI Builder key (Credits page on your dashboard)",
+    "A free Gemini API key (aistudio.google.com/apikey) OR your own Claude/Anthropic API key (console.anthropic.com/settings/keys)",
     "Python 3.10+ installed",
     "A PDF, Word doc, or text file to test with (a contract, report, or article works well)"
   ],
   "outcomes": [
     "Detect a document's type and pull plain text out of PDFs, Word docs, text files, and web pages",
-    "Send extracted text to the AI through your AI Builder credits - never your own API key",
+    "Send extracted text to the AI through your own key - Gemini or Claude, your choice",
     "Parse a structured AI reply into key points, action items, and an executive brief without using JSON",
     "Handle a malformed AI reply without crashing your program",
     "Control what a single summary costs, no matter how long the source document is",
@@ -31,6 +31,29 @@ values (
   "builds": [
     {
       "number": 1,
+      "title": "Connect your AI (Gemini or Claude)",
+      "time": "15 min",
+      "description": "Set up the one file every build in this project calls to reach the AI, before writing the detector and summarizer that use it.",
+      "steps": [
+        {
+          "instruction": "Create a project folder. Inside it, create `requirements.txt` with this content, then run `pip install -r requirements.txt`:",
+          "prompt": "requests\nbeautifulsoup4\nPyPDF2\npython-docx\npython-dotenv\nfpdf2\n",
+          "verify": "pip install finishes with no errors, and `pip show requests` prints a real version number."
+        },
+        {
+          "instruction": "Create `sdt_ai.py` with this code — copy it exactly, you'll never edit it. This is the ONLY file that talks to the AI in this whole project:",
+          "prompt": "\"\"\"\nSocial Dev AI Builder - your connection to the AI.\n\nYou have TWO ways to power this file. Pick ONE and set it in your .env:\n\n  AI_PROVIDER=gemini    -> your own FREE Google Gemini API key\n  AI_PROVIDER=claude    -> your own Claude/Anthropic API key\n\nEvery project in this course calls ask_ai(...) the exact same way no\nmatter which one you pick - this file is the only place that changes.\n\nSETUP - OPTION 1: Gemini (free, no billing needed):\n\n  1. Go to https://aistudio.google.com/apikey and sign in with any Google\n     account. Click \"Create API key\" - free, no card required.\n  2. In the same folder as this file, create a file named exactly: .env\n  3. Put these two lines inside it:\n\n         AI_PROVIDER=gemini\n         GEMINI_API_KEY=paste_your_own_key_here\n\nSETUP - OPTION 2: Claude (if you already have a paid Claude account):\n\n  1. Go to https://console.anthropic.com/settings/keys and create an API\n     key. This needs billing set up on your Anthropic account - it is a\n     separate thing from a claude.ai Pro subscription, and is billed by\n     Anthropic based on what you actually use.\n  2. In your .env file, put these two lines instead:\n\n         AI_PROVIDER=claude\n         ANTHROPIC_API_KEY=paste_your_own_key_here\n\nNever share either key or put it on GitHub - each one is billed to YOUR\naccount. That's it. Every project in this course reuses this same file.\n\"\"\"\n\nimport os\nimport time\n\nimport requests\nfrom dotenv import load_dotenv\n\n# Reads the .env file sitting next to your project and loads your keys.\nload_dotenv()\n\n# Overridable via .env if you ever want to try a different model.\nGEMINI_MODEL = os.environ.get(\"GEMINI_MODEL\", \"gemini-2.5-flash\")\nGEMINI_URL = (\n    f\"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent\"\n)\n\nCLAUDE_MODEL = os.environ.get(\"CLAUDE_MODEL\", \"claude-haiku-4-5\")\nANTHROPIC_URL = \"https://api.anthropic.com/v1/messages\"\nANTHROPIC_VERSION = \"2023-06-01\"\n\n# Gemini's free tier occasionally answers 503 (\"model overloaded\") during\n# busy periods - that's not your code being wrong, retrying a couple of\n# times almost always gets a real answer.\nMAX_ATTEMPTS = 3\nRETRY_DELAY_SECONDS = 3\n\n\nclass AIError(Exception):\n    \"\"\"Something went wrong talking to the AI. The message explains what.\"\"\"\n\n\ndef _get_provider():\n    \"\"\"\n    Reads AI_PROVIDER from .env. Falls back to guessing from whichever key\n    is actually present, so forgetting to set AI_PROVIDER explicitly\n    doesn't crash a setup that only has one key configured.\n    \"\"\"\n    provider = os.environ.get(\"AI_PROVIDER\", \"\").strip().lower()\n    if provider in (\"gemini\", \"claude\"):\n        return provider\n\n    if os.environ.get(\"GEMINI_API_KEY\"):\n        return \"gemini\"\n    if os.environ.get(\"ANTHROPIC_API_KEY\"):\n        return \"claude\"\n\n    raise AIError(\n        \"No AI provider configured.\\n\"\n        \"Add ONE of these pairs to your .env file:\\n\\n\"\n        \"    AI_PROVIDER=gemini\\n\"\n        \"    GEMINI_API_KEY=paste_your_free_key_here\\n\\n\"\n        \"  ...or...\\n\\n\"\n        \"    AI_PROVIDER=claude\\n\"\n        \"    ANTHROPIC_API_KEY=paste_your_own_key_here\\n\\n\"\n        \"Get a free Gemini key at https://aistudio.google.com/apikey\"\n    )\n\n\ndef _ask_gemini(prompt, system=None, max_tokens=1000):\n    api_key = os.environ.get(\"GEMINI_API_KEY\")\n    if not api_key:\n        raise AIError(\n            \"AI_PROVIDER is set to gemini but no GEMINI_API_KEY was found.\\n\"\n            \"Get a free key at https://aistudio.google.com/apikey and add \"\n            \"it to .env:\\n\"\n            \"    GEMINI_API_KEY=paste_your_own_key_here\"\n        )\n\n    payload = {\n        \"contents\": [{\"role\": \"user\", \"parts\": [{\"text\": prompt}]}],\n        \"generationConfig\": {\"maxOutputTokens\": max_tokens},\n    }\n    if system:\n        payload[\"systemInstruction\"] = {\"parts\": [{\"text\": system}]}\n\n    last_problem = \"no response\"\n    for attempt in range(MAX_ATTEMPTS):\n        try:\n            response = requests.post(\n                GEMINI_URL, params={\"key\": api_key}, json=payload, timeout=90\n            )\n        except requests.RequestException:\n            raise AIError(\n                \"Could not reach Gemini. Check your internet connection and try again.\"\n            )\n\n        if response.status_code == 503:\n            last_problem = \"Gemini is busy (503 - high demand on the free tier)\"\n            time.sleep(RETRY_DELAY_SECONDS)\n            continue\n\n        if response.status_code == 429:\n            raise AIError(\n                \"Gemini says you've hit the free tier's rate limit. Wait a \"\n                \"minute and try again.\"\n            )\n\n        if response.status_code == 400:\n            raise AIError(\n                f\"Gemini rejected the request - double check your GEMINI_API_KEY \"\n                f\"is correct: {response.text[:300]}\"\n            )\n\n        if response.status_code != 200:\n            raise AIError(\n                f\"Gemini returned an error (status {response.status_code}): {response.text[:300]}\"\n            )\n\n        data = response.json()\n        try:\n            candidate = data[\"candidates\"][0]\n        except (KeyError, IndexError):\n            raise AIError(f\"Unexpected reply from Gemini: {data}\")\n\n        if candidate.get(\"finishReason\") == \"SAFETY\":\n            raise AIError(\"Gemini declined to answer (safety filter). Try rephrasing your prompt.\")\n\n        try:\n            text = candidate[\"content\"][\"parts\"][0][\"text\"]\n        except (KeyError, IndexError):\n            raise AIError(f\"Unexpected reply shape from Gemini: {data}\")\n\n        usage = data.get(\"usageMetadata\", {})\n        return {\n            \"text\": text,\n            \"input_tokens\": usage.get(\"promptTokenCount\"),\n            \"output_tokens\": usage.get(\"candidatesTokenCount\"),\n        }\n\n    raise AIError(\n        f\"Gemini was unavailable after {MAX_ATTEMPTS} tries ({last_problem}). \"\n        \"This happens sometimes on the free tier during high demand - wait \"\n        \"a minute and try again.\"\n    )\n\n\ndef _ask_claude(prompt, system=None, max_tokens=1000):\n    api_key = os.environ.get(\"ANTHROPIC_API_KEY\")\n    if not api_key:\n        raise AIError(\n            \"AI_PROVIDER is set to claude but no ANTHROPIC_API_KEY was found.\\n\"\n            \"Create one at https://console.anthropic.com/settings/keys and \"\n            \"add it to .env:\\n\"\n            \"    ANTHROPIC_API_KEY=paste_your_own_key_here\"\n        )\n\n    payload = {\n        \"model\": CLAUDE_MODEL,\n        \"max_tokens\": max_tokens,\n        \"messages\": [{\"role\": \"user\", \"content\": prompt}],\n    }\n    if system:\n        payload[\"system\"] = system\n\n    try:\n        response = requests.post(\n            ANTHROPIC_URL,\n            headers={\n                \"x-api-key\": api_key,\n                \"anthropic-version\": ANTHROPIC_VERSION,\n                \"Content-Type\": \"application/json\",\n            },\n            json=payload,\n            timeout=90,\n        )\n    except requests.RequestException:\n        raise AIError(\"Could not reach Claude. Check your internet connection and try again.\")\n\n    try:\n        data = response.json()\n    except ValueError:\n        raise AIError(f\"Unexpected reply from Claude (status {response.status_code}).\")\n\n    if response.status_code == 401:\n        raise AIError(\n            \"Claude rejected your ANTHROPIC_API_KEY - double check it was copied correctly.\"\n        )\n\n    if response.status_code == 429:\n        raise AIError(\"Claude says you've hit your rate or usage limit. Wait a moment and try again.\")\n\n    if \"error\" in data:\n        raise AIError(data[\"error\"].get(\"message\", str(data[\"error\"])))\n\n    text = \"\".join(\n        block.get(\"text\", \"\") for block in data.get(\"content\", []) if block.get(\"type\") == \"text\"\n    )\n    usage = data.get(\"usage\", {})\n    return {\n        \"text\": text,\n        \"input_tokens\": usage.get(\"input_tokens\"),\n        \"output_tokens\": usage.get(\"output_tokens\"),\n    }\n\n\ndef ask_ai_detailed(prompt, system=None, max_tokens=1000, project=None):\n    \"\"\"\n    Same as ask_ai, but returns the whole reply as a dict.\n\n        result = ask_ai_detailed(\"Summarise this\", max_tokens=200)\n        print(result[\"text\"])\n    \"\"\"\n    provider = _get_provider()\n    if provider == \"gemini\":\n        return _ask_gemini(prompt, system=system, max_tokens=max_tokens)\n    return _ask_claude(prompt, system=system, max_tokens=max_tokens)\n\n\ndef ask_ai(prompt, system=None, max_tokens=1000, project=None):\n    \"\"\"\n    Send a question to the AI and get the answer back as text.\n\n        answer = ask_ai(\"Write a haiku about Lagos traffic\")\n        print(answer)\n\n    prompt      - what you want the AI to do. This is the important part.\n    system      - optional. Sets the AI's role, e.g. \"You are a careful editor.\"\n    max_tokens  - roughly how long the answer may be. 1000 is plenty for most.\n    project     - unused, kept so call sites read the same across every\n                  project regardless of which AI is behind this file.\n\n    Works identically whichever provider your .env is set to - every\n    project in this course calls this one function and never needs to\n    know which AI is actually answering.\n\n    Returns the AI's answer as a plain string.\n    Raises AIError with a readable message if something is wrong.\n    \"\"\"\n    return ask_ai_detailed(prompt, system=system, max_tokens=max_tokens, project=project)[\"text\"]\n\n\nif __name__ == \"__main__\":\n    # Running this file directly checks that your setup works.\n    print(\"Testing your AI Builder connection...\\n\")\n    try:\n        provider = _get_provider()\n        result = ask_ai_detailed(\"Say hello in exactly five words.\", max_tokens=50)\n        print(f\"Provider: {provider}\")\n        print(\"The AI said:\", result[\"text\"])\n        print(\"\\nYour setup works. You are ready to build.\")\n    except AIError as problem:\n        print(\"Setup problem:\\n\")\n        print(problem)\n",
+          "verify": "Nothing to check yet — you'll test this file once your .env is filled in, in the next step."
+        },
+        {
+          "instruction": "Create `.env` in the same folder with this content. Pick ONE AI option (Gemini or Claude) below.",
+          "prompt": "# OPTION 1: your own free Gemini key (recommended - no billing needed)\n# Get one free at https://aistudio.google.com/apikey - no credit card needed\nAI_PROVIDER=gemini\nGEMINI_API_KEY=paste_your_own_key_here\n\n# OPTION 2: your own Claude/Anthropic key (comment OPTION 1 out above,\n# uncomment these two lines instead - needs billing set up on your own\n# Anthropic account)\n# Get one at https://console.anthropic.com/settings/keys\n# AI_PROVIDER=claude\n# ANTHROPIC_API_KEY=paste_your_own_key_here\n",
+          "verify": "Run `python sdt_ai.py` - it should print which provider you're using, then `The AI said: ...`, and end with `Your setup works. You are ready to build.` If you see `No AI provider configured` instead, check that .env sits next to sdt_ai.py and that AI_PROVIDER plus its matching key are both uncommented."
+        }
+      ]
+    },
+    {
+      "number": 2,
       "title": "Detect the document type and extract its text",
       "time": "30 min",
       "description": "Before the AI can summarize anything, you need plain text - no matter whether it arrived as a PDF, a Word doc, a plain text file, or a link.",
@@ -44,7 +67,7 @@ values (
       "goFurther": "Break it on purpose: create an empty .txt file (0 bytes) and run `extract_text()` on it - you should get a clear \"Couldn't find any readable text\" error instead of a crash, because of the length check inside extract_text(). Now try the opposite: paste sample.txt's contents into itself 500 times to make a huge .txt file, and extract it - this succeeds no matter the size, because detector.py has no size limit at all. The real protection against a giant document lives one file over, in summarizer.py's MAX_CHARACTERS - so a 500-page report and a 2-page memo cost about the same number of credits to summarize, but the summary only ever reflects what's in the first ~15,000 characters."
     },
     {
-      "number": 2,
+      "number": 3,
       "title": "Turn text into a structured summary",
       "time": "35 min",
       "description": "This is the file you'll edit most - it decides what shape a summary takes, and how the AI's reply gets read back into your program.",
@@ -58,7 +81,7 @@ values (
       "goFurther": "Temporarily change MAX_CHARACTERS from 15000 down to 500, then summarize a long document. The executive brief will still read fine, but the key points will start missing things that were only in the back half of the document - that's the entire cost/quality tradeoff of this project happening in a single number."
     },
     {
-      "number": 3,
+      "number": 4,
       "title": "Wire it into one command",
       "time": "20 min",
       "description": "One command, any document - this is what you (or a teammate) would actually run.",
@@ -72,7 +95,7 @@ values (
       "goFurther": "Run `python main.py https://en.wikipedia.org/wiki/Artificial_intelligence` - a real web address instead of a file path. The exact same summarize_document() call handles it with zero changes, because detector.py already hid the difference between a file and a URL from every file downstream of it."
     },
     {
-      "number": 4,
+      "number": 5,
       "phaseLabel": "🎯 Challenge",
       "title": "Challenge: Add a fourth summary section",
       "time": "35 min",
@@ -131,7 +154,7 @@ values (
   }
 ]$res$::jsonb,
   'builder1',
-  'Option-B rewrite: real tested Python code + AI Builder credits gateway, replaces paste-into-Claude workflow. See supabase/starter-projects/document-summarizer-agent/.'
+  'Rewrite: real tested Python code, student picks Gemini (free) or their own Claude/Anthropic key -- no shared credits gateway. See supabase/starter-projects/document-summarizer-agent/.'
 )
 on conflict (course_id) do update set
   what_you_build = excluded.what_you_build, what_you_learn = excluded.what_you_learn, session = excluded.session,

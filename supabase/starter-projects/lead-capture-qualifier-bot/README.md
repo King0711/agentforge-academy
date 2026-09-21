@@ -8,12 +8,11 @@ creates a qualified contact (with a follow-up task) in HubSpot.
 
 1. `pip install -r requirements.txt`
 2. Copy `.env.example` to `.env`
-3. Paste your AI Builder key from your dashboard (Credits → Copy my key)
+3. Add your AI key to `.env` - a free Gemini key (aistudio.google.com/apikey) or your own Claude/Anthropic key (console.anthropic.com/settings/keys)
 4. Test the wiring: `python main.py` — this costs no credits and needs no HubSpot account yet
 5. Once you've created a HubSpot Private App token (see Build 3) and added it to `.env`, run the real server: `flask --app main run --port 5000`
 
-No AI subscription and no API key from any AI company is needed. Your
-AI Builder credits come with the course.
+You pick which AI powers this project - Gemini's free tier costs nothing, or use your own Claude/Anthropic account if you already have one. See `sdt_ai.py` for full setup steps.
 
 ## The files
 
