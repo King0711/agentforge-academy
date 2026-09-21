@@ -43,11 +43,16 @@ from dotenv import load_dotenv
 # Reads the .env file sitting next to your project and loads your keys.
 load_dotenv()
 
-# Overridable via .env if you ever want to try a different model.
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
-GEMINI_URL = (
-    f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
-)
+# gemini-3.7-flash first - the current stable/GA flash model. If it's
+# ever down (Google's free tier occasionally returns 503 "high demand"
+# on a single model for hours at a time), gemini-2.5-flash is a real
+# fallback, not a downgrade-and-forget: a different model is a
+# different capacity pool, so it's often still up during a
+# 3.7-specific outage. Set GEMINI_MODEL in .env to pin one specific
+# model instead and skip the fallback entirely.
+_env_model = os.environ.get("GEMINI_MODEL")
+GEMINI_MODELS = [_env_model] if _env_model else ["gemini-3.7-flash", "gemini-2.5-flash"]
+GEMINI_URL_TEMPLATE = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
 CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "claude-haiku-4-5")
 ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
@@ -91,38 +96,29 @@ def _get_provider():
     )
 
 
-def _ask_gemini(prompt, system=None, max_tokens=1000):
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        raise AIError(
-            "AI_PROVIDER is set to gemini but no GEMINI_API_KEY was found.\n"
-            "Get a free key at https://aistudio.google.com/apikey and add "
-            "it to .env:\n"
-            "    GEMINI_API_KEY=paste_your_own_key_here"
-        )
+def _ask_gemini_model(model, api_key, payload):
+    """
+    Tries ONE Gemini model, retrying up to MAX_ATTEMPTS times on a 503
+    ("high demand") before giving up on this model. Returns the parsed
+    result dict, or raises AIError - including a distinct AIError for a
+    503 that never cleared, so _ask_gemini() below can tell "this model
+    is down, try the next one" apart from every other failure.
+    """
+    url = GEMINI_URL_TEMPLATE.format(model=model)
 
-    payload = {
-        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": {"maxOutputTokens": max_tokens},
-    }
-    if system:
-        payload["systemInstruction"] = {"parts": [{"text": system}]}
-
-    last_problem = "no response"
     for attempt in range(MAX_ATTEMPTS):
         try:
-            response = requests.post(
-                GEMINI_URL, params={"key": api_key}, json=payload, timeout=90
-            )
+            response = requests.post(url, params={"key": api_key}, json=payload, timeout=90)
         except requests.RequestException:
             raise AIError(
                 "Could not reach Gemini. Check your internet connection and try again."
             )
 
         if response.status_code == 503:
-            last_problem = "Gemini is busy (503 - high demand on the free tier)"
-            time.sleep(RETRY_DELAY_SECONDS)
-            continue
+            if attempt < MAX_ATTEMPTS - 1:
+                time.sleep(RETRY_DELAY_SECONDS)
+                continue
+            raise AIError(f"{model} is busy (503 - high demand)")
 
         if response.status_code == 429:
             raise AIError(
@@ -162,8 +158,41 @@ def _ask_gemini(prompt, system=None, max_tokens=1000):
             "output_tokens": usage.get("candidatesTokenCount"),
         }
 
+
+def _ask_gemini(prompt, system=None, max_tokens=1000):
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        raise AIError(
+            "AI_PROVIDER is set to gemini but no GEMINI_API_KEY was found.\n"
+            "Get a free key at https://aistudio.google.com/apikey and add "
+            "it to .env:\n"
+            "    GEMINI_API_KEY=paste_your_own_key_here"
+        )
+
+    payload = {
+        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+        "generationConfig": {"maxOutputTokens": max_tokens},
+    }
+    if system:
+        payload["systemInstruction"] = {"parts": [{"text": system}]}
+
+    # Try each model in GEMINI_MODELS in order - a 503 that survives every
+    # retry on one model falls through to the next, since a different
+    # model is a different capacity pool and is often still up during a
+    # model-specific outage. Any other kind of failure (bad key, rate
+    # limit, safety block) is raised immediately instead of wasted on a
+    # second model that would fail the exact same way.
+    last_problem = None
+    for model in GEMINI_MODELS:
+        try:
+            return _ask_gemini_model(model, api_key, payload)
+        except AIError as problem:
+            if "high demand" not in str(problem):
+                raise
+            last_problem = problem
+
     raise AIError(
-        f"Gemini was unavailable after {MAX_ATTEMPTS} tries ({last_problem}). "
+        f"Gemini was unavailable after trying {', '.join(GEMINI_MODELS)} ({last_problem}). "
         "This happens sometimes on the free tier during high demand - wait "
         "a minute and try again."
     )
