@@ -47,6 +47,7 @@ export const routes = [
   '/whatsapp-bot-guide',
   '/ai-builder',
   '/vibe-coding',
+  '/ai-agent-mastery',
   '/builder-1-guide',
   '/session/build-real-product',
   '/session/daily-news-agent',

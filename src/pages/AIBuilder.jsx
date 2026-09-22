@@ -1,17 +1,16 @@
-import { useCallback, useEffect, useSyncExternalStore } from 'react';
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { m } from 'framer-motion';
 import {
-  CheckCircle2, X, Briefcase, Repeat, Building2, ChevronRight, Tag, CalendarDays, Info,
-  MessageCircle, Hammer, CircleHelp, ArrowRight, Zap, Timer,
+  CheckCircle2, X, Briefcase, Repeat, Building2, ChevronRight, Info,
+  MessageCircle, Hammer, CircleHelp, ArrowRight, Zap, Infinity as InfinityIcon,
 } from 'lucide-react';
 import TestimonialCard from '../components/TestimonialCard';
 import YouTubeFacade from '../components/YouTubeFacade';
 import { agents, getBuilder1Agents, groupAgentsByWeek } from '../data/agents';
 import { agentsBeginner } from '../data/agentsBeginner';
 import { levels } from '../data/departments';
-import { useCohortSchedule } from '../hooks/useCohortSchedule';
-import { ANCHOR_PRICE, BUILDER_PRICE, BUILDER_SAVINGS, BUILDER_SAVINGS_PERCENT, PRO_PRICE } from '../data/pricing';
+import { BUILDER1_PRICE, BUILDER2_PRICE, PRO_PRICE } from '../data/pricing';
 
 // Content below is adapted from the /webinar deck's narrative (same offer,
 // same honest framing, same real proof points) rebuilt as a scrollable
@@ -105,12 +104,14 @@ const FOR_YOU = ['You want to build something, not just watch a video', "You've 
 const NOT_FOR_YOU = ["You're looking for a magic button that needs zero effort from you", 'You want theory with no hands-on building', "You're not willing to actually open Claude and follow along"];
 
 // Prices come from src/data/pricing.js — this page used to redeclare them
-// locally, which is exactly the drift that file exists to prevent (note
-// ANCHOR_PRICE is the strikethrough anchor, NOT a purchasable plan; the
-// webhook's resolvePlan() only recognises BUILDER_PRICE and PRO_PRICE).
-const BUILDER1_FEATURES = [`${builder1Count} Builder 1 agent sessions`, 'Copy-paste prompts for every build', 'XP tracking & progress', 'Portfolio write-up prompts', '6 months of access'];
-const BUILDER2_FEATURES = [`${builder2Count} Builder 2 agent sessions`, 'Multi-step, API-integrated agent builds', 'XP tracking & progress', 'Portfolio write-up prompts', '6 months of access'];
-const PRO_FEATURES = [`All ${builder1Count + builder2Count} sessions — Builder 1 + Builder 2`, 'No prerequisite — both tracks unlock immediately', 'XP tracking & progress across both tracks', 'Portfolio write-up prompts for every agent', 'Priority support', '6 months of access'];
+// locally, which is exactly the drift that file exists to prevent. Builder 1
+// and Builder 2 no longer share one price (BUILDER1_PRICE/BUILDER2_PRICE),
+// since they're now permanent, guides-only purchases (2026-09-22) rather
+// than a 6-month subscription — no anchor/savings framing at this price
+// point, see data/pricing.js's own comment for why.
+const BUILDER1_FEATURES = [`${builder1Count} Builder 1 agent sessions`, 'Copy-paste prompts for every build', 'XP tracking & progress', 'Portfolio write-up prompts', 'Permanent access — yours to keep'];
+const BUILDER2_FEATURES = [`${builder2Count} Builder 2 agent sessions`, 'Multi-step, API-integrated agent builds', 'XP tracking & progress', 'Portfolio write-up prompts', 'Permanent access — yours to keep'];
+const PRO_FEATURES = [`All ${builder1Count + builder2Count} sessions — Builder 1 + Builder 2`, 'No prerequisite — both tracks unlock immediately', 'XP tracking & progress across both tracks', 'Portfolio write-up prompts for every agent', 'Permanent access — yours to keep'];
 
 // Short theme labels per Builder 1 week. The data (src/data/agentsBeginner.js)
 // stores only week number + isMainProject, not a display label — same split
@@ -122,86 +123,6 @@ const WEEK_THEMES = {
   4: 'Customer-facing messaging',
 };
 const builder1Weeks = groupAgentsByWeek(getBuilder1Agents());
-
-function formatCohortDate(dateStr) {
-  if (!dateStr) return null;
-  const date = new Date(`${dateStr}T00:00:00`);
-  if (date < new Date(new Date().toDateString())) return null;
-  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-}
-
-// One shared 1s tick. Stable identity so useSyncExternalStore doesn't
-// resubscribe on every render.
-function subscribeToTick(onChange) {
-  const id = setInterval(onChange, 1000);
-  return () => clearInterval(id);
-}
-
-/**
- * Counts down to the next LIVE COHORT date — deliberately not framed as an
- * enrollment deadline. Cohort dates are informational only and don't gate
- * access (see useCohortSchedule): buying grants the whole tier instantly,
- * whatever the date says. Copy here has to keep promising that, or buyers
- * arrive expecting a cohort-gated course and ask for refunds we don't give
- * (FAQ.jsx: no change-your-mind window).
- *
- * useSyncExternalStore rather than useState+useEffect specifically for its
- * third argument: this page is prerendered (scripts/prerender-routes.mjs)
- * and main.jsx hydrates that markup, so getServerSnapshot() returning null
- * is what keeps the hydration render empty — matching the snapshot instead
- * of baking a stale countdown into static HTML and then mismatching on
- * hydration (React #418, the same class of bug useTestimonials and
- * useCohortSchedule document). The live value swaps in right after.
- *
- * The snapshot is a plain number (seconds left), not an object — getSnapshot
- * must be referentially stable between ticks or React re-renders forever.
- */
-function CohortCountdown({ dateStr }) {
-  const getSnapshot = useCallback(() => {
-    if (!dateStr) return 0;
-    return Math.max(0, Math.floor((new Date(`${dateStr}T00:00:00`).getTime() - Date.now()) / 1000));
-  }, [dateStr]);
-
-  const secondsLeft = useSyncExternalStore(subscribeToTick, getSnapshot, () => null);
-
-  if (secondsLeft === null || secondsLeft <= 0) return null;
-
-  const days = Math.floor(secondsLeft / 86400);
-  const units = [
-    { value: days, label: days === 1 ? 'day' : 'days' },
-    { value: Math.floor(secondsLeft / 3600) % 24, label: 'hrs' },
-    { value: Math.floor(secondsLeft / 60) % 60, label: 'min' },
-    { value: secondsLeft % 60, label: 'sec' },
-  ];
-
-  return (
-    // data-client-only: scripts/prerender.mjs strips this subtree from the
-    // static snapshot, so the committed HTML never carries a frozen clock
-    // and hydration still matches the null getServerSnapshot above.
-    <div data-client-only className="flex flex-col items-center gap-2.5">
-      <span className="inline-flex items-center gap-1.5 text-[12.5px] font-bold uppercase tracking-wide text-body">
-        <Timer className="w-3.5 h-3.5 text-brand" /> Next live cohort starts in
-      </span>
-      <div className="flex items-center gap-2 sm:gap-2.5">
-        {units.map((unit) => (
-          <div
-            key={unit.label}
-            className="bg-white dark:bg-[#181818] border-[1.5px] border-border-soft rounded-xl px-3 sm:px-3.5 py-2 min-w-[58px] sm:min-w-[64px] text-center"
-          >
-            <div className="font-display font-extrabold text-xl sm:text-2xl text-ink tabular-nums leading-none">
-              {String(unit.value).padStart(2, '0')}
-            </div>
-            <div className="text-[10.5px] font-bold uppercase tracking-wide text-gray-400 mt-1">{unit.label}</div>
-          </div>
-        ))}
-      </div>
-      <p className="text-[12.5px] text-body max-w-xs text-center">
-        That's when the live sessions begin — <strong className="text-body-strong">your access starts the moment you pay</strong>, so
-        you can work through the track at your own pace before then.
-      </p>
-    </div>
-  );
-}
 
 function SectionHeading({ eyebrow, children }) {
   return (
@@ -217,15 +138,6 @@ function SectionHeading({ eyebrow, children }) {
 }
 
 export default function AIBuilder() {
-  const { builder1: builder1CohortDate, builder2: builder2CohortDate } = useCohortSchedule();
-  const builder1Cohort = formatCohortDate(builder1CohortDate);
-  const builder2Cohort = formatCohortDate(builder2CohortDate);
-  // Soonest cohort still ahead of us, across both tiers — the page sells all
-  // three plans now, so counting down to Builder 1's date alone would show
-  // nothing whenever that one date happens to be in the past.
-  const nextCohortDate = [builder1CohortDate, builder2CohortDate]
-    .filter((d) => d && new Date(`${d}T00:00:00`) >= new Date(new Date().toDateString()))
-    .sort()[0] || null;
   const remaining = agentsBeginner.length - wall.length;
 
   useEffect(() => {
@@ -237,7 +149,7 @@ export default function AIBuilder() {
     if (metaDesc) {
       metaDesc.setAttribute(
         'content',
-        `Stop using AI. Start building with it. ${builder1Count + builder2Count} real AI agent sessions across Builder 1 and Builder 2, one-time payment, 6 months access. Start with Builder 1 today.`
+        `Stop using AI. Start building with it. ${builder1Count + builder2Count} real AI agent sessions across Builder 1 and Builder 2, one-time payment, permanent access. Start with Builder 1 today.`
       );
     }
 
@@ -312,7 +224,7 @@ export default function AIBuilder() {
               to="/pricing"
               className="bg-brand text-white font-extrabold text-base px-8 py-4 rounded-2xl shadow-[0_10px_22px_rgba(124,58,237,.4)] hover:bg-brand-deep transition-colors"
             >
-              Get Builder 1 — ₦<span>{BUILDER_PRICE.toLocaleString()}</span> →
+              Get Builder 1 — ₦<span>{BUILDER1_PRICE.toLocaleString()}</span> →
             </Link>
             <a href="#what-you-build" className="text-body-strong font-bold text-[14.5px] hover:text-brand transition-colors">
               See what you'll build ↓
@@ -322,7 +234,7 @@ export default function AIBuilder() {
           <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45 }} className="flex flex-wrap justify-center gap-x-5 gap-y-1.5 mt-6 text-[13px] text-body font-semibold">
             <span><span>{builder1Count}</span> sessions</span>
             <span>·</span>
-            <span>6 months access</span>
+            <span>Permanent access</span>
             <span>·</span>
             <span>One-time payment, no subscription</span>
           </m.div>
@@ -699,17 +611,9 @@ export default function AIBuilder() {
         </div>
       </div>
 
-      {/* Offer — all three real plans. ANCHOR_PRICE is the strikethrough
-          anchor only; the two prices anyone can actually pay are
-          BUILDER_PRICE (either single tier) and PRO_PRICE (both). */}
+      {/* Offer — all three real plans, each permanent/guides-only. */}
       <div id="pricing" className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto">
         <SectionHeading eyebrow="The offer">Pick where you start.</SectionHeading>
-
-        {nextCohortDate && (
-          <div className="flex justify-center -mt-4 mb-9">
-            <CohortCountdown dateStr={nextCohortDate} />
-          </div>
-        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 text-left items-stretch">
           {/* Builder 1 — this page's entry offer */}
@@ -719,18 +623,12 @@ export default function AIBuilder() {
             </span>
             <div className="font-extrabold text-ink text-lg mt-1">🌱 Builder 1</div>
             <div className="flex items-baseline gap-2.5 mt-2.5 mb-0.5">
-              <span className="text-base text-gray-400 line-through">₦<span>{ANCHOR_PRICE.toLocaleString()}</span></span>
-              <span className="font-display font-extrabold text-[32px] text-ink">₦<span>{BUILDER_PRICE.toLocaleString()}</span></span>
+              <span className="font-display font-extrabold text-[32px] text-ink">₦<span>{BUILDER1_PRICE.toLocaleString()}</span></span>
             </div>
             <div className="flex flex-wrap gap-1.5 mb-3.5">
               <span className="inline-flex items-center gap-1 bg-[#EAFAF1] dark:bg-green/10 text-green font-extrabold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
-                <Tag className="w-3 h-3" /> Save ₦<span>{BUILDER_SAVINGS.toLocaleString()}</span> · <span>{BUILDER_SAVINGS_PERCENT}</span>% off
+                <InfinityIcon className="w-3 h-3" /> Yours forever — no expiry
               </span>
-              {builder1Cohort && (
-                <span className="inline-flex items-center gap-1 bg-[#F3EBFF] dark:bg-brand/15 text-brand font-bold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
-                  <CalendarDays className="w-3 h-3" /> Live cohort <span>{builder1Cohort}</span>
-                </span>
-              )}
             </div>
             <p className="text-[13px] text-body mb-4">The foundation track. No prerequisite, no coding experience needed.</p>
             <ul className="flex flex-col gap-2.5 mb-5 flex-1">
@@ -750,18 +648,12 @@ export default function AIBuilder() {
           <div className="rounded-[22px] border-[1.5px] border-border-soft bg-white dark:bg-[#181818] p-6 flex flex-col">
             <div className="font-extrabold text-ink text-lg mt-1">⚡ Builder 2</div>
             <div className="flex items-baseline gap-2.5 mt-2.5 mb-0.5">
-              <span className="text-base text-gray-400 line-through">₦<span>{ANCHOR_PRICE.toLocaleString()}</span></span>
-              <span className="font-display font-extrabold text-[32px] text-ink">₦<span>{BUILDER_PRICE.toLocaleString()}</span></span>
+              <span className="font-display font-extrabold text-[32px] text-ink">₦<span>{BUILDER2_PRICE.toLocaleString()}</span></span>
             </div>
             <div className="flex flex-wrap gap-1.5 mb-3.5">
               <span className="inline-flex items-center gap-1 bg-[#EAFAF1] dark:bg-green/10 text-green font-extrabold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
-                <Tag className="w-3 h-3" /> Save ₦<span>{BUILDER_SAVINGS.toLocaleString()}</span> · <span>{BUILDER_SAVINGS_PERCENT}</span>% off
+                <InfinityIcon className="w-3 h-3" /> Yours forever — no expiry
               </span>
-              {builder2Cohort && (
-                <span className="inline-flex items-center gap-1 bg-[#F3EBFF] dark:bg-brand/15 text-brand font-bold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
-                  <CalendarDays className="w-3 h-3" /> Live cohort <span>{builder2Cohort}</span>
-                </span>
-              )}
             </div>
             <p className="text-[13px] text-body mb-4">Best after Builder 1 — but nothing stops you jumping straight in.</p>
             <ul className="flex flex-col gap-2.5 mb-5 flex-1">
@@ -792,7 +684,7 @@ export default function AIBuilder() {
             </div>
             <div className="flex flex-wrap gap-1.5 mb-3.5">
               <span className="inline-flex items-center gap-1 bg-[#EAFAF1] dark:bg-green/10 text-green font-extrabold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
-                <Tag className="w-3 h-3" /> Save ₦<span>{(BUILDER_PRICE * 2 - PRO_PRICE).toLocaleString()}</span> vs. both separately
+                <InfinityIcon className="w-3 h-3" /> Yours forever — no expiry
               </span>
             </div>
             <p className="text-[13px] text-body mb-4">Both tracks, one payment, no prerequisite — everything unlocks immediately.</p>
@@ -816,7 +708,7 @@ export default function AIBuilder() {
         <div className="max-w-3xl mx-auto mt-7 flex flex-col gap-2">
           <p className="flex items-start gap-1.5 text-[12.5px] text-body">
             <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-            One-time payment, not a subscription. Access starts the moment you pay and runs for 6 months.
+            One-time payment, not a subscription. Access starts the moment you pay and never expires.
           </p>
           <p className="flex items-start gap-1.5 text-[12.5px] text-body">
             <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
@@ -834,7 +726,7 @@ export default function AIBuilder() {
         >
           <div>
             <h2 className="font-display font-extrabold text-2xl sm:text-[26px] text-white m-0">Ready to become an AI Builder?</h2>
-            <p className="text-[#EDE4FF] mt-2 mb-0 text-[15px]">One-time payment. 6 months of access. Start today.</p>
+            <p className="text-[#EDE4FF] mt-2 mb-0 text-[15px]">One-time payment. Permanent access. Start today.</p>
           </div>
           <Link
             to="/pricing"

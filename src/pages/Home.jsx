@@ -9,7 +9,7 @@ import { departments, isVisibleToPublic } from '../data/departments';
 import { usePro } from '../hooks/usePro';
 import { useTheme } from '../context/ThemeContext';
 import { useCohortSchedule } from '../hooks/useCohortSchedule';
-import { ANCHOR_PRICE, BUILDER_PRICE, VIBECODING_PRICE } from '../data/pricing';
+import { BUILDER1_PRICE, VIBECODING_PRICE, AI_AGENT_MASTERY_PRICE } from '../data/pricing';
 
 // Returns a display string for a cohort start date, or null if it's unset or
 // already in the past — same rule Pricing.jsx uses, duplicated rather than
@@ -126,11 +126,11 @@ const PROGRAMS = [
     to: '/ai-builder',
     icon: Bot,
     accent: 'green',
-    tag: 'Automation Builder',
+    tag: 'AI Agent Guides',
     title: 'Build AI agents for real work',
     text: `${publicAgents.length} guided, self-paced builds — Gmail triage, WhatsApp bots, invoice processing, and more. Ship a portfolio of working agents.`,
-    bullets: ['Self-paced, 6 months access', 'Runs on your own free Gemini key', 'Portfolio write-up every session'],
-    price: `From ₦${BUILDER_PRICE.toLocaleString()}`,
+    bullets: ['Self-paced, permanent access', 'Runs on your own free Gemini key', 'Portfolio write-up every session'],
+    price: `From ₦${BUILDER1_PRICE.toLocaleString()}`,
   },
   {
     to: '/vibe-coding',
@@ -141,6 +141,16 @@ const PROGRAMS = [
     text: '4 weeks, 8 live classes. Go from an idea to a deployed website, web app, and AI-powered product — no coding experience required.',
     bullets: ['Live instructor-led classes', 'Portfolio site, to-do app, Supabase CRUD app + more', 'Certificate of completion'],
     price: `₦${VIBECODING_PRICE.toLocaleString()} one-time`,
+  },
+  {
+    to: '/ai-agent-mastery',
+    icon: MessageCircle,
+    accent: 'brand',
+    tag: 'AI Agent Mastery',
+    title: 'Build your own AI personal assistant',
+    text: 'Live cohort. Build one integrated assistant that triages your inbox, runs your calendar, does research, and drafts messages — with guardrails built in.',
+    bullets: ['Live instructor-led classes', 'One assistant, built end to end', 'Certificate of completion'],
+    price: `₦${AI_AGENT_MASTERY_PRICE.toLocaleString()} one-time`,
   },
 ];
 
@@ -269,9 +279,8 @@ export default function Home({ progress, onSelectAgent }) {
               <span>{publicAgents.length}</span> guided Artificial Intelligence (AI) agent build sessions across every department. Copy-paste prompts, step-by-step builds, and a portfolio write-up — so you ship something real every session.
             </p>
             <div className="flex items-baseline gap-2.5 mb-6">
-              <span className="text-base text-gray-400 line-through">₦<span>{ANCHOR_PRICE.toLocaleString()}</span></span>
-              <span className="font-display font-extrabold text-2xl text-ink">₦<span>{BUILDER_PRICE.toLocaleString()}</span></span>
-              <span className="text-sm text-body">one-time · 6 months access</span>
+              <span className="font-display font-extrabold text-2xl text-ink">From ₦<span>{BUILDER1_PRICE.toLocaleString()}</span></span>
+              <span className="text-sm text-body">one-time · yours to keep</span>
             </div>
             <div className="flex gap-3.5 items-center flex-wrap">
               <Link
@@ -379,11 +388,11 @@ export default function Home({ progress, onSelectAgent }) {
         </div>
       </div>
 
-      {/* ── Two programs ── */}
+      {/* ── Three programs ── */}
       <div className="px-4 sm:px-6 lg:px-[5vw] pt-2 pb-14 max-w-6xl mx-auto">
-        <h2 className="font-display font-extrabold text-[30px] text-ink tracking-[-.8px] text-center m-0">Two ways to build with AI</h2>
-        <p className="text-center text-body mt-2 mb-7">Pick the path that fits — automate real work, or ship your own web app from scratch</p>
-        <div className="grid sm:grid-cols-2 gap-5">
+        <h2 className="font-display font-extrabold text-[30px] text-ink tracking-[-.8px] text-center m-0">Three ways to build with AI</h2>
+        <p className="text-center text-body mt-2 mb-7">Pick the path that fits — automate real work, ship your own web app, or build a personal assistant</p>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {PROGRAMS.map((program) => (
             <Link
               key={program.to}
@@ -611,7 +620,7 @@ export default function Home({ progress, onSelectAgent }) {
         >
           <div>
             <h2 className="font-display font-extrabold text-2xl sm:text-[26px] text-white m-0">Unlock all <span>{publicAgents.length}</span> sessions</h2>
-            <p className="text-[#EDE4FF] mt-2 mb-0 text-[15px]">Get Builder 1, Builder 2, or both bundled as Pro — every plan is a one-time payment for 6 months of access.</p>
+            <p className="text-[#EDE4FF] mt-2 mb-0 text-[15px]">Get Builder 1, Builder 2, or both bundled as Pro — one-time payment, permanent access, yours to keep.</p>
           </div>
           <Link
             to="/pricing"

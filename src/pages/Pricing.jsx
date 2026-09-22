@@ -1,67 +1,48 @@
 import { m } from 'framer-motion';
-import { CheckCircle2, AlertCircle, Tag, Loader2, Zap, CalendarDays, Info, BookOpen } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Infinity as InfinityIcon, Loader2, Zap, Info } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { usePro } from '../hooks/usePro';
-import { useCohortSchedule } from '../hooks/useCohortSchedule';
 import { usePaystackCheckout } from '../hooks/usePaystackCheckout';
 import { agents } from '../data/agents';
-import {
-  ANCHOR_PRICE, BUILDER_PRICE, BUILDER_SAVINGS, BUILDER_SAVINGS_PERCENT, PRO_PRICE,
-  BUNDLE_PRICES,
-} from '../data/pricing';
+import { BUILDER1_PRICE, BUILDER2_PRICE, PRO_PRICE } from '../data/pricing';
 import { usePageSeo } from '../hooks/usePageSeo';
 
 const builder1Count = agents.filter((a) => a.difficulty === 'Builder 1').length;
 const builder2Count = agents.filter((a) => a.difficulty === 'Builder 2').length;
 
 const BUILDER1_FEATURES = [
-  `${builder1Count} Builder 1 agent sessions`,
+  `${builder1Count} Builder 1 agent guides`,
   'Copy-paste prompts for every build',
   'XP tracking & progress',
   'Portfolio write-up prompts',
-  '6 months of access',
+  'Permanent access — yours to keep',
 ];
 
 const BUILDER2_FEATURES = [
-  `${builder2Count} Builder 2 agent sessions`,
+  `${builder2Count} Builder 2 agent guides`,
   'Multi-step, API-integrated agent builds',
   'XP tracking & progress',
   'Portfolio write-up prompts',
-  '6 months of access',
+  'Permanent access — yours to keep',
 ];
 
 const PRO_FEATURES = [
-  `All ${builder1Count + builder2Count} sessions — Builder 1 + Builder 2`,
+  `All ${builder1Count + builder2Count} guides — Builder 1 + Builder 2`,
   'No prerequisite — both tracks unlock immediately',
   'XP tracking & progress across both tracks',
   'Portfolio write-up prompts for every agent',
-  'Priority support',
-  '6 months of access',
+  'Permanent access — yours to keep',
 ];
-
-// Returns a display string for a cohort start date, or null if it's unset
-// or already in the past (an admin who forgets to clear a stale date
-// shouldn't leave "cohort starts" showing for a date that's already gone).
-function formatCohortDate(dateStr) {
-  if (!dateStr) return null;
-  const date = new Date(`${dateStr}T00:00:00`);
-  if (date < new Date(new Date().toDateString())) return null;
-  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-}
 
 export default function Pricing() {
   const { user } = useAuth();
   const { theme } = useTheme();
   const { hasBuilder1, hasBuilder2, isPro } = usePro();
-  const { builder1: builder1CohortDate, builder2: builder2CohortDate } = useCohortSchedule();
-
-  const builder1Cohort = formatCohortDate(builder1CohortDate);
-  const builder2Cohort = formatCohortDate(builder2CohortDate);
 
   usePageSeo({
     title: 'Pricing — Builder 1, Builder 2 & Pro | Social Dev Technologies',
-    description: 'Simple, one-time pricing for Builder 1, Builder 2, or the combined Pro plan — no subscription, 6 months of access to build real AI agents.',
+    description: 'Simple, one-time pricing for Builder 1, Builder 2, or the combined Pro plan — permanent access to the guides, no subscription, no expiry.',
     canonicalPath: '/pricing',
   });
 
@@ -79,7 +60,7 @@ export default function Pricing() {
           Build agents. Level up your career.
         </h1>
         <p className="text-body text-base max-w-xl mx-auto">
-          Pay once, build for 6 months. Start with Builder 1, move on to Builder 2, or get both bundled as Pro.
+          Pay once, keep the guides forever. Start with Builder 1, move on to Builder 2, or get both as Pro.
         </p>
         <div className="inline-flex items-center gap-2 text-[13px] font-semibold text-brand bg-[#F3EBFF] dark:bg-brand/15 rounded-full px-4 py-2 mt-4">
           <Info className="w-4 h-4 flex-shrink-0" />
@@ -106,20 +87,14 @@ export default function Pricing() {
         >
           <div className="font-extrabold text-ink text-lg">🌱 Builder 1</div>
           <div className="flex items-baseline gap-2.5 mt-2.5 mb-0.5">
-            <span className="text-base text-gray-400 line-through">₦<span>{ANCHOR_PRICE.toLocaleString()}</span></span>
-            <span className="font-display font-extrabold text-[34px] text-ink">₦<span>{BUILDER_PRICE.toLocaleString()}</span></span>
+            <span className="font-display font-extrabold text-[34px] text-ink">₦<span>{BUILDER1_PRICE.toLocaleString()}</span></span>
           </div>
           <div className="flex flex-wrap gap-1.5 mb-3.5">
             <span className="inline-flex items-center gap-1 bg-[#EAFAF1] dark:bg-green/10 text-green font-extrabold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
-              <Tag className="w-3 h-3" /> Save ₦<span>{BUILDER_SAVINGS.toLocaleString()}</span> · <span>{BUILDER_SAVINGS_PERCENT}</span>% off
+              <InfinityIcon className="w-3 h-3" /> Yours forever — no expiry
             </span>
-            {builder1Cohort && (
-              <span className="inline-flex items-center gap-1 bg-[#F3EBFF] dark:bg-brand/15 text-brand font-bold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
-                <CalendarDays className="w-3 h-3" /> Cohort starts <span>{builder1Cohort}</span>
-              </span>
-            )}
           </div>
-          <p className="text-[13.5px] text-body mb-4.5">One-time payment. Start here — the foundation track.</p>
+          <p className="text-[13.5px] text-body mb-4.5">One-time payment, permanent access. Start here — the foundation track.</p>
           <ul className="flex flex-col gap-2.5 mb-5.5 flex-1">
             {BUILDER1_FEATURES.map((f) => (
               <li key={f} className="flex items-start gap-2.5 text-[13.5px] text-body-strong">
@@ -140,7 +115,7 @@ export default function Pricing() {
                 className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-deep disabled:opacity-60 text-white font-extrabold px-6 py-3.5 rounded-xl shadow-[0_10px_22px_rgba(124,58,237,.35)] transition-colors"
               >
                 {checkoutLoading === 'builder1' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {user ? `Pay ₦${BUILDER_PRICE.toLocaleString()} with Paystack` : 'Sign up to get started'}
+                {user ? `Pay ₦${BUILDER1_PRICE.toLocaleString()} with Paystack` : 'Sign up to get started'}
               </button>
               {!user && <p className="text-center text-xs text-gray-400 mt-1">Sign up first — then come back to pay.</p>}
             </div>
@@ -156,20 +131,14 @@ export default function Pricing() {
         >
           <div className="font-extrabold text-ink text-lg">⚡ Builder 2</div>
           <div className="flex items-baseline gap-2.5 mt-2.5 mb-0.5">
-            <span className="text-base text-gray-400 line-through">₦<span>{ANCHOR_PRICE.toLocaleString()}</span></span>
-            <span className="font-display font-extrabold text-[34px] text-ink">₦<span>{BUILDER_PRICE.toLocaleString()}</span></span>
+            <span className="font-display font-extrabold text-[34px] text-ink">₦<span>{BUILDER2_PRICE.toLocaleString()}</span></span>
           </div>
           <div className="flex flex-wrap gap-1.5 mb-3.5">
             <span className="inline-flex items-center gap-1 bg-[#EAFAF1] dark:bg-green/10 text-green font-extrabold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
-              <Tag className="w-3 h-3" /> Save ₦<span>{BUILDER_SAVINGS.toLocaleString()}</span> · <span>{BUILDER_SAVINGS_PERCENT}</span>% off
+              <InfinityIcon className="w-3 h-3" /> Yours forever — no expiry
             </span>
-            {builder2Cohort && (
-              <span className="inline-flex items-center gap-1 bg-[#F3EBFF] dark:bg-brand/15 text-brand font-bold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
-                <CalendarDays className="w-3 h-3" /> Cohort starts <span>{builder2Cohort}</span>
-              </span>
-            )}
           </div>
-          <p className="text-[13.5px] text-body mb-4.5">One-time payment. Best after finishing Builder 1 — but nothing stops you from jumping in early.</p>
+          <p className="text-[13.5px] text-body mb-4.5">One-time payment, permanent access. Best after finishing Builder 1 — but nothing stops you from jumping in early.</p>
           <ul className="flex flex-col gap-2.5 mb-5.5 flex-1">
             {BUILDER2_FEATURES.map((f) => (
               <li key={f} className="flex items-start gap-2.5 text-[13.5px] text-body-strong">
@@ -190,7 +159,7 @@ export default function Pricing() {
                 className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-deep disabled:opacity-60 text-white font-extrabold px-6 py-3.5 rounded-xl shadow-[0_10px_22px_rgba(124,58,237,.35)] transition-colors"
               >
                 {checkoutLoading === 'builder2' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {user ? `Pay ₦${BUILDER_PRICE.toLocaleString()} with Paystack` : 'Sign up to get started'}
+                {user ? `Pay ₦${BUILDER2_PRICE.toLocaleString()} with Paystack` : 'Sign up to get started'}
               </button>
               {!user && <p className="text-center text-xs text-gray-400 mt-1">Sign up first — then come back to pay.</p>}
             </div>
@@ -213,6 +182,11 @@ export default function Pricing() {
           </div>
           <div className="font-display font-extrabold text-[38px] text-ink mt-2.5 mb-0.5">
             ₦<span>{PRO_PRICE.toLocaleString()}</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5 mb-3.5">
+            <span className="inline-flex items-center gap-1 bg-[#EAFAF1] dark:bg-green/10 text-green font-extrabold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
+              <InfinityIcon className="w-3 h-3" /> Yours forever — no expiry
+            </span>
           </div>
           <p className="text-[13.5px] text-body mb-4.5">
             One-time payment for Builder 1 + Builder 2 together — no prerequisite, both unlock immediately.
@@ -245,56 +219,6 @@ export default function Pricing() {
         </m.div>
       </div>
 
-      {/* A-la-carte guide bundles — permanent, content-only access to a
-          tier's guides, no cohort/live perks or AI credits (see
-          supabase/guide-purchases-setup.sql). Each card is hidden once the
-          user already holds that tier's full (strictly better, same-price-
-          class) subscription access — buying the bundle on top would grant
-          nothing new. */}
-      {(!hasBuilder1 || !hasBuilder2) && (
-        <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="mt-10 pt-10 border-t border-border-soft">
-          <div className="flex items-center justify-center gap-2 mb-1.5">
-            <BookOpen className="w-4 h-4 text-brand" />
-            <h2 className="font-display font-extrabold text-lg text-ink">Just want the guides?</h2>
-          </div>
-          <p className="text-body text-[13.5px] max-w-lg mx-auto mb-6">
-            No cohort, no live sessions, no AI Builder credits — permanent access to a tier's step-by-step guides, priced like a book instead of a subscription.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-2xl mx-auto text-left">
-            {!hasBuilder1 && (
-              <div className="rounded-2xl border border-border-soft bg-white dark:bg-[#181818] p-6 flex flex-col">
-                <div className="font-extrabold text-ink">Builder 1 Guide Bundle</div>
-                <div className="font-display font-extrabold text-2xl text-ink mt-1.5 mb-3">₦{BUNDLE_PRICES.builder1.toLocaleString()}</div>
-                <p className="text-[13px] text-body mb-4 flex-1">All {builder1Count} Builder 1 guides, forever — no expiry.</p>
-                <button
-                  onClick={() => handleCheckout('bundle_builder1')}
-                  disabled={checkoutLoading === 'bundle_builder1'}
-                  className="flex items-center justify-center gap-2 w-full bg-white dark:bg-[#181818] border-[1.5px] border-brand text-brand hover:bg-[#F3EBFF] dark:hover:bg-brand/10 disabled:opacity-60 font-extrabold px-5 py-2.5 rounded-xl transition-colors"
-                >
-                  {checkoutLoading === 'bundle_builder1' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                  {user ? 'Buy the bundle' : 'Sign up to get started'}
-                </button>
-              </div>
-            )}
-            {!hasBuilder2 && (
-              <div className="rounded-2xl border border-border-soft bg-white dark:bg-[#181818] p-6 flex flex-col">
-                <div className="font-extrabold text-ink">Builder 2 Guide Bundle</div>
-                <div className="font-display font-extrabold text-2xl text-ink mt-1.5 mb-3">₦{BUNDLE_PRICES.builder2.toLocaleString()}</div>
-                <p className="text-[13px] text-body mb-4 flex-1">All {builder2Count} Builder 2 guides, forever — no expiry.</p>
-                <button
-                  onClick={() => handleCheckout('bundle_builder2')}
-                  disabled={checkoutLoading === 'bundle_builder2'}
-                  className="flex items-center justify-center gap-2 w-full bg-white dark:bg-[#181818] border-[1.5px] border-brand text-brand hover:bg-[#F3EBFF] dark:hover:bg-brand/10 disabled:opacity-60 font-extrabold px-5 py-2.5 rounded-xl transition-colors"
-                >
-                  {checkoutLoading === 'bundle_builder2' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                  {user ? 'Buy the bundle' : 'Sign up to get started'}
-                </button>
-              </div>
-            )}
-          </div>
-        </m.div>
-      )}
-
       {/* Payment methods */}
       <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-9 text-center">
         <p className="text-[13.5px] text-gray-400 mb-3">
@@ -308,7 +232,7 @@ export default function Pricing() {
           ))}
         </div>
         <p className="text-xs text-gray-400 mt-6">
-          Every plan is a one-time payment for 6 months of access — no auto-renewal. For billing questions email support@socialdevtechnologies.com
+          Every plan is a one-time payment, yours to keep — no subscription, no auto-renewal. For billing questions email support@socialdevtechnologies.com
         </p>
       </m.div>
     </div>

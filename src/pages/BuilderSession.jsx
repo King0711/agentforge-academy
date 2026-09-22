@@ -9,8 +9,6 @@ import { getAgentsByDifficulty, getBuilderPagePath } from '../data/agents';
 import { getDifficulty } from '../data/departments';
 import { getTechColor } from '../data/techStack';
 import { useCourseContent } from '../hooks/useCourseContent';
-import { usePaystackCheckout } from '../hooks/usePaystackCheckout';
-import { GUIDE_PRICES } from '../data/pricing';
 import { useTheme } from '../context/ThemeContext';
 import XPBadge from '../components/XPBadge';
 import SessionGuide from '../components/SessionGuide';
@@ -47,8 +45,6 @@ export default function BuilderSession({ progress, tier }) {
   const difficulty = getDifficulty(tier);
 
   const { content, loading, locked } = useCourseContent(agent?.id);
-  const { checkout, loadingKey: guideCheckoutLoading, error: guideCheckoutError } = usePaystackCheckout();
-  const guidePrice = tier === 'Builder 1' ? GUIDE_PRICES.builder1 : GUIDE_PRICES.builder2;
 
   // SEO — each session gets its own title + description, restored on unmount
   // so navigating away doesn't leave stale tags on the next page.
@@ -275,27 +271,14 @@ export default function BuilderSession({ progress, tier }) {
             <Lock className="w-8 h-8 text-brand" />
             <p className="font-bold text-ink">This session's guide is <span>{tier}</span> content</p>
             <p className="text-sm text-body max-w-sm">
-              Get <span>{tier}</span> (or the Pro bundle) to unlock the full step-by-step build, prompts, and resources — or buy just this guide, no subscription.
+              Get <span>{tier}</span> (or the Pro bundle) to unlock the full step-by-step build, prompts, and resources — permanent access, yours to keep.
             </p>
-            {guideCheckoutError && (
-              <p className="text-sm text-rose max-w-sm">{guideCheckoutError}</p>
-            )}
-            <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
-              <Link
-                to="/pricing"
-                className="inline-flex items-center gap-2 bg-brand hover:bg-brand-deep text-white font-bold px-5 py-2.5 rounded-xl transition-colors"
-              >
-                See plans
-              </Link>
-              <button
-                onClick={() => checkout('guide', { courseId: agent.id })}
-                disabled={guideCheckoutLoading === 'guide'}
-                className="inline-flex items-center gap-2 bg-white dark:bg-[#181818] border border-border-soft hover:border-brand/40 text-body-strong font-bold px-5 py-2.5 rounded-xl transition-colors disabled:opacity-60"
-              >
-                {guideCheckoutLoading === 'guide' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                Buy just this guide — ₦{guidePrice.toLocaleString()}
-              </button>
-            </div>
+            <Link
+              to="/pricing"
+              className="mt-2 inline-flex items-center gap-2 bg-brand hover:bg-brand-deep text-white font-bold px-5 py-2.5 rounded-xl transition-colors"
+            >
+              See plans
+            </Link>
           </div>
         )}
 

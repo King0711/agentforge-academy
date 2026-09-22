@@ -32,7 +32,7 @@ function CohortDateRow({ label, value, onChange, onSave, saving }) {
 
 export default function AdminCohorts() {
   const { showToast } = useOutletContext();
-  const [cohortDates, setCohortDates] = useState({ builder1: '', builder2: '', vibecoding: '' });
+  const [cohortDates, setCohortDates] = useState({ builder1: '', builder2: '', vibecoding: '', aimastery: '' });
   const [cohortSaving, setCohortSaving] = useState(null);
   const [error, setError] = useState('');
 
@@ -40,7 +40,7 @@ export default function AdminCohorts() {
     try {
       const { data, error: err } = await supabase.from('cohort_schedule').select('tier, start_date');
       if (err) throw err;
-      const next = { builder1: '', builder2: '', vibecoding: '' };
+      const next = { builder1: '', builder2: '', vibecoding: '', aimastery: '' };
       for (const row of data || []) {
         next[row.tier] = row.start_date || '';
       }
@@ -62,7 +62,7 @@ export default function AdminCohorts() {
         .update({ start_date: cohortDates[tier] || null })
         .eq('tier', tier);
       if (err) throw err;
-      const tierLabels = { builder1: 'Builder 1', builder2: 'Builder 2', vibecoding: 'Vibe Coding' };
+      const tierLabels = { builder1: 'Builder 1', builder2: 'Builder 2', vibecoding: 'Vibe Coding', aimastery: 'AI Agent Mastery' };
       showToast(`${tierLabels[tier] || tier} cohort date saved.`);
     } catch (err) {
       setError(err.message);
@@ -109,9 +109,18 @@ export default function AdminCohorts() {
           onSave={() => saveCohortDate('vibecoding')}
           saving={cohortSaving === 'vibecoding'}
         />
+        <CohortDateRow
+          label="AI Agent Mastery"
+          value={cohortDates.aimastery}
+          onChange={(v) => setCohortDates((prev) => ({ ...prev, aimastery: v }))}
+          onSave={() => saveCohortDate('aimastery')}
+          saving={cohortSaving === 'aimastery'}
+        />
       </div>
       <p className="text-xs text-gray-400 mb-2">
-        Clear a date and save to hide it from the Pricing page (e.g. once that cohort has started).
+        Clear a date and save to hide it. Builder 1/Builder 2 are permanent, guides-only products now (no live
+        cohort) — their dates here no longer show anywhere public. Vibe Coding and AI Agent Mastery still show
+        theirs on their own pricing page.
       </p>
     </div>
   );

@@ -15,31 +15,27 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '
 // sent to Paystack (see amountNaira below), so a mismatch with the
 // webhook's own PRICES means a real charge gets flagged as unrecognized.
 //
-// Cut from 50000/50000/90000 to 25000/25000/45000 (2026-09-02). Pro kept
-// at a ~10% discount off buying both tracks separately, same ratio as
-// before, rather than left at 90000 (which would cost more than the two
-// tracks bought individually).
+// builder1/builder2/pro cut from 25000/25000/45000 to 5000/7000/10000
+// (2026-09-22) as part of repositioning them from a 6-month subscription
+// (live cohort + AI Builder credits) into permanent, guides-only access —
+// see supabase/guide-purchases-setup.sql. Builder 1 and Builder 2 no
+// longer share one price: Builder 2 is priced above Builder 1 as the more
+// advanced track. Pro (10000) is a discount off buying both separately
+// (12000), same "just get Pro" logic as before at the new price floor.
 //
-// vibecoding (added 2026-09-08) is the separate live-cohort Vibe Coding
-// bootcamp, not a tier of the builder1/builder2/pro ladder above — it's
-// priced independently and happens to land at the same amount as
-// builder1/builder2. That's fine: the webhook's resolvePlan() trusts the
-// metadata.plan set below for exact identification, only falling back to
-// amount-only matching (pro-only) for metadata-less payments.
+// vibecoding and aimastery are both separate live-cohort products, not
+// tiers of the builder1/builder2/pro ladder above — priced independently
+// (and identically, at 25000) from each other and from the ladder. That's
+// fine: the webhook's resolvePlan() trusts the metadata.plan set below for
+// exact identification, only falling back to amount-only matching
+// (pro-only) for metadata-less payments.
 const PRICES = {
-  builder1: 25000,
-  builder2: 25000,
-  pro: 45000,
+  builder1: 5000,
+  builder2: 7000,
+  pro: 10000,
   vibecoding: 25000,
+  aimastery: 25000,
 };
-
-// A-la-carte guide purchases (2026-09-19) — a separate, additive path
-// alongside the tiers above, not a replacement. Permanent access to
-// one guide or a whole tier's guides, no 6-month expiry, no AI Builder
-// credits, no cohort perks — priced and framed like buying a book.
-// Keep these in sync with paystack-webhook's own copy of this object.
-const GUIDE_PRICES = { builder1: 1999, builder2: 3999 };
-const BUNDLE_PRICES = { builder1: 14000, builder2: 19999 };
 
 // This function is called directly from the browser (Pricing.jsx via
 // supabase.functions.invoke), so it needs CORS headers and to answer the
@@ -98,51 +94,18 @@ serve(async (req) => {
     return jsonResponse({ error: 'Invalid JSON body' }, 400);
   }
 
-  const { plan, redirectOrigin, courseId } = body;
-  if (typeof plan !== 'string') {
+  const { plan, redirectOrigin } = body;
+  if (typeof plan !== 'string' || !Object.hasOwn(PRICES, plan)) {
     return jsonResponse({ error: 'Unknown plan' }, 400);
   }
+  const amountNaira = PRICES[plan];
 
-  let amountNaira;
-  let metadata = { user_id: user.id, plan };
-  let referenceSuffix = plan;
-
-  if (plan === 'guide') {
-    // Individual guide purchase — price depends on which tier the
-    // course_id belongs to, looked up from course_content itself
-    // (never trust a client-supplied tier) rather than a hardcoded
-    // id range, so this stays correct if courses are ever renumbered.
-    const parsedCourseId = Number(courseId);
-    if (!Number.isInteger(parsedCourseId)) {
-      return jsonResponse({ error: 'courseId required for a guide purchase' }, 400);
-    }
-    const service = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const { data: courseRow } = await service
-      .from('course_content')
-      .select('tier')
-      .eq('course_id', parsedCourseId)
-      .maybeSingle();
-    if (!courseRow || !Object.hasOwn(GUIDE_PRICES, courseRow.tier)) {
-      return jsonResponse({ error: 'Unknown or non-purchasable course_id' }, 400);
-    }
-    amountNaira = GUIDE_PRICES[courseRow.tier];
-    metadata = { user_id: user.id, plan, course_id: parsedCourseId };
-    referenceSuffix = `guide${parsedCourseId}`;
-  } else if (Object.hasOwn(BUNDLE_PRICES, plan.replace('bundle_', '')) && plan.startsWith('bundle_')) {
-    amountNaira = BUNDLE_PRICES[plan.replace('bundle_', '')];
-  } else if (Object.hasOwn(PRICES, plan)) {
-    amountNaira = PRICES[plan];
-  } else {
-    return jsonResponse({ error: 'Unknown plan' }, 400);
-  }
-
-  // Embed the verified user id + plan (+ course_id for a single guide) in
-  // Paystack's metadata. Paystack signs the whole webhook payload with our
-  // secret key, so when it comes back we can trust this exactly as much as
-  // we trust our own signature check — this is what lets the webhook grant
-  // access by user id instead of the fragile "match the payer's email"
-  // approach.
-  const reference = `sdt_${referenceSuffix}_${user.id}_${Date.now()}`;
+  // Embed the verified user id + plan in Paystack's metadata. Paystack
+  // signs the whole webhook payload with our secret key, so when it comes
+  // back we can trust this exactly as much as we trust our own signature
+  // check — this is what lets the webhook grant access by user id instead
+  // of the fragile "match the payer's email" approach.
+  const reference = `sdt_${plan}_${user.id}_${Date.now()}`;
 
   const paystackRes = await fetch('https://api.paystack.co/transaction/initialize', {
     method: 'POST',
@@ -155,7 +118,7 @@ serve(async (req) => {
       amount: amountNaira * 100, // kobo
       currency: 'NGN',
       reference,
-      metadata,
+      metadata: { user_id: user.id, plan },
       callback_url: `${redirectOrigin || ''}/dashboard`,
     }),
   });

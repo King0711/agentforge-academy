@@ -1,31 +1,49 @@
 -- ============================================================
--- A-la-carte guide purchases — buy one guide, or a full Builder
--- tier's guides as a discounted bundle, without a 6-month
--- subscription-style tier purchase (builder1_expires_at /
--- builder2_expires_at stay exactly as they are — this is a
--- separate, additive access path, not a replacement).
+-- AI Agent Guides — permanent, guides-only access for Builder 1
+-- and Builder 2 (builder1_expires_at/builder2_expires_at stay
+-- exactly as they are for grandfathered subscribers — this is a
+-- replacement for NEW sales, not a retroactive change).
 --
--- Confirmed pricing (2026-09-19):
---   Builder 1 guide  — N1,999   | Builder 1 bundle (all 12) — N14,000
---   Builder 2 guide  — N3,999   | Builder 2 bundle (all 13) — N19,999
+-- Confirmed pricing (2026-09-22):
+--   Builder 1 (all 12 guides) — N5,000
+--   Builder 2 (all 13 guides) — N7,000
+--   Pro (both)                — N10,000
 --
--- Access granted this way is PERMANENT (no expiry) — a one-time
--- purchase of a single guide or a bundle is priced and framed like
--- buying a book, not renting a subscription. This deliberately
--- differs from the 6-month builder1_expires_at/builder2_expires_at
--- tiers, which also include AI Builder credits and cohort/live
--- perks that a-la-carte buyers are not paying for.
+-- Access granted this way is PERMANENT (no expiry), with no live
+-- classes, cohort, or AI Builder credits — priced and framed like
+-- buying a book, not a subscription.
+--
+-- Superseded design note: an earlier draft of this migration also
+-- supported a single-guide-at-a-time purchase (plan 'guide') and a
+-- separate 'bundle_builder1'/'bundle_builder2' plan distinct from
+-- 'builder1'/'builder2'. That was dropped before ever being applied
+-- to production (confirmed via live schema check — no historical
+-- rows use those values) in favor of 'builder1'/'builder2'/'pro'
+-- directly meaning "grant the permanent guide bundle."
 -- ============================================================
 
 -- 1. guide_purchases — one row per (user, course_id) ever purchased
---    individually or as part of a bundle. A bundle purchase inserts
---    one row per course_id in that tier, all sharing the same
+--    as part of a tier bundle. A bundle purchase inserts one row per
+--    course_id in that tier, all sharing the same tier and
 --    provider_transaction_id, so a single Paystack payment is fully
 --    traceable back to every guide it unlocked.
+--
+--    `tier` is stored directly (set by paystack-webhook at insert
+--    time, which already knows it unambiguously) rather than derived
+--    later from course_content.tier or src/data/agents.js — a third
+--    "which courses belong to which tier" source would only be one
+--    more place for that mapping to drift out of sync.
+--
+--    Operational note: if a course is ever added to an existing
+--    tier's lineup, existing permanent owners of that tier do NOT
+--    automatically get a guide_purchases row for the new course_id —
+--    backfill one for each existing owner of that tier by hand
+--    alongside adding the course_content row.
 create table if not exists public.guide_purchases (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   course_id integer not null,
+  tier text not null check (tier in ('builder1', 'builder2')),
   provider_transaction_id text not null,
   created_at timestamptz not null default now(),
   unique (user_id, course_id)
@@ -42,37 +60,11 @@ create policy "Users can view their own guide purchases"
 
 create index if not exists guide_purchases_user_idx on public.guide_purchases (user_id);
 
--- 2. Widen the three independent plan CHECK constraints to add 'guide' and
---    the two bundle plans — same three tables vibecoding-setup.sql widened
---    when it added 'vibecoding' (each is its own constraint, not a shared
---    enum type, so all three need this same drop/add pair):
---      - payments: paystack-webhook's insert (uncaught — not wrapped in a
---        try/catch like the other writes below it) would crash mid-webhook
---        on every single guide/bundle sale, right after guide_purchases was
---        already granted — leaving the entitlement correctly given but the
---        payment forever unlogged and the webhook stuck retrying.
---      - checkout_attempts: create-paystack-checkout's best-effort insert
---        (silently swallowed on failure) would otherwise just never log a
---        row, quietly breaking abandoned-checkout reminders for this path.
---      - referral_earnings: paystack-webhook's best-effort insert would
---        otherwise silently drop the referrer's payout for anyone referred
---        who buys a guide/bundle instead of a tier.
-alter table public.payments drop constraint if exists payments_plan_check;
-alter table public.payments add constraint payments_plan_check
-  check (plan = any (array['builder1', 'builder2', 'pro', 'vibecoding', 'guide', 'bundle_builder1', 'bundle_builder2']));
-
-alter table public.checkout_attempts drop constraint if exists checkout_attempts_plan_check;
-alter table public.checkout_attempts add constraint checkout_attempts_plan_check
-  check (plan = any (array['builder1', 'builder2', 'pro', 'vibecoding', 'guide', 'bundle_builder1', 'bundle_builder2']));
-
-alter table public.referral_earnings drop constraint if exists referral_earnings_plan_check;
-alter table public.referral_earnings add constraint referral_earnings_plan_check
-  check (plan = any (array['builder1', 'builder2', 'pro', 'vibecoding', 'guide', 'bundle_builder1', 'bundle_builder2']));
-
--- 3. course_content RLS — add a third way in, alongside the existing
---    two entitlement-tier checks. A guide_purchases row for this
---    exact course_id grants access to that one row regardless of
---    tier expiry, permanently.
+-- 2. course_content RLS — add a third way in, alongside the existing
+--    two entitlement-tier checks (which stay for grandfathered
+--    subscribers). A guide_purchases row for this exact course_id
+--    grants access to that one row regardless of tier expiry,
+--    permanently.
 drop policy if exists "Tiered course content requires matching active entitlement or a" on public.course_content;
 
 create policy "Tiered course content requires matching active entitlement or a"

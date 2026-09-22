@@ -50,7 +50,7 @@ function formatSessionDate(isoString) {
   return new Date(isoString).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
 }
 
-const TIER_LABELS = { builder1: 'Builder 1', builder2: 'Builder 2', vibecoding: 'Vibe Coding' };
+const TIER_LABELS = { builder1: 'Builder 1', builder2: 'Builder 2', vibecoding: 'Vibe Coding', aimastery: 'AI Agent Mastery' };
 
 export default function AdminLiveSessions() {
   const { showToast } = useOutletContext();
@@ -173,6 +173,7 @@ export default function AdminLiveSessions() {
             <option value="builder1">Builder 1</option>
             <option value="builder2">Builder 2</option>
             <option value="vibecoding">Vibe Coding</option>
+            <option value="aimastery">AI Agent Mastery</option>
           </select>
           <input
             type="datetime-local"
