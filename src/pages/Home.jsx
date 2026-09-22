@@ -271,12 +271,9 @@ export default function Home({ progress, onSelectAgent }) {
               <span className="inline-block bg-yellow px-2.5 rounded-lg -rotate-[1.5deg]">Level up.</span>
             </h1>
             <p className="text-[17px] leading-relaxed text-body mt-5 mb-5 max-w-[480px]">
-              {/* Dynamic count kept in its own element rather than a bare
-                  text sibling: two adjacent JSX text children serialize as
-                  one merged text node in prerendered static HTML, which
-                  then mismatches React's two-node hydration expectation
-                  (React #418) on every visit. */}
-              <span>{publicAgents.length}</span> guided Artificial Intelligence (AI) agent build sessions across every department. Copy-paste prompts, step-by-step builds, and a portfolio write-up — so you ship something real every session.
+              Learn AI by building it. Ship real AI agents, launch your own AI-powered web app, or build a personal
+              assistant that works for you — hands-on, project-based programs with a real outcome at the end of
+              every one, not video lectures.
             </p>
             <div className="flex gap-3.5 items-center flex-wrap mt-2">
               <Link
@@ -367,7 +364,16 @@ export default function Home({ progress, onSelectAgent }) {
       {/* ── How it works ── */}
       <div className="px-4 sm:px-6 lg:px-[5vw] pt-5 pb-11 max-w-6xl mx-auto">
         <h2 className="font-display font-extrabold text-[30px] text-ink tracking-[-.8px] text-center m-0">How it works</h2>
-        <p className="text-center text-body mt-2 mb-7">Three steps from zero to portfolio-ready agent</p>
+        <p className="text-center text-body mt-2 mb-7 max-w-2xl mx-auto">
+          {/* Dynamic count kept in its own element rather than a bare text
+              sibling: two adjacent JSX text children serialize as one merged
+              text node in prerendered static HTML, which then mismatches
+              React's two-node hydration expectation (React #418) on every
+              visit. */}
+          <span>{publicAgents.length}</span> guided AI agent build sessions across every department — copy-paste
+          prompts, step-by-step builds, and a portfolio write-up every session. Three steps from zero to
+          portfolio-ready agent:
+        </p>
         <div className="grid sm:grid-cols-3 gap-5">
           {HOW_IT_WORKS.map((step) => (
             <div key={step.num} className="bg-white dark:bg-[#181818] border-[1.5px] border-border-soft rounded-[20px] p-6.5">
