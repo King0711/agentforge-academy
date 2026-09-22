@@ -25,16 +25,16 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '
 //
 // vibecoding and aimastery are both separate live-cohort products, not
 // tiers of the builder1/builder2/pro ladder above — priced independently
-// (and identically, at 25000) from each other and from the ladder. That's
-// fine: the webhook's resolvePlan() trusts the metadata.plan set below for
-// exact identification, only falling back to amount-only matching
-// (pro-only) for metadata-less payments.
+// of each other and of the ladder (aimastery cut from 25000 to 19999,
+// 2026-09-23). The webhook's resolvePlan() trusts the metadata.plan set
+// below for exact identification, only falling back to amount-only
+// matching (pro-only) for metadata-less payments.
 const PRICES = {
   builder1: 5000,
   builder2: 7000,
   pro: 10000,
   vibecoding: 25000,
-  aimastery: 25000,
+  aimastery: 19999,
 };
 
 // This function is called directly from the browser (Pricing.jsx via

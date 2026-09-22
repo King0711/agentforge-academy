@@ -20,15 +20,15 @@ const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 // anchor price for these three, the 95%+ discount it would imply is no
 // longer real.
 //
-// vibecoding and aimastery are both separate live-cohort products (same
-// price as each other, 25000, coincidentally). resolvePlan() below trusts
-// metadata.plan first, and checkout always sets it.
+// vibecoding and aimastery are both separate live-cohort products, each
+// priced independently (aimastery cut from 25000 to 19999, 2026-09-23).
+// resolvePlan() below trusts metadata.plan first, and checkout always sets it.
 const PRICES = {
   builder1: 5000,
   builder2: 7000,
   pro: 10000,
   vibecoding: 25000,
-  aimastery: 25000,
+  aimastery: 19999,
 };
 const AMOUNT_TOLERANCE = 1;
 
@@ -182,15 +182,13 @@ function timingSafeEqual(a, b) {
   return diff === 0;
 }
 
-// Every plan now has a distinct price (5000/7000/10000/25000/25000) except
-// vibecoding and aimastery sharing 25000 — amount alone can't tell those
-// two apart, so trust the plan embedded in metadata at checkout creation
-// (see create-paystack-checkout), but still verify its price matches
-// before granting anything. Only fall back to amount-only resolution for
-// payments with no metadata (e.g. a manual charge created directly in the
-// Paystack dashboard), where 'pro' is the only plan an amount alone can
-// identify unambiguously (10000's tolerance band doesn't overlap 5000,
-// 7000, or 25000's).
+// Every plan now has a distinct, non-overlapping price (5000/7000/10000/
+// 19999/25000) — still trust the plan embedded in metadata at checkout
+// creation (see create-paystack-checkout) as the primary signal, but
+// verify its price matches before granting anything. Only fall back to
+// amount-only resolution for payments with no metadata (e.g. a manual
+// charge created directly in the Paystack dashboard), where 'pro' is the
+// only plan this fallback checks for.
 function resolvePlan(metadataPlan, amountNaira, currency) {
   if (currency !== 'NGN') return null;
 
