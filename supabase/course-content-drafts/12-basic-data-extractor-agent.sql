@@ -1,7 +1,7 @@
 insert into public.course_content_draft (course_id, what_you_build, what_you_learn, session, starter_code, test_it_out, troubleshooting, resources, tier, change_note)
 values (
   12,
-  $wyb$A command-line tool that reads a folder of unstructured text files - a business card blurb, an email signature, a real-estate listing, a job posting - and calls an AI gateway to pull out name, email, phone, date and amount fields. The AI answers using bracket markers instead of JSON, so a slightly-off reply degrades gracefully instead of crashing the whole batch, and it's explicitly told to write "none" for anything it can't find rather than guess. Every extracted record is compiled into a single output.csv with pandas, ready to open in Excel or Google Sheets.$wyb$,
+  $wyb$A command-line tool that reads a folder of unstructured text files - a business card blurb, an email signature, a real-estate listing, a job posting - and calls your own AI key (Gemini or Claude) to pull out name, email, phone, date and amount fields. The AI answers using bracket markers instead of JSON, so a slightly-off reply degrades gracefully instead of crashing the whole batch, and it's explicitly told to write "none" for anything it can't find rather than guess. Every extracted record is compiled into a single output.csv with pandas, ready to open in Excel or Google Sheets.$wyb$,
   $wyl$[
   "Design a prompt with bracket markers instead of JSON, and explain why that's more forgiving for a beginner project",
   "Instruct an AI to admit when it can't find something, instead of guessing",
@@ -101,7 +101,7 @@ values (
     }
   ],
   "portfolio": "You just built a data extraction pipeline that turns messy, real-world text into a clean spreadsheet - and proved it refuses to fabricate values it can't find. Take a screenshot of output.csv next to one of your sample documents, and add \"Basic Data Extractor Agent\" to your build portfolio.",
-  "portfolioPrompt": "I just built a data extraction agent: it reads unstructured text (business cards, email signatures, listings, job postings), uses an AI gateway to pull out name/email/phone/date/amount fields via a bracket-marker format designed to degrade gracefully instead of breaking like JSON does, and compiles everything into a clean CSV with pandas - with a parser I tested against missing fields and unexpected AI output.\n\nHelp me write:\n1. A 2-3 sentence project description for my portfolio site\n2. A short LinkedIn post announcing it\n3. Three resume-style bullet points describing what I built and the skills it shows"
+  "portfolioPrompt": "I just built a data extraction agent: it reads unstructured text (business cards, email signatures, listings, job postings), uses my own AI key (Gemini or Claude) to pull out name/email/phone/date/amount fields via a bracket-marker format designed to degrade gracefully instead of breaking like JSON does, and compiles everything into a clean CSV with pandas - with a parser I tested against missing fields and unexpected AI output.\n\nHelp me write:\n1. A 2-3 sentence project description for my portfolio site\n2. A short LinkedIn post announcing it\n3. Three resume-style bullet points describing what I built and the skills it shows"
 }$sess$::jsonb,
   null, null,
   $tsh$[

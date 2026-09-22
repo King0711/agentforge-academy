@@ -167,7 +167,7 @@ values (
     }
   ],
   "portfolio": "You built and deployed a 24/7 WhatsApp bot that replies in your own voice, using your own AI key - Gemini or Claude. Take a screenshot of a real conversation on your phone, and add “WhatsApp Auto-Reply Bot” to your build portfolio with a one-line description.",
-  "portfolioPrompt": "I just built a WhatsApp auto-reply bot using Python, Flask, and Twilio. It receives incoming WhatsApp messages via a webhook, builds a prompt from a custom persona file to generate replies in my own voice, and runs 24/7 deployed on Railway — all AI calls go through a shared credit-metered gateway instead of my own API key.\n\nHelp me write:\n1. A 2-3 sentence project description for my portfolio site\n2. A short LinkedIn post announcing it\n3. Three resume-style bullet points describing what I built and the skills it shows"
+  "portfolioPrompt": "I just built a WhatsApp auto-reply bot using Python, Flask, and Twilio. It receives incoming WhatsApp messages via a webhook, builds a prompt from a custom persona file to generate replies in my own voice, and runs 24/7 deployed on Railway — all AI calls go through my own key (a free Gemini key or my own Claude/Anthropic key).\n\nHelp me write:\n1. A 2-3 sentence project description for my portfolio site\n2. A short LinkedIn post announcing it\n3. Three resume-style bullet points describing what I built and the skills it shows"
 }$sess$::jsonb,
   null, null,
   $tsh$[

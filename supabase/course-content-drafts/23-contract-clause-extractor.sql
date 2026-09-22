@@ -166,7 +166,7 @@ values (
   }
 ]$res$::jsonb,
   'builder2',
-  'Option-B rewrite: real tested Python replacing paste-into-Claude prompts, dual-mode sdt_ai.py gateway (student's own Gemini or Claude/Anthropic key, no shared credits) replacing direct Anthropic SDK calls, with a course-specific safety guard.'
+  $note$Option-B rewrite: real tested Python replacing paste-into-Claude prompts, dual-mode sdt_ai.py gateway (student's own Gemini or Claude/Anthropic key, no shared credits) replacing direct Anthropic SDK calls, with a course-specific safety guard.$note$
 )
 on conflict (course_id) do update set
   what_you_build = excluded.what_you_build,

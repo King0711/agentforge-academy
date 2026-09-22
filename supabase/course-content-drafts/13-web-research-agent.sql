@@ -147,7 +147,7 @@ values (
     }
   ],
   "portfolio": "You built a research agent that can produce a cited brief on almost any topic in minutes -- and unlike a simple prompt-and-paste script, it never lets the AI cite a source it wasn't actually given. Save one of your generated reports (redact anything sensitive) and add \"Web Research Agent\" to your build portfolio with the topic you researched.",
-  "portfolioPrompt": "I just built a web research agent: it runs Tavily searches on a topic, scrapes full page content for thin sources, and uses an AI gateway to synthesize everything into a structured, cited brief (Background, Key Findings, Data Points, Conflicting Views, Conclusion) -- with a citation guard that strips out any source number the AI didn't actually receive -- then runs a follow-up search round to fill gaps before producing the final report.\n\nHelp me write:\n1. A 2-3 sentence project description for my portfolio site\n2. A short LinkedIn post announcing it\n3. Three resume-style bullet points describing what I built and the skills it shows"
+  "portfolioPrompt": "I just built a web research agent: it runs Tavily searches on a topic, scrapes full page content for thin sources, and uses my own AI key (Gemini or Claude) to synthesize everything into a structured, cited brief (Background, Key Findings, Data Points, Conflicting Views, Conclusion) -- with a citation guard that strips out any source number the AI didn't actually receive -- then runs a follow-up search round to fill gaps before producing the final report.\n\nHelp me write:\n1. A 2-3 sentence project description for my portfolio site\n2. A short LinkedIn post announcing it\n3. Three resume-style bullet points describing what I built and the skills it shows"
 }$sess$::jsonb,
   null, null,
   $tsh$[
@@ -195,7 +195,7 @@ values (
   }
 ]$res$::jsonb,
   'builder2',
-  'Option-B rewrite: real tested Python (search/scrape/synthesize/citation-guard/followup), dual-mode sdt_ai.py gateway (student's own Gemini or Claude/Anthropic key, no shared credits) replacing direct Anthropic SDK calls and the "paste into Claude Code" workflow.'
+  $note$Option-B rewrite: real tested Python (search/scrape/synthesize/citation-guard/followup), dual-mode sdt_ai.py gateway (student's own Gemini or Claude/Anthropic key, no shared credits) replacing direct Anthropic SDK calls and the "paste into Claude Code" workflow.$note$
 )
 on conflict (course_id) do update set
   what_you_build = excluded.what_you_build,

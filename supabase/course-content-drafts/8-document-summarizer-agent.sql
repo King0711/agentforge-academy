@@ -5,7 +5,7 @@ values (
   $wyl$[
   "Detect a document's type from its file extension or a URL",
   "Extract plain text from PDF, DOCX, TXT, and web pages",
-  "Call an AI model through a metered credit gateway instead of your own API key",
+  "Call an AI model through your own key (a free Gemini key or your own Claude/Anthropic key)",
   "Design a prompt using bracket markers instead of JSON, and why that's more forgiving",
   "Parse an AI reply that might come back malformed, without crashing",
   "Control the cost of a single AI call by capping how much text you send",
@@ -110,7 +110,7 @@ values (
     }
   ],
   "portfolio": "You just built a tool that turns any contract, report, or long email thread into a structured summary in seconds - genuinely useful on your own documents, not just a portfolio piece. Run it on something real, take a screenshot of the structured output, and add \"Document Summarizer Agent\" to your build portfolio with a one-line description.",
-  "portfolioPrompt": "I just built a Python command-line tool that detects whether a document is a PDF, Word file, text file, or web link, extracts its text, and uses an AI model through a metered credit system to produce a structured summary: key points, action items, and a one-paragraph executive brief. It parses the AI's reply using a forgiving bracket-marker format instead of JSON, so a slightly malformed reply doesn't crash the whole program.\n\nHelp me write:\n1. A 2-3 sentence project description for my portfolio site\n2. A short LinkedIn post announcing it\n3. Three resume-style bullet points describing what I built and the skills it shows"
+  "portfolioPrompt": "I just built a Python command-line tool that detects whether a document is a PDF, Word file, text file, or web link, extracts its text, and uses an AI model (my own Gemini or Claude/Anthropic key) to produce a structured summary: key points, action items, and a one-paragraph executive brief. It parses the AI's reply using a forgiving bracket-marker format instead of JSON, so a slightly malformed reply doesn't crash the whole program.\n\nHelp me write:\n1. A 2-3 sentence project description for my portfolio site\n2. A short LinkedIn post announcing it\n3. Three resume-style bullet points describing what I built and the skills it shows"
 }$sess$::jsonb,
   null, null,
   $tsh$[

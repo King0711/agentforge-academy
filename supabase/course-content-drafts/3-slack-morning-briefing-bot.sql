@@ -2,7 +2,7 @@ insert into public.course_content_draft (course_id, what_you_build, what_you_lea
 values (
   3,
   $wyb$A scheduled Python bot that reads the last 24 hours of messages from your busiest Slack channels, uses your own AI key to sort everything into what needs a decision today and what's just useful context, and DMs you the finished briefing every morning. No AI subscription of your own, and no code pasted from an AI chat window into your project — the starter code is real, already-tested Python you read, run, and extend yourself.$wyb$,
-  $wyl$["Create a Slack app and scope its bot token to exactly what it needs", "Fetch and paginate channel history with the Slack Web API", "Separate “talk to an external API” code from pure, testable logic", "Design a prompt and parser that degrade gracefully instead of crashing on a bad AI reply", "Call AI through a shared, credit-metered gateway instead of your own API key", "Schedule a Python job to run unattended every morning"]$wyl$::jsonb,
+  $wyl$["Create a Slack app and scope its bot token to exactly what it needs", "Fetch and paginate channel history with the Slack Web API", "Separate “talk to an external API” code from pure, testable logic", "Design a prompt and parser that degrade gracefully instead of crashing on a bad AI reply", "Call AI through your own key (a free Gemini key or your own Claude/Anthropic key), with a graceful fallback to a second model when one is overloaded", "Schedule a Python job to run unattended every morning"]$wyl$::jsonb,
   $sess${
   "model": "Gemini 3.7 Flash or Claude Haiku 4.5 (your choice - see sdt_ai.py setup)",
   "totalTime": "110 min",
