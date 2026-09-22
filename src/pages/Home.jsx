@@ -278,11 +278,7 @@ export default function Home({ progress, onSelectAgent }) {
                   (React #418) on every visit. */}
               <span>{publicAgents.length}</span> guided Artificial Intelligence (AI) agent build sessions across every department. Copy-paste prompts, step-by-step builds, and a portfolio write-up — so you ship something real every session.
             </p>
-            <div className="flex items-baseline gap-2.5 mb-6">
-              <span className="font-display font-extrabold text-2xl text-ink">From ₦<span>{BUILDER1_PRICE.toLocaleString()}</span></span>
-              <span className="text-sm text-body">one-time · yours to keep</span>
-            </div>
-            <div className="flex gap-3.5 items-center flex-wrap">
+            <div className="flex gap-3.5 items-center flex-wrap mt-2">
               <Link
                 to="/pricing"
                 className="bg-brand text-white font-bold text-base px-7 py-[15px] rounded-2xl shadow-[0_10px_22px_rgba(124,58,237,.4)] hover:bg-brand-deep transition-colors"
