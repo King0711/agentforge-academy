@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { m } from 'framer-motion';
 import {
   CheckCircle2, ArrowRight, CalendarDays, Info, CircleHelp, Loader2, AlertCircle,
-  Bot, Mail, Calendar, Search, MessageSquare, ShieldCheck,
+  Bot, Mail, Calendar, Search, MessageSquare, ShieldCheck, X, Zap,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { usePro } from '../hooks/usePro';
@@ -32,6 +32,42 @@ const WHO_FOR = [
   { title: 'Builder 1 / Builder 2 graduates', text: "You've shipped individual agents — now build the one that ties everything together." },
   { title: 'Consultants & freelancers', text: 'You want to reclaim the hours lost to admin, so you can bill for the work that actually matters.' },
   { title: 'Anyone tired of context-switching', text: 'You want one assistant that remembers context across your inbox, calendar, and tasks — not five disconnected tools.' },
+  { title: 'Anyone who wants a new income stream', text: "Once you can build one for yourself, you can build one for someone else's business too — a skill most people in your market can't deliver yet." },
+];
+
+// Self-assessment, same pattern AIBuilder.jsx uses ("A quick gut check")
+// for the automation-guides program — written fresh here for
+// personal-assistant-specific pain points (inbox/calendar/follow-up),
+// not copy-pasted from that page.
+const HONEST_CHECK = [
+  { title: 'Your inbox runs your day', items: ['You lose the first hour of your day just triaging what came in overnight', 'The same few questions come in on repeat, and you type the same answer every time'] },
+  { title: 'Your calendar is a second job', items: ['Finding a slot that works for everyone takes five messages back and forth', 'Something slips through because nothing is actually tracking it for you'] },
+  { title: "You're the one who has to remember", items: ["Follow-ups slip because nobody's chasing them but you", 'Research and prep for a call falls on you the night before, every time'] },
+];
+
+// Same "using it vs. owning it" framing as AIBuilder.jsx's "Using AI vs.
+// Building with AI" — adapted for a personal assistant specifically
+// rather than agent-building in general.
+const USING_TOOLS = [
+  'Opens a chat tool when they remember to, for one question at a time',
+  're-explains the same context every single session',
+  'Still does the triaging, scheduling, and follow-up by hand',
+];
+const OWNING_ASSISTANT = [
+  'Runs continuously, not just when you remember to open it',
+  'Remembers context across your inbox, calendar, and tasks',
+  'Handles the triage, the scheduling, and the follow-up — and checks with you before anything risky',
+];
+
+const FOR_YOU = [
+  'You want an assistant handling real busywork, not another app to babysit',
+  'You can commit to showing up live and building alongside the cohort',
+  'You want a skill you could also offer to other businesses',
+];
+const NOT_FOR_YOU = [
+  "You're looking for a fully autonomous system with zero oversight from day one",
+  'You want to skip straight to results without building the guardrails first',
+  "You can't commit to the live sessions",
 ];
 
 const OUTCOMES = [
@@ -140,6 +176,26 @@ export default function AIAgentMastery() {
         </div>
       </div>
 
+      {/* Honest check */}
+      <div className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto">
+        <SectionHeading eyebrow="A quick gut check">How many of these sound like you?</SectionHeading>
+        <div className="grid sm:grid-cols-3 gap-3.5 max-w-4xl mx-auto mb-6">
+          {HONEST_CHECK.map((group) => (
+            <div key={group.title} className="bg-white dark:bg-[#181818] border-[1.5px] border-border-soft rounded-2xl p-4.5">
+              <span className="font-display font-bold text-[14px] text-ink block mb-2.5">{group.title}</span>
+              <ul className="flex flex-col gap-1.5">
+                {group.items.map((item) => (
+                  <li key={item} className="text-[12.5px] text-body leading-relaxed">{item}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <p className="text-center font-display font-bold text-[15px] sm:text-lg text-ink max-w-xl mx-auto">
+          If two or more sound like your week, you don't need another app. <span className="text-brand">You need an assistant that just handles it.</span>
+        </p>
+      </div>
+
       {/* Capabilities */}
       <div id="capabilities" className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto scroll-mt-20">
         <SectionHeading eyebrow="One assistant, four jobs">What your agent will handle</SectionHeading>
@@ -153,6 +209,35 @@ export default function AIAgentMastery() {
               <p className="text-[12.5px] text-body leading-relaxed">{c.text}</p>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Using tools vs. owning an assistant */}
+      <div className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto">
+        <SectionHeading>Using AI tools vs. owning an assistant</SectionHeading>
+        <div className="grid sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
+          <div className="bg-white dark:bg-[#181818] border-[1.5px] border-border-soft rounded-2xl p-5">
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-white/10 text-gray-400 flex items-center justify-center"><MessageSquare className="w-4.5 h-4.5" /></div>
+              <h3 className="font-display font-bold text-[15px] text-ink">Using AI tools</h3>
+            </div>
+            <ul className="space-y-2">
+              {USING_TOOLS.map((t) => (
+                <li key={t} className="flex items-start gap-2 text-[12.5px] text-body"><X className="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0" /> <span>{t}</span></li>
+              ))}
+            </ul>
+          </div>
+          <div className="bg-white dark:bg-[#181818] border-[2px] border-brand rounded-2xl p-5 shadow-[0_16px_36px_-18px_rgba(124,58,237,.4)]">
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="w-9 h-9 rounded-lg bg-[#F3EBFF] dark:bg-brand/15 text-brand flex items-center justify-center"><Zap className="w-4.5 h-4.5" /></div>
+              <h3 className="font-display font-bold text-[15px] text-ink">Owning an assistant</h3>
+            </div>
+            <ul className="space-y-2">
+              {OWNING_ASSISTANT.map((t) => (
+                <li key={t} className="flex items-start gap-2 text-[12.5px] text-body-strong font-medium"><CheckCircle2 className="w-3.5 h-3.5 text-green mt-0.5 flex-shrink-0" /> <span>{t}</span></li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
 
@@ -191,6 +276,29 @@ export default function AIAgentMastery() {
             An assistant that can send emails and manage your calendar needs real guardrails, not blind trust — a core
             part of the cohort is building in the checks that keep your agent asking before it acts on anything risky.
           </p>
+        </div>
+      </div>
+
+      {/* Qualifier */}
+      <div className="px-4 sm:px-6 lg:px-[5vw] pb-16 max-w-5xl mx-auto">
+        <SectionHeading>Is AI Agent Mastery for you?</SectionHeading>
+        <div className="grid sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
+          <div className="bg-white dark:bg-[#181818] border-[2px] border-green rounded-2xl p-6">
+            <h3 className="font-display font-bold text-base text-ink mb-4">This is for you if…</h3>
+            <ul className="flex flex-col gap-2.5">
+              {FOR_YOU.map((item) => (
+                <li key={item} className="flex items-start gap-2.5 text-[13px] text-body-strong font-medium"><CheckCircle2 className="w-4 h-4 text-green mt-0.5 flex-shrink-0" /> <span>{item}</span></li>
+              ))}
+            </ul>
+          </div>
+          <div className="bg-white dark:bg-[#181818] border-[1.5px] border-border-soft rounded-2xl p-6">
+            <h3 className="font-display font-bold text-base text-ink mb-4">This might not be for you if…</h3>
+            <ul className="flex flex-col gap-2.5">
+              {NOT_FOR_YOU.map((item) => (
+                <li key={item} className="flex items-start gap-2.5 text-[13px] text-body"><X className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" /> <span>{item}</span></li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
 
