@@ -16,9 +16,11 @@ const links = [
   // catalog browser), which still exists but is reached from elsewhere
   // (Home.jsx, Catalog) rather than the top-level nav.
   { label: 'Learning Paths', children: [
+      // AI Agent Mastery listed first — it's the priority/flagship program
+      // (founder-confirmed 2026-09-23).
+      { to: '/ai-agent-mastery', label: 'AI Agent Mastery' },
       { to: '/ai-builder', label: 'AI Agent Guides' },
       { to: '/vibe-coding', label: 'Vibe Coding Bootcamp' },
-      { to: '/ai-agent-mastery', label: 'AI Agent Mastery' },
     ] },
   // Grouped under one "Learn" dropdown rather than separate top-level links.
   // Both stay real, separately-crawlable routes — the dropdown is only a

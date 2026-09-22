@@ -22,9 +22,9 @@ export default function Footer() {
           <FooterCol
             title="Platform"
             links={[
+              { label: 'AI Agent Mastery', to: '/ai-agent-mastery' },
               { label: 'Become an AI Builder', to: '/ai-builder' },
               { label: 'Vibe Coding Bootcamp', to: '/vibe-coding' },
-              { label: 'AI Agent Mastery', to: '/ai-agent-mastery' },
               { label: 'Catalog', to: '/catalog' },
               { label: 'Agent Guides', to: '/guides' },
               { label: 'Learning Paths', to: '/paths' },

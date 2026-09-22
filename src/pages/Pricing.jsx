@@ -41,17 +41,9 @@ const PRO_FEATURES = [
 // their own checkout, curriculum detail, and FAQ. This page shows just
 // enough to compare all three programs at a glance and send someone to
 // the right page, rather than duplicating a second checkout flow for each.
+// AI Agent Mastery listed first — it's the priority/flagship program
+// (founder-confirmed 2026-09-23), not a reflection of price or launch order.
 const LIVE_COHORTS = [
-  {
-    to: '/vibe-coding',
-    icon: Sparkles,
-    name: 'Vibe Coding Bootcamp',
-    text: '4 weeks, 8 live classes. Go from an idea to a deployed website, web app, and AI-powered product — no coding experience required.',
-    bullets: ['Live instructor-led classes', 'Portfolio site, to-do app, Supabase CRUD app + more', 'Certificate of completion'],
-    price: VIBECODING_PRICE,
-    hasKey: 'hasVibeCoding',
-    coursePath: '/vibe-coding/course',
-  },
   {
     to: '/ai-agent-mastery',
     icon: Bot,
@@ -61,6 +53,16 @@ const LIVE_COHORTS = [
     price: AI_AGENT_MASTERY_PRICE,
     hasKey: 'hasAiMastery',
     coursePath: '/ai-agent-mastery/course',
+  },
+  {
+    to: '/vibe-coding',
+    icon: Sparkles,
+    name: 'Vibe Coding Bootcamp',
+    text: '4 weeks, 8 live classes. Go from an idea to a deployed website, web app, and AI-powered product — no coding experience required.',
+    bullets: ['Live instructor-led classes', 'Portfolio site, to-do app, Supabase CRUD app + more', 'Certificate of completion'],
+    price: VIBECODING_PRICE,
+    hasKey: 'hasVibeCoding',
+    coursePath: '/vibe-coding/course',
   },
 ];
 

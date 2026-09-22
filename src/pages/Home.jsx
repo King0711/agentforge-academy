@@ -124,7 +124,19 @@ const publicAgents = agents.filter((a) => isVisibleToPublic(a.difficulty));
 // Two distinct product lines — not tiers of one ladder, see business-model.md.
 // Equal visual weight (same card treatment, same border thickness) so
 // neither reads as the "real" product with the other bolted on.
+// AI Agent Mastery listed first — it's the priority/flagship program
+// (founder-confirmed 2026-09-23), not a reflection of price or launch order.
 const PROGRAMS = [
+  {
+    to: '/ai-agent-mastery',
+    icon: MessageCircle,
+    accent: 'brand',
+    tag: 'AI Agent Mastery',
+    title: 'Build your own AI personal assistant',
+    text: 'Live cohort. Build one integrated assistant that triages your inbox, runs your calendar, does research, and drafts messages — with guardrails built in.',
+    bullets: ['Live instructor-led classes', 'One assistant, built end to end', 'Certificate of completion'],
+    price: `₦${AI_AGENT_MASTERY_PRICE.toLocaleString()} one-time`,
+  },
   {
     to: '/ai-builder',
     icon: Bot,
@@ -144,16 +156,6 @@ const PROGRAMS = [
     text: '4 weeks, 8 live classes. Go from an idea to a deployed website, web app, and AI-powered product — no coding experience required.',
     bullets: ['Live instructor-led classes', 'Portfolio site, to-do app, Supabase CRUD app + more', 'Certificate of completion'],
     price: `₦${VIBECODING_PRICE.toLocaleString()} one-time`,
-  },
-  {
-    to: '/ai-agent-mastery',
-    icon: MessageCircle,
-    accent: 'brand',
-    tag: 'AI Agent Mastery',
-    title: 'Build your own AI personal assistant',
-    text: 'Live cohort. Build one integrated assistant that triages your inbox, runs your calendar, does research, and drafts messages — with guardrails built in.',
-    bullets: ['Live instructor-led classes', 'One assistant, built end to end', 'Certificate of completion'],
-    price: `₦${AI_AGENT_MASTERY_PRICE.toLocaleString()} one-time`,
   },
 ];
 
@@ -633,7 +635,7 @@ export default function Home({ progress, onSelectAgent }) {
               Prefer real classes over a self-paced library?
             </h2>
             <p className="text-body leading-relaxed mb-5 max-w-[440px]">
-              Vibe Coding Bootcamp and AI Agent Mastery are both live, instructor-led cohorts — walkthroughs, office
+              AI Agent Mastery and Vibe Coding Bootcamp are both live, instructor-led cohorts — walkthroughs, office
               hours, and Q&A on Zoom, not just guides to read on your own. Can't make it live? Every session is
               recorded and added to your replays.
             </p>
@@ -694,7 +696,7 @@ export default function Home({ progress, onSelectAgent }) {
         >
           <div>
             <h2 className="font-display font-extrabold text-2xl sm:text-[26px] text-white m-0">Ready to start building?</h2>
-            <p className="text-[#EDE4FF] mt-2 mb-0 text-[15px]">AI Agent Guides, Vibe Coding, or AI Agent Mastery — every program and price in one place.</p>
+            <p className="text-[#EDE4FF] mt-2 mb-0 text-[15px]">AI Agent Mastery, AI Agent Guides, or Vibe Coding — every program and price in one place.</p>
           </div>
           <Link
             to="/pricing"
