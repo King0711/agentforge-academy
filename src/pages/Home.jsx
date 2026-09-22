@@ -175,7 +175,7 @@ const OUTCOMES = [
 
 const HOW_IT_WORKS = [
   { num: 1, bg: '#7C3AED', fg: '#fff', title: 'Pick a session', text: `${publicAgents.length} guided builds across Builder 1 and Builder 2. Each has a time estimate and clear outcomes.` },
-  { num: 2, bg: '#F5D90A', fg: '#1A1333', title: 'Paste into Gemini', text: 'Every build ships ready-to-use prompts. No blank page — open Gemini, paste, iterate. All you need is a free Gemini API key from Google AI Studio, no paid subscription.' },
+  { num: 2, bg: '#F5D90A', fg: '#1A1333', title: 'Follow the guide', text: 'Every build ships a clear, step-by-step guide with ready-to-use prompts — no blank page, just follow along and build.' },
   { num: 3, bg: '#16A34A', fg: '#fff', title: 'Ship to portfolio', text: 'Each session ends with a write-up prompt: LinkedIn post, resume bullets, project blurb.' },
 ];
 
