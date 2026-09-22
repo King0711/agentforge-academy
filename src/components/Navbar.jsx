@@ -10,15 +10,21 @@ import { useTheme } from '../context/ThemeContext';
 const links = [
   { to: '/', label: 'Home' },
   { to: '/catalog', label: 'Catalog' },
-  { to: '/paths', label: 'Learning Paths' },
+  // The three sellable programs — this dropdown replaces the old standalone
+  // "Programs" nav item entirely (founder-confirmed 2026-09-22); "Learning
+  // Paths" no longer links directly to /paths (the difficulty/department
+  // catalog browser), which still exists but is reached from elsewhere
+  // (Home.jsx, Catalog) rather than the top-level nav.
+  { label: 'Learning Paths', children: [
+      { to: '/ai-builder', label: 'AI Agent Guides' },
+      { to: '/vibe-coding', label: 'Vibe Coding Bootcamp' },
+      { to: '/ai-agent-mastery', label: 'AI Agent Mastery' },
+    ] },
   // Grouped under one "Learn" dropdown rather than separate top-level links.
   // Both stay real, separately-crawlable routes — the dropdown is only a
   // navigation affordance, not a tab switcher that would hide one of them
   // from crawlers.
   { label: 'Learn', children: [{ to: '/guides', label: 'Guides' }, { to: '/news', label: 'AI News' }] },
-  // Two separate product lines (automation classes vs. the live Vibe Coding
-  // bootcamp) — same dropdown pattern as "Learn" above, not a tab switcher.
-  { label: 'Programs', children: [{ to: '/pricing', label: 'Automation Builder' }, { to: '/vibe-coding', label: 'Vibe Coding Bootcamp' }] },
 ];
 
 export default function Navbar() {
