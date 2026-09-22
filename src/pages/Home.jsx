@@ -1,6 +1,9 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { m } from 'framer-motion';
-import { Code2, Bot, KeyRound, MessageCircle, Video, CalendarDays, PlayCircle, Send, CheckCheck, Sparkles, ArrowRight } from 'lucide-react';
+import {
+  Code2, Bot, KeyRound, MessageCircle, Video, CalendarDays, PlayCircle, Send, CheckCheck, Sparkles, ArrowRight,
+  Users, Award, TrendingUp, Wallet, Zap,
+} from 'lucide-react';
 import AgentCard from '../components/AgentCard';
 import YouTubeFacade from '../components/YouTubeFacade';
 import TestimonialsSection from '../components/TestimonialsSection';
@@ -154,26 +157,41 @@ const PROGRAMS = [
   },
 ];
 
+// General, company-wide track record — deliberately placed with the "Three
+// programs" section near the top of the page, not folded into the
+// AI-Agent-Guides-only stats further down (AI Agents / Departments / XP /
+// Hours), since these numbers and outcomes span all three programs.
+const TRACK_RECORD_STATS = [
+  { icon: Users, value: '500+', label: 'Students taught' },
+  { icon: Award, value: 'Certificates', label: 'Awarded on completion' },
+  { icon: Sparkles, value: '3', label: 'Programs to choose from' },
+];
+
+const OUTCOMES = [
+  { icon: TrendingUp, title: 'Stay ahead of the curve', text: 'Students walk into work already using AI skills their teams and managers are only just starting to ask for.' },
+  { icon: Wallet, title: 'Real salary increases', text: 'Bringing new, in-demand skills to the table shows up in more than just a portfolio — many students see it reflected in their pay.' },
+  { icon: Zap, title: 'More efficient at work', text: 'Tasks that used to take hours get automated away — students get noticeably more done in the same workday.' },
+];
+
 const HOW_IT_WORKS = [
   { num: 1, bg: '#7C3AED', fg: '#fff', title: 'Pick a session', text: `${publicAgents.length} guided builds across Builder 1 and Builder 2. Each has a time estimate and clear outcomes.` },
-  { num: 2, bg: '#F5D90A', fg: '#1A1333', title: 'Paste into Claude', text: 'Every build ships ready-to-use prompts. No blank page — open Claude, paste, iterate. You\'ll need a paid Claude account (Claude Pro or higher) to complete the builds.' },
+  { num: 2, bg: '#F5D90A', fg: '#1A1333', title: 'Paste into Gemini', text: 'Every build ships ready-to-use prompts. No blank page — open Gemini, paste, iterate. All you need is a free Gemini API key from Google AI Studio, no paid subscription.' },
   { num: 3, bg: '#16A34A', fg: '#fff', title: 'Ship to portfolio', text: 'Each session ends with a write-up prompt: LinkedIn post, resume bullets, project blurb.' },
 ];
 
-// Set expectations before checkout, not after — the Claude Pro line already
-// existed buried in step 2's fine print; this puts it (and the two other
-// things students actually get surprised by) somewhere a visitor deciding
+// Set expectations before checkout, not after — these are the things
+// students actually get surprised by, put somewhere a visitor deciding
 // whether to buy will actually see it.
 const BEFORE_YOU_START = [
   {
     icon: Code2,
     title: 'No prior coding experience required',
-    text: 'Every build ships copy-paste-ready prompts — you\'re directing Claude, not writing code from scratch. Basic comfort with a browser and copy-paste is all you need to start.',
+    text: 'Every build ships copy-paste-ready prompts — you\'re directing the AI, not writing code from scratch. Basic comfort with a browser and copy-paste is all you need to start.',
   },
   {
     icon: Bot,
-    title: 'A paid Claude account',
-    text: 'You\'ll need Claude Pro or higher to complete the builds — Claude\'s free tier runs out of usage mid-session. That\'s billed separately by Anthropic, on top of your one-time course payment.',
+    title: 'No paid AI subscription needed',
+    text: 'All you need is a free Gemini API key from Google AI Studio — the free tier is enough to complete every build. Nothing extra to pay for beyond your one-time course payment.',
   },
   {
     icon: KeyRound,
@@ -397,6 +415,41 @@ export default function Home({ progress, onSelectAgent }) {
               </div>
             </Link>
           ))}
+        </div>
+      </div>
+
+      {/* ── Track record ── */}
+      <div className="bg-[#1A1333] px-4 sm:px-6 lg:px-[5vw] py-14">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-9">
+            <span className="inline-flex items-center gap-2 text-[13px] font-bold px-4 py-1.5 rounded-full bg-white/10 text-yellow mb-3">
+              Proven track record
+            </span>
+            <h2 className="font-display font-extrabold text-[30px] text-white tracking-[-.8px] m-0">Real outcomes, not just sessions</h2>
+            <p className="text-[#C9BFE8] mt-2 max-w-xl mx-auto">
+              500+ students taught across three programs — with outcomes that show up at work, not just a certificate.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-9">
+            {TRACK_RECORD_STATS.map((stat) => (
+              <div key={stat.label} className="bg-white/5 border border-white/10 rounded-[18px] px-5 py-6 text-center">
+                <stat.icon className="w-5 h-5 text-yellow mx-auto mb-2" />
+                <div className="font-display font-extrabold text-2xl text-white">{stat.value}</div>
+                <div className="text-[13px] text-[#C9BFE8] font-semibold mt-0.5">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+          <div className="grid sm:grid-cols-3 gap-5">
+            {OUTCOMES.map((item) => (
+              <div key={item.title} className="bg-white/5 border border-white/10 rounded-[20px] p-6">
+                <div className="w-11 h-11 rounded-xl bg-white/10 text-yellow flex items-center justify-center mb-4">
+                  <item.icon className="w-5 h-5" />
+                </div>
+                <h3 className="font-display font-bold text-lg text-white mb-2">{item.title}</h3>
+                <p className="text-sm leading-relaxed text-[#C9BFE8] m-0">{item.text}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

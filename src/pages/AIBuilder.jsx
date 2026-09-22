@@ -93,8 +93,8 @@ const FAQS = [
   { q: 'Do I need coding experience?', a: 'No. Every session starts with copy-paste prompts.' },
   { q: "What if I've never programmed at all?", a: "That's who Builder 1 is for. Follow steps, copy-paste, done." },
   { q: "What if I don't know what to build?", a: "Every session is project-based. You're never starting blank." },
-  { q: "What if I'm busy?", a: 'Self-paced. 1.5–3 hrs per session. 6 months of access.' },
-  { q: 'Why do I need Claude Pro?', a: 'Real production AI, not a toy — the free tier hits limits fast.' },
+  { q: "What if I'm busy?", a: 'Self-paced. 1.5–3 hrs per session. Permanent access, no deadline.' },
+  { q: 'Do I need to pay for AI tools?', a: 'No — a free Gemini API key from Google AI Studio is all you need.' },
   { q: 'What support do I get?', a: 'Direct support. Reach out, get an answer. Never alone.' },
   { q: 'What if I get stuck?', a: "Reach out anytime — we'll help you move forward." },
   { q: 'What if AI changes?', a: "You learn principles, not tools. That doesn't expire." },
@@ -712,7 +712,7 @@ export default function AIBuilder() {
           </p>
           <p className="flex items-start gap-1.5 text-[12.5px] text-body">
             <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-            You'll need your own paid Claude account (Claude Pro or higher), billed separately by Anthropic. A few
+            All you need is a free Gemini API key from Google AI Studio — no paid AI subscription required. A few
             Builder 2 sessions also need a free API key from a third-party service — each one tells you before you start.
           </p>
         </div>
