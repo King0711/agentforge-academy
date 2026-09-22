@@ -205,7 +205,7 @@ export default function BuilderSession({ progress, tier }) {
 
         <div className="flex items-start gap-2 text-[13px] text-brand bg-[#F3EBFF] dark:bg-brand/15 rounded-lg px-3.5 py-2.5 mb-8">
           <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
-          You'll need your own paid Claude account (Claude Pro or higher) to follow along with this build — that's billed separately by Anthropic.
+          All you need is a free Gemini API key from Google AI Studio — no paid AI subscription required to follow along with this build.
         </div>
 
         {/* Mark complete */}
@@ -271,7 +271,7 @@ export default function BuilderSession({ progress, tier }) {
             <Lock className="w-8 h-8 text-brand" />
             <p className="font-bold text-ink">This session's guide is <span>{tier}</span> content</p>
             <p className="text-sm text-body max-w-sm">
-              Get <span>{tier}</span> (or the Pro bundle) to unlock the full step-by-step build, prompts, and resources.
+              Get <span>{tier}</span> (or the Pro bundle) to unlock the full step-by-step build, prompts, and resources — permanent access, yours to keep.
             </p>
             <Link
               to="/pricing"

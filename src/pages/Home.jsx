@@ -1,6 +1,9 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { m } from 'framer-motion';
-import { Code2, Bot, KeyRound, MessageCircle, Video, CalendarDays, PlayCircle, Send, CheckCheck, Sparkles, ArrowRight } from 'lucide-react';
+import {
+  Code2, Bot, KeyRound, MessageCircle, Video, CalendarDays, PlayCircle, Send, CheckCheck, Sparkles, ArrowRight,
+  Users, Award, TrendingUp, Wallet, Zap,
+} from 'lucide-react';
 import AgentCard from '../components/AgentCard';
 import YouTubeFacade from '../components/YouTubeFacade';
 import TestimonialsSection from '../components/TestimonialsSection';
@@ -9,7 +12,7 @@ import { departments, isVisibleToPublic } from '../data/departments';
 import { usePro } from '../hooks/usePro';
 import { useTheme } from '../context/ThemeContext';
 import { useCohortSchedule } from '../hooks/useCohortSchedule';
-import { ANCHOR_PRICE, BUILDER_PRICE, VIBECODING_PRICE } from '../data/pricing';
+import { BUILDER1_PRICE, VIBECODING_PRICE, AI_AGENT_MASTERY_PRICE } from '../data/pricing';
 
 // Returns a display string for a cohort start date, or null if it's unset or
 // already in the past — same rule Pricing.jsx uses, duplicated rather than
@@ -35,8 +38,8 @@ function LiveClassMockup() {
         <CalendarDays className="w-4 h-4 text-gray-300" />
       </div>
       {[
-        { title: 'Builder 1 — Week 1 walkthrough', tier: 'Builder 1' },
-        { title: 'Builder 2 — Office hours', tier: 'Builder 2' },
+        { title: 'Vibe Coding — Week 1 walkthrough', tier: 'Vibe Coding Bootcamp' },
+        { title: 'AI Agent Mastery — Office hours', tier: 'AI Agent Mastery' },
       ].map((s) => (
         <div key={s.title} className="flex items-center gap-3 rounded-xl border border-border-soft px-3.5 py-3 mb-2.5 last:mb-0">
           <div className="w-9 h-9 rounded-lg bg-[#F3EBFF] dark:bg-brand/15 flex items-center justify-center flex-shrink-0">
@@ -126,11 +129,11 @@ const PROGRAMS = [
     to: '/ai-builder',
     icon: Bot,
     accent: 'green',
-    tag: 'Automation Builder',
+    tag: 'AI Agent Guides',
     title: 'Build AI agents for real work',
     text: `${publicAgents.length} guided, self-paced builds — Gmail triage, WhatsApp bots, invoice processing, and more. Ship a portfolio of working agents.`,
-    bullets: ['Self-paced, 6 months access', 'Runs on your own free Gemini key', 'Portfolio write-up every session'],
-    price: `From ₦${BUILDER_PRICE.toLocaleString()}`,
+    bullets: ['Self-paced, permanent access', 'Runs on your own free Gemini key', 'Portfolio write-up every session'],
+    price: `From ₦${BUILDER1_PRICE.toLocaleString()}`,
   },
   {
     to: '/vibe-coding',
@@ -142,28 +145,53 @@ const PROGRAMS = [
     bullets: ['Live instructor-led classes', 'Portfolio site, to-do app, Supabase CRUD app + more', 'Certificate of completion'],
     price: `₦${VIBECODING_PRICE.toLocaleString()} one-time`,
   },
+  {
+    to: '/ai-agent-mastery',
+    icon: MessageCircle,
+    accent: 'brand',
+    tag: 'AI Agent Mastery',
+    title: 'Build your own AI personal assistant',
+    text: 'Live cohort. Build one integrated assistant that triages your inbox, runs your calendar, does research, and drafts messages — with guardrails built in.',
+    bullets: ['Live instructor-led classes', 'One assistant, built end to end', 'Certificate of completion'],
+    price: `₦${AI_AGENT_MASTERY_PRICE.toLocaleString()} one-time`,
+  },
+];
+
+// General, company-wide track record — deliberately placed with the "Three
+// programs" section near the top of the page, not folded into the
+// AI-Agent-Guides-only stats further down (AI Agents / Departments / XP /
+// Hours), since these numbers and outcomes span all three programs.
+const TRACK_RECORD_STATS = [
+  { icon: Users, value: '500+', label: 'Students taught' },
+  { icon: Award, value: 'Certificates', label: 'Awarded on completion' },
+  { icon: Sparkles, value: '3', label: 'Programs to choose from' },
+];
+
+const OUTCOMES = [
+  { icon: TrendingUp, title: 'Stay ahead of the curve', text: 'Students walk into work already using AI skills their teams and managers are only just starting to ask for.' },
+  { icon: Wallet, title: 'Real salary increases', text: 'Bringing new, in-demand skills to the table shows up in more than just a portfolio — many students see it reflected in their pay.' },
+  { icon: Zap, title: 'More efficient at work', text: 'Tasks that used to take hours get automated away — students get noticeably more done in the same workday.' },
 ];
 
 const HOW_IT_WORKS = [
   { num: 1, bg: '#7C3AED', fg: '#fff', title: 'Pick a session', text: `${publicAgents.length} guided builds across Builder 1 and Builder 2. Each has a time estimate and clear outcomes.` },
-  { num: 2, bg: '#F5D90A', fg: '#1A1333', title: 'Paste into Claude', text: 'Every build ships ready-to-use prompts. No blank page — open Claude, paste, iterate. You\'ll need a paid Claude account (Claude Pro or higher) to complete the builds.' },
+  { num: 2, bg: '#F5D90A', fg: '#1A1333', title: 'Follow the guide', text: 'Every build ships a clear, step-by-step guide with ready-to-use prompts — no blank page, just follow along and build.' },
   { num: 3, bg: '#16A34A', fg: '#fff', title: 'Ship to portfolio', text: 'Each session ends with a write-up prompt: LinkedIn post, resume bullets, project blurb.' },
 ];
 
-// Set expectations before checkout, not after — the Claude Pro line already
-// existed buried in step 2's fine print; this puts it (and the two other
-// things students actually get surprised by) somewhere a visitor deciding
+// Set expectations before checkout, not after — these are the things
+// students actually get surprised by, put somewhere a visitor deciding
 // whether to buy will actually see it.
 const BEFORE_YOU_START = [
   {
     icon: Code2,
     title: 'No prior coding experience required',
-    text: 'Every build ships copy-paste-ready prompts — you\'re directing Claude, not writing code from scratch. Basic comfort with a browser and copy-paste is all you need to start.',
+    text: 'Every build ships copy-paste-ready prompts — you\'re directing the AI, not writing code from scratch. Basic comfort with a browser and copy-paste is all you need to start.',
   },
   {
     icon: Bot,
-    title: 'A paid Claude account',
-    text: 'You\'ll need Claude Pro or higher to complete the builds — Claude\'s free tier runs out of usage mid-session. That\'s billed separately by Anthropic, on top of your one-time course payment.',
+    title: 'No paid AI subscription needed',
+    text: 'All you need is a free Gemini API key from Google AI Studio — the free tier is enough to complete every build. Nothing extra to pay for beyond your one-time course payment.',
   },
   {
     icon: KeyRound,
@@ -225,10 +253,12 @@ export default function Home({ progress, onSelectAgent }) {
   const { hasBuilder1, hasBuilder2, isAdmin } = usePro();
   const { theme } = useTheme();
   const navigate = useNavigate();
-  const { builder1: builder1CohortDate, builder2: builder2CohortDate } = useCohortSchedule();
+  // Builder 1/2 have no live cohort anymore (permanent, guides-only access) —
+  // the only programs with a "next cohort starts" date are the two live ones.
+  const { vibecoding: vibecodingCohortDate, aimastery: aimasteryCohortDate } = useCohortSchedule();
 
   const popularAgents = [...publicAgents].sort((a, b) => b.xp - a.xp).slice(0, 4);
-  const nextCohort = formatCohortDate(builder1CohortDate) || formatCohortDate(builder2CohortDate);
+  const nextCohort = formatCohortDate(vibecodingCohortDate) || formatCohortDate(aimasteryCohortDate);
 
   return (
     <div>
@@ -261,19 +291,11 @@ export default function Home({ progress, onSelectAgent }) {
               <span className="inline-block bg-yellow px-2.5 rounded-lg -rotate-[1.5deg]">Level up.</span>
             </h1>
             <p className="text-[17px] leading-relaxed text-body mt-5 mb-5 max-w-[480px]">
-              {/* Dynamic count kept in its own element rather than a bare
-                  text sibling: two adjacent JSX text children serialize as
-                  one merged text node in prerendered static HTML, which
-                  then mismatches React's two-node hydration expectation
-                  (React #418) on every visit. */}
-              <span>{publicAgents.length}</span> guided Artificial Intelligence (AI) agent build sessions across every department. Copy-paste prompts, step-by-step builds, and a portfolio write-up — so you ship something real every session.
+              Learn AI by building it. Ship real AI agents, launch your own AI-powered web app, or build a personal
+              assistant that works for you — hands-on, project-based programs with a real outcome at the end of
+              every one, not video lectures.
             </p>
-            <div className="flex items-baseline gap-2.5 mb-6">
-              <span className="text-base text-gray-400 line-through">₦<span>{ANCHOR_PRICE.toLocaleString()}</span></span>
-              <span className="font-display font-extrabold text-2xl text-ink">₦<span>{BUILDER_PRICE.toLocaleString()}</span></span>
-              <span className="text-sm text-body">one-time · 6 months access</span>
-            </div>
-            <div className="flex gap-3.5 items-center flex-wrap">
+            <div className="flex gap-3.5 items-center flex-wrap mt-2">
               <Link
                 to="/pricing"
                 className="bg-brand text-white font-bold text-base px-7 py-[15px] rounded-2xl shadow-[0_10px_22px_rgba(124,58,237,.4)] hover:bg-brand-deep transition-colors"
@@ -339,51 +361,16 @@ export default function Home({ progress, onSelectAgent }) {
         </div>
       </div>
 
-      {/* ── Stats row ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 px-4 sm:px-6 lg:px-[5vw] py-10 max-w-6xl mx-auto">
-        <div className="bg-[#F3EBFF] dark:bg-[#181818] rounded-[18px] px-5 py-5.5 text-center">
-          <div className="font-display font-extrabold text-[34px] text-brand">{publicAgents.length}</div>
-          <div className="text-[13px] text-body font-semibold mt-0.5">AI Agents</div>
+      {/* ── Three programs ── */}
+      <div className="px-4 sm:px-6 lg:px-[5vw] pt-14 pb-14 max-w-6xl mx-auto">
+        <div className="text-center mb-7">
+          <span className="inline-flex items-center gap-2 text-[13px] font-bold px-4 py-1.5 rounded-full bg-[#F3EBFF] dark:bg-brand/15 text-brand mb-3">
+            What we offer
+          </span>
+          <h2 className="font-display font-extrabold text-[30px] text-ink tracking-[-.8px] m-0">Three ways to build with AI</h2>
+          <p className="text-center text-body mt-2">Pick the path that fits — automate real work, ship your own web app, or build a personal assistant</p>
         </div>
-        <div className="bg-[#FEF9E7] dark:bg-[#181818] rounded-[18px] px-5 py-5.5 text-center">
-          <div className="font-display font-extrabold text-[34px] text-[#B45309]">{realDepartments.length}</div>
-          <div className="text-[13px] text-body font-semibold mt-0.5">Departments</div>
-        </div>
-        <div className="bg-[#EAFAF1] dark:bg-[#181818] rounded-[18px] px-5 py-5.5 text-center">
-          <div className="font-display font-extrabold text-[34px] text-green"><span>{Math.round(totalXP / 1000)}</span>k+</div>
-          <div className="text-[13px] text-body font-semibold mt-0.5">XP Available</div>
-        </div>
-        <div className="bg-[#FDEEF4] dark:bg-[#181818] rounded-[18px] px-5 py-5.5 text-center">
-          <div className="font-display font-extrabold text-[34px] text-rose"><span>{totalHours}</span>+</div>
-          <div className="text-[13px] text-body font-semibold mt-0.5">Hours of content</div>
-        </div>
-      </div>
-
-      {/* ── How it works ── */}
-      <div className="px-4 sm:px-6 lg:px-[5vw] pt-5 pb-11 max-w-6xl mx-auto">
-        <h2 className="font-display font-extrabold text-[30px] text-ink tracking-[-.8px] text-center m-0">How it works</h2>
-        <p className="text-center text-body mt-2 mb-7">Three steps from zero to portfolio-ready agent</p>
-        <div className="grid sm:grid-cols-3 gap-5">
-          {HOW_IT_WORKS.map((step) => (
-            <div key={step.num} className="bg-white dark:bg-[#181818] border-[1.5px] border-border-soft rounded-[20px] p-6.5">
-              <div
-                className="w-12 h-12 rounded-[14px] font-display font-extrabold text-xl flex items-center justify-center shadow-[0_8px_18px_rgba(124,58,237,.35)]"
-                style={{ background: step.bg, color: step.fg }}
-              >
-                {step.num}
-              </div>
-              <h3 className="font-display font-bold text-lg text-ink mt-4 mb-2">{step.title}</h3>
-              <p className="text-sm leading-relaxed text-body m-0">{step.text}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Two programs ── */}
-      <div className="px-4 sm:px-6 lg:px-[5vw] pt-2 pb-14 max-w-6xl mx-auto">
-        <h2 className="font-display font-extrabold text-[30px] text-ink tracking-[-.8px] text-center m-0">Two ways to build with AI</h2>
-        <p className="text-center text-body mt-2 mb-7">Pick the path that fits — automate real work, or ship your own web app from scratch</p>
-        <div className="grid sm:grid-cols-2 gap-5">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {PROGRAMS.map((program) => (
             <Link
               key={program.to}
@@ -427,6 +414,101 @@ export default function Home({ progress, onSelectAgent }) {
                 </span>
               </div>
             </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Track record ── */}
+      <div className="bg-[#1A1333] px-4 sm:px-6 lg:px-[5vw] py-14">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-9">
+            <span className="inline-flex items-center gap-2 text-[13px] font-bold px-4 py-1.5 rounded-full bg-white/10 text-yellow mb-3">
+              Proven track record
+            </span>
+            <h2 className="font-display font-extrabold text-[30px] text-white tracking-[-.8px] m-0">Real outcomes, not just sessions</h2>
+            <p className="text-[#C9BFE8] mt-2 max-w-xl mx-auto">
+              500+ students taught across three programs — with outcomes that show up at work, not just a certificate.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-9">
+            {TRACK_RECORD_STATS.map((stat) => (
+              <div key={stat.label} className="bg-white/5 border border-white/10 rounded-[18px] px-5 py-6 text-center">
+                <stat.icon className="w-5 h-5 text-yellow mx-auto mb-2" />
+                <div className="font-display font-extrabold text-2xl text-white">{stat.value}</div>
+                <div className="text-[13px] text-[#C9BFE8] font-semibold mt-0.5">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+          <div className="grid sm:grid-cols-3 gap-5">
+            {OUTCOMES.map((item) => (
+              <div key={item.title} className="bg-white/5 border border-white/10 rounded-[20px] p-6">
+                <div className="w-11 h-11 rounded-xl bg-white/10 text-yellow flex items-center justify-center mb-4">
+                  <item.icon className="w-5 h-5" />
+                </div>
+                <h3 className="font-display font-bold text-lg text-white mb-2">{item.title}</h3>
+                <p className="text-sm leading-relaxed text-[#C9BFE8] m-0">{item.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── AI Agent Guides deep dive — everything from here through "Most
+          popular sessions" is specifically about the self-paced guides
+          track, not Vibe Coding or AI Agent Mastery. This divider makes
+          that scope explicit now that it no longer sits right under the
+          hero. ── */}
+      <div className="px-4 sm:px-6 lg:px-[5vw] pt-4 text-center max-w-6xl mx-auto">
+        <span className="inline-flex items-center gap-2 text-[13px] font-bold px-4 py-1.5 rounded-full bg-[#EAFAF1] dark:bg-green/10 text-green">
+          🌱 A closer look: AI Agent Guides
+        </span>
+      </div>
+
+      {/* ── Stats row ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 px-4 sm:px-6 lg:px-[5vw] py-10 max-w-6xl mx-auto">
+        <div className="bg-[#F3EBFF] dark:bg-[#181818] rounded-[18px] px-5 py-5.5 text-center">
+          <div className="font-display font-extrabold text-[34px] text-brand">{publicAgents.length}</div>
+          <div className="text-[13px] text-body font-semibold mt-0.5">AI Agents</div>
+        </div>
+        <div className="bg-[#FEF9E7] dark:bg-[#181818] rounded-[18px] px-5 py-5.5 text-center">
+          <div className="font-display font-extrabold text-[34px] text-[#B45309]">{realDepartments.length}</div>
+          <div className="text-[13px] text-body font-semibold mt-0.5">Departments</div>
+        </div>
+        <div className="bg-[#EAFAF1] dark:bg-[#181818] rounded-[18px] px-5 py-5.5 text-center">
+          <div className="font-display font-extrabold text-[34px] text-green"><span>{Math.round(totalXP / 1000)}</span>k+</div>
+          <div className="text-[13px] text-body font-semibold mt-0.5">XP Available</div>
+        </div>
+        <div className="bg-[#FDEEF4] dark:bg-[#181818] rounded-[18px] px-5 py-5.5 text-center">
+          <div className="font-display font-extrabold text-[34px] text-rose"><span>{totalHours}</span>+</div>
+          <div className="text-[13px] text-body font-semibold mt-0.5">Hours of content</div>
+        </div>
+      </div>
+
+      {/* ── How it works ── */}
+      <div className="px-4 sm:px-6 lg:px-[5vw] pt-5 pb-11 max-w-6xl mx-auto">
+        <h2 className="font-display font-extrabold text-[30px] text-ink tracking-[-.8px] text-center m-0">How it works</h2>
+        <p className="text-center text-body mt-2 mb-7 max-w-2xl mx-auto">
+          {/* Dynamic count kept in its own element rather than a bare text
+              sibling: two adjacent JSX text children serialize as one merged
+              text node in prerendered static HTML, which then mismatches
+              React's two-node hydration expectation (React #418) on every
+              visit. */}
+          <span>{publicAgents.length}</span> guided AI agent build sessions across every department — copy-paste
+          prompts, step-by-step builds, and a portfolio write-up every session. Three steps from zero to
+          portfolio-ready agent:
+        </p>
+        <div className="grid sm:grid-cols-3 gap-5">
+          {HOW_IT_WORKS.map((step) => (
+            <div key={step.num} className="bg-white dark:bg-[#181818] border-[1.5px] border-border-soft rounded-[20px] p-6.5">
+              <div
+                className="w-12 h-12 rounded-[14px] font-display font-extrabold text-xl flex items-center justify-center shadow-[0_8px_18px_rgba(124,58,237,.35)]"
+                style={{ background: step.bg, color: step.fg }}
+              >
+                {step.num}
+              </div>
+              <h3 className="font-display font-bold text-lg text-ink mt-4 mb-2">{step.title}</h3>
+              <p className="text-sm leading-relaxed text-body m-0">{step.text}</p>
+            </div>
           ))}
         </div>
       </div>
@@ -548,11 +630,12 @@ export default function Home({ progress, onSelectAgent }) {
               <Video className="w-3.5 h-3.5" /> Live classes
             </span>
             <h2 className="font-display font-extrabold text-[28px] sm:text-[32px] text-ink tracking-[-.7px] mt-4 mb-3">
-              It's not just a self-paced library
+              Prefer real classes over a self-paced library?
             </h2>
             <p className="text-body leading-relaxed mb-5 max-w-[440px]">
-              Every cohort gets scheduled live sessions — walkthroughs, office hours, and Q&A on Zoom — on top of the
-              self-paced builds. Can't make it live? Every session is recorded and added to your replays.
+              Vibe Coding Bootcamp and AI Agent Mastery are both live, instructor-led cohorts — walkthroughs, office
+              hours, and Q&A on Zoom, not just guides to read on your own. Can't make it live? Every session is
+              recorded and added to your replays.
             </p>
             {nextCohort && (
               <p className="inline-flex items-center gap-2 text-sm font-bold text-ink bg-[#F3EBFF] dark:bg-brand/15 px-4 py-2 rounded-full mb-5">
@@ -564,7 +647,7 @@ export default function Home({ progress, onSelectAgent }) {
                 to="/pricing"
                 className="inline-flex bg-brand text-white font-bold text-base px-7 py-[15px] rounded-2xl shadow-[0_10px_22px_rgba(124,58,237,.4)] hover:bg-brand-deep transition-colors"
               >
-                Join the next cohort →
+                See the live cohorts →
               </Link>
             </div>
           </div>
@@ -610,8 +693,8 @@ export default function Home({ progress, onSelectAgent }) {
           style={{ background: 'linear-gradient(120deg, #7C3AED, #9D5CFF)' }}
         >
           <div>
-            <h2 className="font-display font-extrabold text-2xl sm:text-[26px] text-white m-0">Unlock all <span>{publicAgents.length}</span> sessions</h2>
-            <p className="text-[#EDE4FF] mt-2 mb-0 text-[15px]">Get Builder 1, Builder 2, or both bundled as Pro — every plan is a one-time payment for 6 months of access.</p>
+            <h2 className="font-display font-extrabold text-2xl sm:text-[26px] text-white m-0">Ready to start building?</h2>
+            <p className="text-[#EDE4FF] mt-2 mb-0 text-[15px]">AI Agent Guides, Vibe Coding, or AI Agent Mastery — every program and price in one place.</p>
           </div>
           <Link
             to="/pricing"

@@ -1,139 +1,111 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { m } from 'framer-motion';
-import { CheckCircle2, AlertCircle, Tag, Loader2, Zap, CalendarDays, Info } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { CheckCircle2, AlertCircle, Infinity as InfinityIcon, Loader2, Zap, Info, Sparkles, Bot } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { usePro } from '../hooks/usePro';
-import { useCohortSchedule } from '../hooks/useCohortSchedule';
-import { supabase } from '../lib/supabaseClient';
+import { usePaystackCheckout } from '../hooks/usePaystackCheckout';
+import CheckoutAuthModal from '../components/CheckoutAuthModal';
 import { agents } from '../data/agents';
-import { ANCHOR_PRICE, BUILDER_PRICE, BUILDER_SAVINGS, BUILDER_SAVINGS_PERCENT, PRO_PRICE } from '../data/pricing';
+import { BUILDER1_PRICE, BUILDER2_PRICE, PRO_PRICE, VIBECODING_PRICE, AI_AGENT_MASTERY_PRICE } from '../data/pricing';
 import { usePageSeo } from '../hooks/usePageSeo';
 
 const builder1Count = agents.filter((a) => a.difficulty === 'Builder 1').length;
 const builder2Count = agents.filter((a) => a.difficulty === 'Builder 2').length;
 
 const BUILDER1_FEATURES = [
-  `${builder1Count} Builder 1 agent sessions`,
+  `${builder1Count} Builder 1 agent guides`,
   'Copy-paste prompts for every build',
   'XP tracking & progress',
   'Portfolio write-up prompts',
-  '6 months of access',
+  'Permanent access — yours to keep',
 ];
 
 const BUILDER2_FEATURES = [
-  `${builder2Count} Builder 2 agent sessions`,
+  `${builder2Count} Builder 2 agent guides`,
   'Multi-step, API-integrated agent builds',
   'XP tracking & progress',
   'Portfolio write-up prompts',
-  '6 months of access',
+  'Permanent access — yours to keep',
 ];
 
 const PRO_FEATURES = [
-  `All ${builder1Count + builder2Count} sessions — Builder 1 + Builder 2`,
+  `All ${builder1Count + builder2Count} guides — Builder 1 + Builder 2`,
   'No prerequisite — both tracks unlock immediately',
   'XP tracking & progress across both tracks',
   'Portfolio write-up prompts for every agent',
-  'Priority support',
-  '6 months of access',
+  'Permanent access — yours to keep',
 ];
 
-// Returns a display string for a cohort start date, or null if it's unset
-// or already in the past (an admin who forgets to clear a stale date
-// shouldn't leave "cohort starts" showing for a date that's already gone).
-function formatCohortDate(dateStr) {
-  if (!dateStr) return null;
-  const date = new Date(`${dateStr}T00:00:00`);
-  if (date < new Date(new Date().toDateString())) return null;
-  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-}
+// Vibe Coding and AI Agent Mastery are both live cohorts with their own
+// full marketing pages (VibeCoding.jsx / AIAgentMastery.jsx) — including
+// their own checkout, curriculum detail, and FAQ. This page shows just
+// enough to compare all three programs at a glance and send someone to
+// the right page, rather than duplicating a second checkout flow for each.
+const LIVE_COHORTS = [
+  {
+    to: '/vibe-coding',
+    icon: Sparkles,
+    name: 'Vibe Coding Bootcamp',
+    text: '4 weeks, 8 live classes. Go from an idea to a deployed website, web app, and AI-powered product — no coding experience required.',
+    bullets: ['Live instructor-led classes', 'Portfolio site, to-do app, Supabase CRUD app + more', 'Certificate of completion'],
+    price: VIBECODING_PRICE,
+    hasKey: 'hasVibeCoding',
+    coursePath: '/vibe-coding/course',
+  },
+  {
+    to: '/ai-agent-mastery',
+    icon: Bot,
+    name: 'AI Agent Mastery',
+    text: 'Live cohort. Build one integrated personal-assistant agent — inbox, calendar, research, and messaging, handled for you.',
+    bullets: ['Live instructor-led classes', 'One assistant, built end to end', 'Certificate of completion'],
+    price: AI_AGENT_MASTERY_PRICE,
+    hasKey: 'hasAiMastery',
+    coursePath: '/ai-agent-mastery/course',
+  },
+];
 
 export default function Pricing() {
-  const { user } = useAuth();
   const { theme } = useTheme();
-  const { hasBuilder1, hasBuilder2, isPro } = usePro();
-  const { builder1: builder1CohortDate, builder2: builder2CohortDate } = useCohortSchedule();
-  const navigate = useNavigate();
-
-  const builder1Cohort = formatCohortDate(builder1CohortDate);
-  const builder2Cohort = formatCohortDate(builder2CohortDate);
+  const { hasBuilder1, hasBuilder2, isPro, hasVibeCoding, hasAiMastery } = usePro();
+  const cohortAccess = { hasVibeCoding, hasAiMastery };
 
   usePageSeo({
-    title: 'Pricing — Builder 1, Builder 2 & Pro | Social Dev Technologies',
-    description: 'Simple, one-time pricing for Builder 1, Builder 2, or the combined Pro plan — no subscription, 6 months of access to build real AI agents.',
+    title: 'Pricing — AI Agent Guides, Vibe Coding & AI Agent Mastery | Social Dev Technologies',
+    description: 'Every program and price in one place — permanent AI Agent Guides from ₦5,000, or a live cohort with Vibe Coding and AI Agent Mastery.',
     canonicalPath: '/pricing',
   });
 
-  const [checkoutLoading, setCheckoutLoading] = useState(null); // 'builder1' | 'builder2' | 'pro' | null
-  const [checkoutError, setCheckoutError] = useState('');
-
-  const handleCheckout = async (plan) => {
-    if (!user) {
-      navigate('/welcome');
-      return;
-    }
-    setCheckoutError('');
-    setCheckoutLoading(plan);
-    try {
-      // `user` above can look truthy from cached auth state even when the
-      // underlying session token is gone (e.g. it lived in sessionStorage
-      // only and the tab was closed/reopened) — that combination is what
-      // caused checkout to fire with no Authorization header and fail with
-      // a cryptic "non-2xx status" error. Confirm a real session exists
-      // right before spending a network round-trip on it.
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setCheckoutError('Your session has expired. Please log in again to continue.');
-        setCheckoutLoading(null);
-        navigate('/welcome');
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke('create-paystack-checkout', {
-        body: { plan, redirectOrigin: window.location.origin },
-      });
-      if (error) {
-        // supabase-js's error.message is a generic "non-2xx status" string —
-        // the real reason is in the response body on error.context.
-        if (error.context) {
-          try {
-            const body = await error.context.clone().json();
-            console.error('create-paystack-checkout error response:', error.context.status, body);
-          } catch {
-            const text = await error.context.clone().text();
-            console.error('create-paystack-checkout error response (non-JSON):', error.context.status, text);
-          }
-        }
-        throw error;
-      }
-      if (!data?.authorization_url) throw new Error(data?.error || 'Could not start checkout.');
-      window.location.href = data.authorization_url;
-    } catch (err) {
-      setCheckoutError(err.message || 'Something went wrong starting checkout. Please try again.');
-      setCheckoutLoading(null);
-    }
-  };
+  const {
+    checkout: handleCheckout, loadingKey: checkoutLoading, error: checkoutError,
+    authModalOpen, closeAuthModal, handleAuthenticated,
+  } = usePaystackCheckout();
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 text-center">
 
       {/* Header */}
-      <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mb-12">
+      <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mb-14">
         <span className="inline-flex items-center gap-2 text-[13px] font-bold px-4 py-1.5 rounded-full bg-[#F3EBFF] dark:bg-brand/15 text-brand">
           Simple, one-time pricing
         </span>
         <h1 className="font-display font-extrabold text-[32px] sm:text-[42px] leading-[1.1] text-ink tracking-[-1px] mt-4 mb-2.5">
-          Build agents. Level up your career.
+          Every program, every price.
         </h1>
         <p className="text-body text-base max-w-xl mx-auto">
-          Pay once, build for 6 months. Start with Builder 1, move on to Builder 2, or get both bundled as Pro.
+          Pick the path that fits — self-paced AI Agent Guides you keep forever, or a live cohort with real classes.
         </p>
-        <div className="inline-flex items-center gap-2 text-[13px] font-semibold text-brand bg-[#F3EBFF] dark:bg-brand/15 rounded-full px-4 py-2 mt-4">
-          <Info className="w-4 h-4 flex-shrink-0" />
-          You'll need your own paid Claude account (Claude Pro or higher) to complete the builds — that's billed separately by Anthropic.
-        </div>
       </m.div>
+
+      {/* AI Agent Guides */}
+      <div className="text-left mb-6">
+        <h2 className="font-display font-extrabold text-2xl text-ink mb-1">AI Agent Guides</h2>
+        <p className="text-body text-[14.5px]">Self-paced. Builder 1, Builder 2, or both as Pro.</p>
+      </div>
+
+      <div className="inline-flex items-center gap-2 text-[13px] font-semibold text-brand bg-[#F3EBFF] dark:bg-brand/15 rounded-full px-4 py-2 mb-6">
+        <Info className="w-4 h-4 flex-shrink-0" />
+        All you need is a free Gemini API key from Google AI Studio — no paid AI subscription required.
+      </div>
 
       {checkoutError && (
         <div className="max-w-md mx-auto mb-6 flex items-start gap-2 text-sm text-rose bg-[#FDEEF4] dark:bg-rose/10 border border-rose/20 rounded-lg px-3 py-2.5 text-left">
@@ -154,20 +126,14 @@ export default function Pricing() {
         >
           <div className="font-extrabold text-ink text-lg">🌱 Builder 1</div>
           <div className="flex items-baseline gap-2.5 mt-2.5 mb-0.5">
-            <span className="text-base text-gray-400 line-through">₦<span>{ANCHOR_PRICE.toLocaleString()}</span></span>
-            <span className="font-display font-extrabold text-[34px] text-ink">₦<span>{BUILDER_PRICE.toLocaleString()}</span></span>
+            <span className="font-display font-extrabold text-[34px] text-ink">₦<span>{BUILDER1_PRICE.toLocaleString()}</span></span>
           </div>
           <div className="flex flex-wrap gap-1.5 mb-3.5">
             <span className="inline-flex items-center gap-1 bg-[#EAFAF1] dark:bg-green/10 text-green font-extrabold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
-              <Tag className="w-3 h-3" /> Save ₦<span>{BUILDER_SAVINGS.toLocaleString()}</span> · <span>{BUILDER_SAVINGS_PERCENT}</span>% off
+              <InfinityIcon className="w-3 h-3" /> Yours forever — no expiry
             </span>
-            {builder1Cohort && (
-              <span className="inline-flex items-center gap-1 bg-[#F3EBFF] dark:bg-brand/15 text-brand font-bold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
-                <CalendarDays className="w-3 h-3" /> Cohort starts <span>{builder1Cohort}</span>
-              </span>
-            )}
           </div>
-          <p className="text-[13.5px] text-body mb-4.5">One-time payment. Start here — the foundation track.</p>
+          <p className="text-[13.5px] text-body mb-4.5">One-time payment, permanent access. Start here — the foundation track.</p>
           <ul className="flex flex-col gap-2.5 mb-5.5 flex-1">
             {BUILDER1_FEATURES.map((f) => (
               <li key={f} className="flex items-start gap-2.5 text-[13.5px] text-body-strong">
@@ -181,17 +147,14 @@ export default function Pricing() {
               You already have Builder 1
             </div>
           ) : (
-            <div className="space-y-3">
-              <button
-                onClick={() => handleCheckout('builder1')}
-                disabled={checkoutLoading === 'builder1'}
-                className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-deep disabled:opacity-60 text-white font-extrabold px-6 py-3.5 rounded-xl shadow-[0_10px_22px_rgba(124,58,237,.35)] transition-colors"
-              >
-                {checkoutLoading === 'builder1' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {user ? `Pay ₦${BUILDER_PRICE.toLocaleString()} with Paystack` : 'Sign up to get started'}
-              </button>
-              {!user && <p className="text-center text-xs text-gray-400 mt-1">Sign up first — then come back to pay.</p>}
-            </div>
+            <button
+              onClick={() => handleCheckout('builder1')}
+              disabled={checkoutLoading === 'builder1'}
+              className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-deep disabled:opacity-60 text-white font-extrabold px-6 py-3.5 rounded-xl shadow-[0_10px_22px_rgba(124,58,237,.35)] transition-colors"
+            >
+              {checkoutLoading === 'builder1' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              {checkoutLoading === 'builder1' ? 'Starting checkout…' : `Pay ₦${BUILDER1_PRICE.toLocaleString()} with Paystack`}
+            </button>
           )}
         </m.div>
 
@@ -204,20 +167,14 @@ export default function Pricing() {
         >
           <div className="font-extrabold text-ink text-lg">⚡ Builder 2</div>
           <div className="flex items-baseline gap-2.5 mt-2.5 mb-0.5">
-            <span className="text-base text-gray-400 line-through">₦<span>{ANCHOR_PRICE.toLocaleString()}</span></span>
-            <span className="font-display font-extrabold text-[34px] text-ink">₦<span>{BUILDER_PRICE.toLocaleString()}</span></span>
+            <span className="font-display font-extrabold text-[34px] text-ink">₦<span>{BUILDER2_PRICE.toLocaleString()}</span></span>
           </div>
           <div className="flex flex-wrap gap-1.5 mb-3.5">
             <span className="inline-flex items-center gap-1 bg-[#EAFAF1] dark:bg-green/10 text-green font-extrabold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
-              <Tag className="w-3 h-3" /> Save ₦<span>{BUILDER_SAVINGS.toLocaleString()}</span> · <span>{BUILDER_SAVINGS_PERCENT}</span>% off
+              <InfinityIcon className="w-3 h-3" /> Yours forever — no expiry
             </span>
-            {builder2Cohort && (
-              <span className="inline-flex items-center gap-1 bg-[#F3EBFF] dark:bg-brand/15 text-brand font-bold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
-                <CalendarDays className="w-3 h-3" /> Cohort starts <span>{builder2Cohort}</span>
-              </span>
-            )}
           </div>
-          <p className="text-[13.5px] text-body mb-4.5">One-time payment. Best after finishing Builder 1 — but nothing stops you from jumping in early.</p>
+          <p className="text-[13.5px] text-body mb-4.5">One-time payment, permanent access. Best after finishing Builder 1 — but nothing stops you from jumping in early.</p>
           <ul className="flex flex-col gap-2.5 mb-5.5 flex-1">
             {BUILDER2_FEATURES.map((f) => (
               <li key={f} className="flex items-start gap-2.5 text-[13.5px] text-body-strong">
@@ -231,17 +188,14 @@ export default function Pricing() {
               You already have Builder 2
             </div>
           ) : (
-            <div className="space-y-3">
-              <button
-                onClick={() => handleCheckout('builder2')}
-                disabled={checkoutLoading === 'builder2'}
-                className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-deep disabled:opacity-60 text-white font-extrabold px-6 py-3.5 rounded-xl shadow-[0_10px_22px_rgba(124,58,237,.35)] transition-colors"
-              >
-                {checkoutLoading === 'builder2' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {user ? `Pay ₦${BUILDER_PRICE.toLocaleString()} with Paystack` : 'Sign up to get started'}
-              </button>
-              {!user && <p className="text-center text-xs text-gray-400 mt-1">Sign up first — then come back to pay.</p>}
-            </div>
+            <button
+              onClick={() => handleCheckout('builder2')}
+              disabled={checkoutLoading === 'builder2'}
+              className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-deep disabled:opacity-60 text-white font-extrabold px-6 py-3.5 rounded-xl shadow-[0_10px_22px_rgba(124,58,237,.35)] transition-colors"
+            >
+              {checkoutLoading === 'builder2' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              {checkoutLoading === 'builder2' ? 'Starting checkout…' : `Pay ₦${BUILDER2_PRICE.toLocaleString()} with Paystack`}
+            </button>
           )}
         </m.div>
 
@@ -262,6 +216,11 @@ export default function Pricing() {
           <div className="font-display font-extrabold text-[38px] text-ink mt-2.5 mb-0.5">
             ₦<span>{PRO_PRICE.toLocaleString()}</span>
           </div>
+          <div className="flex flex-wrap gap-1.5 mb-3.5">
+            <span className="inline-flex items-center gap-1 bg-[#EAFAF1] dark:bg-green/10 text-green font-extrabold text-[11.5px] px-2.5 py-1 rounded-full w-fit">
+              <InfinityIcon className="w-3 h-3" /> Yours forever — no expiry
+            </span>
+          </div>
           <p className="text-[13.5px] text-body mb-4.5">
             One-time payment for Builder 1 + Builder 2 together — no prerequisite, both unlock immediately.
           </p>
@@ -278,23 +237,71 @@ export default function Pricing() {
               You're on Pro — enjoy full access!
             </div>
           ) : (
-            <div className="space-y-3">
-              <button
-                onClick={() => handleCheckout('pro')}
-                disabled={checkoutLoading === 'pro'}
-                className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-deep disabled:opacity-60 text-white font-extrabold px-6 py-3.5 rounded-xl shadow-[0_10px_22px_rgba(124,58,237,.35)] transition-colors"
-              >
-                {checkoutLoading === 'pro' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {user ? `Pay ₦${PRO_PRICE.toLocaleString()} with Paystack` : 'Sign up to get started'}
-              </button>
-              {!user && <p className="text-center text-xs text-gray-400 mt-1">Sign up first — then come back to pay.</p>}
-            </div>
+            <button
+              onClick={() => handleCheckout('pro')}
+              disabled={checkoutLoading === 'pro'}
+              className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-deep disabled:opacity-60 text-white font-extrabold px-6 py-3.5 rounded-xl shadow-[0_10px_22px_rgba(124,58,237,.35)] transition-colors"
+            >
+              {checkoutLoading === 'pro' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              {checkoutLoading === 'pro' ? 'Starting checkout…' : `Pay ₦${PRO_PRICE.toLocaleString()} with Paystack`}
+            </button>
           )}
         </m.div>
       </div>
 
+      {/* Live cohorts — Vibe Coding & AI Agent Mastery, each with their own
+          full page (marketing detail + checkout). Summarized here just
+          enough to compare against the guides above and send people to
+          the right page. */}
+      <div className="text-left mt-14 mb-6">
+        <h2 className="font-display font-extrabold text-2xl text-ink mb-1">Live Cohorts</h2>
+        <p className="text-body text-[14.5px]">Instructor-led, real classes, a fixed cohort of students.</p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-left">
+        {LIVE_COHORTS.map((program, i) => {
+          const enrolled = cohortAccess[program.hasKey];
+          return (
+            <m.div
+              key={program.to}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 * i }}
+              className="rounded-[22px] border-[1.5px] border-border-soft bg-white dark:bg-[#181818] p-7.5 flex flex-col"
+            >
+              <div className="w-11 h-11 rounded-[14px] bg-[#F3EBFF] dark:bg-brand/15 text-brand flex items-center justify-center mb-4">
+                <program.icon className="w-5 h-5" />
+              </div>
+              <div className="font-extrabold text-ink text-lg mb-1">{program.name}</div>
+              <p className="text-[13.5px] text-body mb-4.5">{program.text}</p>
+              <ul className="flex flex-col gap-2.5 mb-5.5 flex-1">
+                {program.bullets.map((f) => (
+                  <li key={f} className="flex items-start gap-2.5 text-[13.5px] text-body-strong">
+                    <CheckCircle2 className="w-4 h-4 text-green mt-0.5 flex-shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <div className="font-display font-extrabold text-[26px] text-ink mb-4">
+                ₦{program.price.toLocaleString()} <span className="text-sm font-bold text-body">one-time</span>
+              </div>
+              <Link
+                to={enrolled ? program.coursePath : program.to}
+                className={`flex items-center justify-center gap-2 w-full font-extrabold px-6 py-3.5 rounded-xl transition-colors ${
+                  enrolled
+                    ? 'bg-[#EAFAF1] dark:bg-green/10 text-green border border-green/30'
+                    : 'bg-brand hover:bg-brand-deep text-white shadow-[0_10px_22px_rgba(124,58,237,.35)]'
+                }`}
+              >
+                {enrolled ? "You're enrolled — go to your classes →" : `Explore ${program.name} →`}
+              </Link>
+            </m.div>
+          );
+        })}
+      </div>
+
       {/* Payment methods */}
-      <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-9 text-center">
+      <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-14 text-center">
         <p className="text-[13.5px] text-gray-400 mb-3">
           Payments processed securely by Paystack — cards accepted worldwide
         </p>
@@ -306,9 +313,11 @@ export default function Pricing() {
           ))}
         </div>
         <p className="text-xs text-gray-400 mt-6">
-          Every plan is a one-time payment for 6 months of access — no auto-renewal. For billing questions email support@socialdevtechnologies.com
+          Every plan is a one-time payment — no subscription, no auto-renewal. For billing questions email support@socialdevtechnologies.com
         </p>
       </m.div>
+
+      <CheckoutAuthModal open={authModalOpen} onClose={closeAuthModal} onAuthenticated={handleAuthenticated} />
     </div>
   );
 }

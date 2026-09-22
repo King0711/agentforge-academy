@@ -9,22 +9,27 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 
 // Expected NGN prices — must match Pricing.jsx and create-paystack-checkout
-// exactly. The ₦100,000 shown struck through on the Builder cards is a
-// marketing anchor, never a real charge amount — never add it here.
+// exactly. These two constants must move together or a real payment gets
+// flagged 'flagged_unrecognized_amount' and nothing is granted despite the
+// charge succeeding.
 //
-// Cut from 50000/50000/90000 to 25000/25000/45000 (2026-09-02), matching
-// create-paystack-checkout exactly — these two constants must move
-// together or a real payment gets flagged 'flagged_unrecognized_amount'
-// and no entitlement or credits are granted despite the charge succeeding.
+// builder1/builder2/pro cut from 25000/25000/45000 to 5000/7000/10000
+// (2026-09-22): these now grant permanent, guides-only access via
+// guide_purchases (see below) instead of a 6-month entitlements-table
+// subscription with cohort/credits — never add back a struck-through
+// anchor price for these three, the 95%+ discount it would imply is no
+// longer real.
 //
-// vibecoding (added 2026-09-08) — the separate live-cohort Vibe Coding
-// bootcamp. Same price as builder1/builder2 is fine: resolvePlan() below
-// trusts metadata.plan first, and checkout always sets it.
+// vibecoding and aimastery are both separate live-cohort products, each
+// priced independently (aimastery cut from 25000 to 19999 and vibecoding
+// raised from 25000 to 50000, both 2026-09-23). resolvePlan() below trusts
+// metadata.plan first, and checkout always sets it.
 const PRICES = {
-  builder1: 25000,
-  builder2: 25000,
-  pro: 45000,
-  vibecoding: 25000,
+  builder1: 5000,
+  builder2: 7000,
+  pro: 10000,
+  vibecoding: 50000,
+  aimastery: 19999,
 };
 const AMOUNT_TOLERANCE = 1;
 
@@ -39,7 +44,13 @@ const AMOUNT_TOLERANCE = 1;
 // the listed price (minus AMOUNT_TOLERANCE for rounding).
 const FEE_CEILING_MULTIPLIER = 1.06;
 
-const PLAN_LABELS = { builder1: 'Builder 1', builder2: 'Builder 2', pro: 'Pro', vibecoding: 'Vibe Coding Bootcamp' };
+const PLAN_LABELS = {
+  builder1: 'Builder 1',
+  builder2: 'Builder 2',
+  pro: 'Pro',
+  vibecoding: 'Vibe Coding Bootcamp',
+  aimastery: 'AI Agent Mastery',
+};
 
 function emailShell(innerHtml) {
   return `
@@ -77,9 +88,11 @@ async function sendResendEmail(to, subject, html) {
 // purchase regardless), but surfacing an upcoming date here still helps a
 // buyer know when live/group activity around their tier kicks off.
 async function buildCohortLines(supabase, plan) {
-  const tiers = plan === 'pro' ? ['builder1', 'builder2'] : [plan];
-  const { data } = await supabase.from('cohort_schedule').select('tier, start_date').in('tier', tiers);
-  const labels = { builder1: 'Builder 1', builder2: 'Builder 2', vibecoding: 'Vibe Coding Bootcamp' };
+  // builder1/builder2/pro are permanent, guides-only purchases now — no
+  // cohort or live-session perks attached, so there's nothing to surface.
+  if (plan === 'builder1' || plan === 'builder2' || plan === 'pro') return '';
+  const { data } = await supabase.from('cohort_schedule').select('tier, start_date').eq('tier', plan);
+  const labels = { vibecoding: 'Vibe Coding Bootcamp', aimastery: 'AI Agent Mastery' };
   const today = new Date(new Date().toDateString());
   const lines = (data || [])
     .filter((row) => row.start_date && new Date(`${row.start_date}T00:00:00`) >= today)
@@ -93,27 +106,43 @@ async function buildCohortLines(supabase, plan) {
   return `<ul style="font-size:14px;color:#3A3358;line-height:1.7;padding-left:20px;margin:16px 0;">${lines.join('')}</ul>`;
 }
 
-// vibecoding gets its own bullet list: it's live-taught (join links/replays
-// live on the dashboard, not a self-paced build queue), doesn't require any
-// specific paid AI tool (dropped 2026-09-08 — see business-model.md), and
-// has a prompt library instead of per-session portfolio write-up prompts.
-// builder1/builder2/pro keep the original bullets unchanged.
+// Three distinct bullet variants:
+// - builder1/builder2/pro (permanent guides, added 2026-09-22): no cohort
+//   lines, no "6 months" framing (access is permanent), no credits mention
+//   (these no longer grant AI Builder credits) — a free Gemini API key is
+//   still all that's needed to work through the guides.
+// - vibecoding: live-taught (join links/replays live on the dashboard, not
+//   a self-paced build queue), plus its prompt library.
+// - aimastery: live-taught like vibecoding, but no prompt-library bullet —
+//   this program has no equivalent reference-library table.
 function welcomeHtml(name, planLabel, cohortLines, plan) {
-  const bullets = plan === 'vibecoding'
-    ? `
+  const isPermanentGuides = plan === 'builder1' || plan === 'builder2' || plan === 'pro';
+  let bullets;
+  if (plan === 'vibecoding') {
+    bullets = `
       <li>Your live classes and replays are on your dashboard under Live Sessions.</li>
       <li>The prompt library (8 reusable prompts for the bootcamp) is also on your dashboard.</li>
       <li>Stuck on something? Reach us on WhatsApp: <a href="https://wa.me/2349066006963" style="color:#7C3AED;">wa.me/2349066006963</a></li>
-    `
-    : `
-      <li>You'll need your own paid Claude account (Claude Pro or higher) to follow the builds — billed separately by Anthropic.</li>
+    `;
+  } else if (plan === 'aimastery') {
+    bullets = `
+      <li>Your live classes and replays are on your dashboard under Live Sessions.</li>
+      <li>Stuck on something? Reach us on WhatsApp: <a href="https://wa.me/2349066006963" style="color:#7C3AED;">wa.me/2349066006963</a></li>
+    `;
+  } else {
+    bullets = `
+      <li>All you need is a free Gemini API key from Google AI Studio — no paid AI subscription required.</li>
       <li>Every session ends with a portfolio write-up prompt — that's what makes this resume-ready, don't skip it.</li>
       <li>Stuck on a build? Reach us on WhatsApp: <a href="https://wa.me/2349066006963" style="color:#7C3AED;">wa.me/2349066006963</a></li>
     `;
+  }
+  const accessLine = isPermanentGuides
+    ? `You're in! Your <strong>${planLabel}</strong> access is live right now — yours to keep, no expiry.`
+    : `You're in! Your <strong>${planLabel}</strong> access is live right now, for the next 6 months.`;
   return `
     <p style="font-size:15px;color:#1A1333;">Hey ${name},</p>
     <p style="font-size:15px;color:#3A3358;line-height:1.6;">
-      You're in! Your <strong>${planLabel}</strong> access is live right now, for the next 6 months.
+      ${accessLine}
     </p>
     ${cohortLines}
     <p style="font-size:15px;color:#3A3358;line-height:1.6;">A few things before you start:</p>
@@ -154,13 +183,13 @@ function timingSafeEqual(a, b) {
   return diff === 0;
 }
 
-// Builder 1 and Builder 2 cost the same (₦50,000), so amount alone can't
-// tell them apart — trust the plan embedded in metadata at checkout
-// creation (see create-paystack-checkout), but still verify its price
-// matches before granting anything. Only fall back to amount-only
-// resolution for payments with no metadata (e.g. a manual charge created
-// directly in the Paystack dashboard), where 'pro' is the only plan an
-// amount alone can identify unambiguously.
+// Every plan now has a distinct, non-overlapping price (5000/7000/10000/
+// 19999/50000) — still trust the plan embedded in metadata at checkout
+// creation (see create-paystack-checkout) as the primary signal, but
+// verify its price matches before granting anything. Only fall back to
+// amount-only resolution for payments with no metadata (e.g. a manual
+// charge created directly in the Paystack dashboard), where 'pro' is the
+// only plan this fallback checks for.
 function resolvePlan(metadataPlan, amountNaira, currency) {
   if (currency !== 'NGN') return null;
 
@@ -173,6 +202,16 @@ function resolvePlan(metadataPlan, amountNaira, currency) {
   if (withinRange(PRICES.pro)) return 'pro';
   return null;
 }
+
+// course_ids for each tier, used to expand a builder1/builder2/pro
+// purchase into one guide_purchases row per guide. Mirrors the ranges
+// already implicit in course_content.tier — kept as a literal list rather
+// than re-deriving it from a live query result inline, so the insert below
+// is one straightforward batch rather than a query-then-map dance.
+const TIER_COURSE_IDS = {
+  builder1: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+  builder2: [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
+};
 
 serve(async (req) => {
   const rawBody = await req.text();
@@ -227,6 +266,7 @@ serve(async (req) => {
   // real plan price before granting anything.
   const metadataPlan = payload.data?.metadata?.plan;
   const plan = resolvePlan(metadataPlan, amountNaira, currency);
+
   if (!plan) {
     await supabase.from('payments').insert({
       user_id: null,
@@ -266,63 +306,46 @@ serve(async (req) => {
     return new Response('User not found', { status: 404 });
   }
 
-  // Every plan is a one-time payment for 6 months of access (founder-confirmed).
-  // Pro grants both tracks at once with no prerequisite; Builder 1/2 grant
-  // only their own track.
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 182);
-  const expiresAtIso = expiresAt.toISOString();
+  const isPermanentGuidePlan = plan === 'builder1' || plan === 'builder2' || plan === 'pro';
 
-  const entitlementUpdate = { payment_provider: 'paystack' };
-  if (plan === 'pro') {
-    entitlementUpdate.builder1_expires_at = expiresAtIso;
-    entitlementUpdate.builder2_expires_at = expiresAtIso;
-  } else if (plan === 'builder1') {
-    entitlementUpdate.builder1_expires_at = expiresAtIso;
-  } else if (plan === 'builder2') {
-    entitlementUpdate.builder2_expires_at = expiresAtIso;
-  } else if (plan === 'vibecoding') {
-    entitlementUpdate.vibecoding_expires_at = expiresAtIso;
-  }
+  if (isPermanentGuidePlan) {
+    // builder1/builder2/pro grant permanent access via guide_purchases,
+    // never entitlements.builder1_expires_at/builder2_expires_at — those
+    // two columns stay reserved for grandfathered pre-2026-09-22
+    // subscribers and are never written to by a new purchase.
+    const tiers = plan === 'pro' ? ['builder1', 'builder2'] : [plan];
+    const rows = tiers.flatMap((tier) =>
+      TIER_COURSE_IDS[tier].map((course_id) => ({ user_id: userId, course_id, tier, provider_transaction_id: txId })),
+    );
+    await supabase
+      .from('guide_purchases')
+      .upsert(rows, { onConflict: 'user_id,course_id', ignoreDuplicates: true });
+  } else {
+    // vibecoding/aimastery are one-time payments for 6 months of live
+    // cohort access (founder-confirmed).
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 182);
+    const expiresAtIso = expiresAt.toISOString();
 
-  await supabase
-    .from('entitlements')
-    .update(entitlementUpdate)
-    .eq('user_id', userId);
-
-  // AI Builder Credits — deliberately after the entitlement update and
-  // wrapped so a failure here can never undo or block it: a student who
-  // paid keeps their access even if this fails, and support can grant
-  // credits manually from /admin/ai-credits. Amounts are read from
-  // ai_platform_settings, not hardcoded, so an admin can change the
-  // allotment without a redeploy.
-  //
-  // The description embeds txId, which is unique per real transaction —
-  // that is what actually protects a genuine renewal months later from
-  // being mistaken for a duplicate, on top of ai_grant_credits' own
-  // 24-hour idempotency window (see its definition for the incident that
-  // window exists to prevent). The webhook's own idempotency check above
-  // (on payments.provider_transaction_id) already means a retried
-  // delivery never reaches this line at all for the same transaction.
-  try {
-    const grantField = { builder1: 'grant_builder1', builder2: 'grant_builder2', pro: 'grant_pro' }[plan];
-    const { data: settings } = await supabase
-      .from('ai_platform_settings')
-      .select(grantField)
-      .eq('id', true)
-      .maybeSingle();
-    const creditAmount = settings?.[grantField];
-    if (creditAmount > 0) {
-      await supabase.rpc('ai_grant_credits', {
-        p_user_id: userId,
-        p_amount: creditAmount,
-        p_type: 'initial_allocation',
-        p_description: `${PLAN_LABELS[plan] || plan} purchase ${txId}`,
-      });
+    const entitlementUpdate = { payment_provider: 'paystack' };
+    if (plan === 'vibecoding') {
+      entitlementUpdate.vibecoding_expires_at = expiresAtIso;
+    } else if (plan === 'aimastery') {
+      entitlementUpdate.aimastery_expires_at = expiresAtIso;
     }
-  } catch (_err) {
-    // non-fatal — see comment above
+
+    await supabase
+      .from('entitlements')
+      .update(entitlementUpdate)
+      .eq('user_id', userId);
   }
+
+  // No plan grants AI Builder credits anymore as of 2026-09-22 (builder1/
+  // builder2/pro dropped credits along with the rest of the subscription
+  // perks; vibecoding/aimastery never had them) — the ai_grant_credits
+  // call that used to live here is gone, not just unreachable, since
+  // ai_platform_settings.grant_builder1/grant_builder2/grant_pro have no
+  // remaining purchase path that reads them.
 
   const { data: paymentRow } = await supabase
     .from('payments')

@@ -10,15 +10,15 @@ const FAQS = [
   },
   {
     q: 'What do I need to actually follow along?',
-    a: 'Your own paid Claude account (Claude Pro or higher) — that\'s billed separately by Anthropic, not included in our pricing. Beyond that, just the free tools each session connects to (Gmail, Slack, Notion, etc., depending on the build).',
+    a: 'A free Gemini API key from Google AI Studio — no paid AI subscription required. Beyond that, just the free tools each session connects to (Gmail, Slack, Notion, etc., depending on the build).',
   },
   {
-    q: 'Is access instant, or do I have to wait for a cohort to start?',
-    a: 'Instant. Buying a plan unlocks your sessions immediately and it\'s fully self-paced. Cohort start dates shown on the pricing page are informational — they mark when live/group activity for that tier kicks off, not when your access begins.',
+    q: 'Is access instant?',
+    a: 'Instant. Buying a plan unlocks your sessions immediately and it\'s fully self-paced, permanent access — no cohort or start date to wait for.',
   },
   {
     q: 'How long does my access last?',
-    a: 'Every plan — Builder 1, Builder 2, or Pro — is a one-time payment covering 6 months of access. There\'s no auto-renewal and nothing recurring to remember to cancel.',
+    a: 'Every plan — Builder 1, Builder 2, or Pro — is a one-time payment for permanent access. There\'s no expiry, no auto-renewal, and nothing recurring to remember to cancel.',
   },
   {
     q: 'What\'s the refund policy?',

@@ -15,22 +15,27 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '
 // sent to Paystack (see amountNaira below), so a mismatch with the
 // webhook's own PRICES means a real charge gets flagged as unrecognized.
 //
-// Cut from 50000/50000/90000 to 25000/25000/45000 (2026-09-02). Pro kept
-// at a ~10% discount off buying both tracks separately, same ratio as
-// before, rather than left at 90000 (which would cost more than the two
-// tracks bought individually).
+// builder1/builder2/pro cut from 25000/25000/45000 to 5000/7000/10000
+// (2026-09-22) as part of repositioning them from a 6-month subscription
+// (live cohort + AI Builder credits) into permanent, guides-only access —
+// see supabase/guide-purchases-setup.sql. Builder 1 and Builder 2 no
+// longer share one price: Builder 2 is priced above Builder 1 as the more
+// advanced track. Pro (10000) is a discount off buying both separately
+// (12000), same "just get Pro" logic as before at the new price floor.
 //
-// vibecoding (added 2026-09-08) is the separate live-cohort Vibe Coding
-// bootcamp, not a tier of the builder1/builder2/pro ladder above — it's
-// priced independently and happens to land at the same amount as
-// builder1/builder2. That's fine: the webhook's resolvePlan() trusts the
-// metadata.plan set below for exact identification, only falling back to
-// amount-only matching (pro-only) for metadata-less payments.
+// vibecoding and aimastery are both separate live-cohort products, not
+// tiers of the builder1/builder2/pro ladder above — priced independently
+// of each other and of the ladder (aimastery cut from 25000 to 19999 and
+// vibecoding raised from 25000 to 50000, both 2026-09-23). The webhook's
+// resolvePlan() trusts the metadata.plan set below for exact
+// identification, only falling back to amount-only matching (pro-only)
+// for metadata-less payments.
 const PRICES = {
-  builder1: 25000,
-  builder2: 25000,
-  pro: 45000,
-  vibecoding: 25000,
+  builder1: 5000,
+  builder2: 7000,
+  pro: 10000,
+  vibecoding: 50000,
+  aimastery: 19999,
 };
 
 // This function is called directly from the browser (Pricing.jsx via

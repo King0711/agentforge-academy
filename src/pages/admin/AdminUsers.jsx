@@ -4,7 +4,7 @@ import { m } from 'framer-motion';
 import {
   Users, Shield, Zap, GraduationCap, Search, RefreshCw, Download,
   CheckCircle2, XCircle, Crown, AlertCircle, Loader2, Mail, ChevronDown, Sparkles,
-  Filter, ArrowUpDown, Hammer, Rocket, Code2,
+  Filter, ArrowUpDown, Hammer, Rocket, Code2, Bot,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -31,12 +31,21 @@ function isActive(expiresAt) {
   return Boolean(expiresAt) && new Date(expiresAt) > new Date();
 }
 
-// "Pro" in this admin view means paying for either Builder track — distinct
-// from Admin, which means account-management privileges. A user can be both,
-// or neither (yet to purchase anything).
+// "Pro" in this admin view means access to either Builder track — distinct
+// from Admin, which means account-management privileges. A user can be
+// both, or neither (yet to purchase anything). Checks both the legacy
+// 6-month entitlement (grandfathered pre-2026-09-22 subscribers) and a
+// permanent guide_purchases bundle (every purchase since) — either one
+// counts as "has" a tier, same rule usePro.js applies for the site itself.
+function hasBuilder1(u) {
+  return isActive(u.builder1_expires_at) || Boolean(u.has_builder1_guides);
+}
+function hasBuilder2(u) {
+  return isActive(u.builder2_expires_at) || Boolean(u.has_builder2_guides);
+}
 function planLabel(u) {
-  const b1 = isActive(u.builder1_expires_at);
-  const b2 = isActive(u.builder2_expires_at);
+  const b1 = hasBuilder1(u);
+  const b2 = hasBuilder2(u);
   if (b1 && b2) return 'Pro (Builder 1 + 2)';
   if (b1) return 'Builder 1';
   if (b2) return 'Builder 2';
@@ -47,8 +56,8 @@ function planLabel(u) {
 // also holds an active plan) so the filter dropdown matches what's shown.
 function planCategory(u) {
   if (u.is_admin) return 'admin';
-  const b1 = isActive(u.builder1_expires_at);
-  const b2 = isActive(u.builder2_expires_at);
+  const b1 = hasBuilder1(u);
+  const b2 = hasBuilder2(u);
   if (b1 && b2) return 'pro';
   if (b1) return 'builder1';
   if (b2) return 'builder2';
@@ -113,8 +122,8 @@ function PlanBadge({ user }) {
       <Crown className="w-3 h-3" /> Admin
     </span>
   );
-  const b1 = isActive(user.builder1_expires_at);
-  const b2 = isActive(user.builder2_expires_at);
+  const b1 = hasBuilder1(user);
+  const b2 = hasBuilder2(user);
   if (b1 && b2) return (
     <span className="inline-flex items-center gap-1 text-xs font-bold bg-[#F3EBFF] dark:bg-brand/15 text-brand border border-brand/30 px-2 py-0.5 rounded-full">
       <Zap className="w-3 h-3" /> Pro
@@ -137,11 +146,12 @@ function PlanBadge({ user }) {
 
 function UserRow({
   u, index, expanded, onToggleExpand, actionLoading,
-  onToggleBuilder1, onToggleBuilder2, onTogglePro, onToggleAdmin, onToggleVibeCoding, currentUserId,
+  onToggleBuilder1, onToggleBuilder2, onTogglePro, onToggleAdmin, onToggleVibeCoding, onToggleAiMastery, currentUserId,
 }) {
   const hasB1 = isActive(u.builder1_expires_at);
   const hasB2 = isActive(u.builder2_expires_at);
   const hasVibeCoding = isActive(u.vibecoding_expires_at);
+  const hasAiMastery = isActive(u.aimastery_expires_at);
   const userIsPro = hasB1 && hasB2;
   return (
     <>
@@ -172,15 +182,22 @@ function UserRow({
           </div>
         </td>
 
-        {/* Plan — Vibe Coding is a separate product, shown alongside rather
-            than folded into PlanBadge's builder1/builder2/pro chain, since a
-            user can hold both an automation plan and Vibe Coding at once. */}
+        {/* Plan — Vibe Coding and AI Agent Mastery are separate products,
+            shown alongside rather than folded into PlanBadge's
+            builder1/builder2/pro chain, since a user can hold any
+            combination of an automation plan, Vibe Coding, and Mastery at
+            once. */}
         <td className="px-5 py-4">
           <div className="flex flex-wrap items-center gap-1.5">
             <PlanBadge user={u} />
             {hasVibeCoding && (
               <span className="inline-flex items-center gap-1 text-xs font-bold bg-[#EAFAF1] dark:bg-green/10 text-green border border-green/20 px-2 py-0.5 rounded-full">
                 Vibe Coding
+              </span>
+            )}
+            {hasAiMastery && (
+              <span className="inline-flex items-center gap-1 text-xs font-bold bg-[#EAFAF1] dark:bg-green/10 text-green border border-green/20 px-2 py-0.5 rounded-full">
+                AI Agent Mastery
               </span>
             )}
           </div>
@@ -296,6 +313,25 @@ function UserRow({
                 <Code2 className="w-3 h-3" />
               )}
               Vibe Coding
+            </button>
+
+            {/* Toggle AI Agent Mastery — separate product, same pattern as Vibe Coding */}
+            <button
+              onClick={() => onToggleAiMastery(u.id, hasAiMastery)}
+              disabled={!!actionLoading || u.is_admin}
+              title={hasAiMastery ? 'Revoke AI Agent Mastery' : 'Grant AI Agent Mastery'}
+              className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-40 ${
+                hasAiMastery
+                  ? 'bg-[#EAFAF1] dark:bg-green/10 text-green hover:bg-[#FDEEF4] dark:hover:bg-rose/10 hover:text-rose'
+                  : 'bg-[#FAF8FF] dark:bg-white/5 text-body-strong hover:bg-[#EAFAF1] dark:hover:bg-green/10 hover:text-green'
+              }`}
+            >
+              {actionLoading === u.id + '_aimastery' ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <Bot className="w-3 h-3" />
+              )}
+              AI Agent Mastery
             </button>
 
             {/* Toggle Admin */}
@@ -461,6 +497,26 @@ export default function AdminUsers() {
         u.id === targetId ? { ...u, vibecoding_expires_at: expiry } : u
       ));
       showToast(!currentActive ? 'Vibe Coding access granted (6 months).' : 'Vibe Coding access revoked.');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const toggleAiMastery = async (targetId, currentActive) => {
+    setActionLoading(targetId + '_aimastery');
+    try {
+      const { error: err } = await supabase.rpc('admin_set_user_aimastery', {
+        target_user_id: targetId,
+        set_active: !currentActive,
+      });
+      if (err) throw err;
+      const expiry = !currentActive ? new Date(Date.now() + 182 * 24 * 60 * 60 * 1000).toISOString() : null;
+      setUsers((prev) => prev.map((u) =>
+        u.id === targetId ? { ...u, aimastery_expires_at: expiry } : u
+      ));
+      showToast(!currentActive ? 'AI Agent Mastery access granted (6 months).' : 'AI Agent Mastery access revoked.');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -640,6 +696,7 @@ export default function AdminUsers() {
                     onToggleBuilder2={toggleBuilder2}
                     onTogglePro={togglePro}
                     onToggleVibeCoding={toggleVibeCoding}
+                    onToggleAiMastery={toggleAiMastery}
                     onToggleAdmin={toggleAdmin}
                     currentUserId={user?.id}
                   />
