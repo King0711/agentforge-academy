@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { m } from 'framer-motion';
 import {
@@ -11,6 +10,7 @@ import { agents, getBuilder1Agents, groupAgentsByWeek } from '../data/agents';
 import { agentsBeginner } from '../data/agentsBeginner';
 import { levels } from '../data/departments';
 import { BUILDER1_PRICE, BUILDER2_PRICE, PRO_PRICE } from '../data/pricing';
+import { usePageSeo } from '../hooks/usePageSeo';
 
 // Content below is adapted from the /webinar deck's narrative (same offer,
 // same honest framing, same real proof points) rebuilt as a scrollable
@@ -140,36 +140,11 @@ function SectionHeading({ eyebrow, children }) {
 export default function AIBuilder() {
   const remaining = agentsBeginner.length - wall.length;
 
-  useEffect(() => {
-    const prevTitle = document.title;
-    const metaDesc = document.querySelector('meta[name="description"]');
-    const prevDesc = metaDesc?.getAttribute('content');
-
-    document.title = 'Become an AI Agent Builder | Social Dev Technologies';
-    if (metaDesc) {
-      metaDesc.setAttribute(
-        'content',
-        `Stop using AI. Start building with it. ${builder1Count + builder2Count} real AI agent sessions across AI Agent Guides, one-time payment, permanent access. Get AI Agent Guides today.`
-      );
-    }
-
-    let canonicalEl = document.querySelector('link[rel="canonical"]');
-    const hadCanonical = Boolean(canonicalEl);
-    const prevCanonical = canonicalEl?.getAttribute('href');
-    if (!canonicalEl) {
-      canonicalEl = document.createElement('link');
-      canonicalEl.setAttribute('rel', 'canonical');
-      document.head.appendChild(canonicalEl);
-    }
-    canonicalEl.setAttribute('href', 'https://socialdevtechnologies.com/ai-builder');
-
-    return () => {
-      document.title = prevTitle;
-      if (metaDesc && prevDesc) metaDesc.setAttribute('content', prevDesc);
-      if (hadCanonical && prevCanonical) canonicalEl.setAttribute('href', prevCanonical);
-      else canonicalEl.remove();
-    };
-  }, []);
+  usePageSeo({
+    title: 'Become an AI Agent Builder | Social Dev Technologies',
+    description: `Stop using AI. Start building with it. ${builder1Count + builder2Count} real AI agent sessions across AI Agent Guides, one-time payment, permanent access. Get AI Agent Guides today.`,
+    canonicalPath: '/ai-builder',
+  });
 
   return (
     <div>
