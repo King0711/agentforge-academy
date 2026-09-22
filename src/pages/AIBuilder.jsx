@@ -91,7 +91,7 @@ const FEATURED_TESTIMONIALS = [
 
 const FAQS = [
   { q: 'Do I need coding experience?', a: 'No. Every session starts with copy-paste prompts.' },
-  { q: "What if I've never programmed at all?", a: "That's who Builder 1 is for. Follow steps, copy-paste, done." },
+  { q: "What if I've never programmed at all?", a: "That's exactly who AI Agent Guides is for — start with Builder 1, follow steps, copy-paste, done." },
   { q: "What if I don't know what to build?", a: "Every session is project-based. You're never starting blank." },
   { q: "What if I'm busy?", a: 'Self-paced. 1.5–3 hrs per session. Permanent access, no deadline.' },
   { q: 'Do I need to pay for AI tools?', a: 'No — a free Gemini API key from Google AI Studio is all you need.' },
@@ -145,11 +145,11 @@ export default function AIBuilder() {
     const metaDesc = document.querySelector('meta[name="description"]');
     const prevDesc = metaDesc?.getAttribute('content');
 
-    document.title = 'Become an AI Builder — Builder 1 | Social Dev Technologies';
+    document.title = 'Become an AI Agent Builder | Social Dev Technologies';
     if (metaDesc) {
       metaDesc.setAttribute(
         'content',
-        `Stop using AI. Start building with it. ${builder1Count + builder2Count} real AI agent sessions across Builder 1 and Builder 2, one-time payment, permanent access. Start with Builder 1 today.`
+        `Stop using AI. Start building with it. ${builder1Count + builder2Count} real AI agent sessions across AI Agent Guides, one-time payment, permanent access. Get AI Agent Guides today.`
       );
     }
 
@@ -210,8 +210,8 @@ export default function AIBuilder() {
             transition={{ delay: 0.2 }}
             className="text-[17px] leading-relaxed text-body mt-5 max-w-lg mx-auto"
           >
-            12 real AI agent sessions. One guided track. Everything you need to stop using AI and start building
-            with it — no coding experience required.
+            AI Agent Guides — <span>{builder1Count + builder2Count}</span> real AI agent sessions, permanent access.
+            Everything you need to stop using AI and start building with it — no coding experience required.
           </m.p>
 
           <m.div
@@ -224,7 +224,7 @@ export default function AIBuilder() {
               to="/pricing"
               className="bg-brand text-white font-extrabold text-base px-8 py-4 rounded-2xl shadow-[0_10px_22px_rgba(124,58,237,.4)] hover:bg-brand-deep transition-colors"
             >
-              Get Builder 1 — ₦<span>{BUILDER1_PRICE.toLocaleString()}</span> →
+              Get AI Agent Guides — from ₦<span>{BUILDER1_PRICE.toLocaleString()}</span> →
             </Link>
             <a href="#what-you-build" className="text-body-strong font-bold text-[14.5px] hover:text-brand transition-colors">
               See what you'll build ↓
@@ -232,7 +232,7 @@ export default function AIBuilder() {
           </m.div>
 
           <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45 }} className="flex flex-wrap justify-center gap-x-5 gap-y-1.5 mt-6 text-[13px] text-body font-semibold">
-            <span><span>{builder1Count}</span> sessions</span>
+            <span><span>{builder1Count + builder2Count}</span> sessions</span>
             <span>·</span>
             <span>Permanent access</span>
             <span>·</span>
@@ -590,7 +590,7 @@ export default function AIBuilder() {
 
       {/* Qualifier */}
       <div className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto">
-        <SectionHeading>Is Builder 1 for you?</SectionHeading>
+        <SectionHeading>Are AI Agent Guides for you?</SectionHeading>
         <div className="grid sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
           <div className="bg-white dark:bg-[#181818] border-[2px] border-green rounded-2xl p-6">
             <h3 className="font-display font-bold text-base text-ink mb-4">This is for you if…</h3>
@@ -732,7 +732,7 @@ export default function AIBuilder() {
             to="/pricing"
             className="bg-yellow text-ink font-extrabold text-base px-7 py-[15px] rounded-2xl shadow-[0_10px_20px_rgba(0,0,0,.18)] hover:brightness-95 transition-all flex-shrink-0"
           >
-            Choose your plan →
+            Get AI Agent Guides →
           </Link>
         </div>
       </div>
