@@ -35,8 +35,8 @@ function LiveClassMockup() {
         <CalendarDays className="w-4 h-4 text-gray-300" />
       </div>
       {[
-        { title: 'Builder 1 — Week 1 walkthrough', tier: 'Builder 1' },
-        { title: 'Builder 2 — Office hours', tier: 'Builder 2' },
+        { title: 'Vibe Coding — Week 1 walkthrough', tier: 'Vibe Coding Bootcamp' },
+        { title: 'AI Agent Mastery — Office hours', tier: 'AI Agent Mastery' },
       ].map((s) => (
         <div key={s.title} className="flex items-center gap-3 rounded-xl border border-border-soft px-3.5 py-3 mb-2.5 last:mb-0">
           <div className="w-9 h-9 rounded-lg bg-[#F3EBFF] dark:bg-brand/15 flex items-center justify-center flex-shrink-0">
@@ -235,10 +235,12 @@ export default function Home({ progress, onSelectAgent }) {
   const { hasBuilder1, hasBuilder2, isAdmin } = usePro();
   const { theme } = useTheme();
   const navigate = useNavigate();
-  const { builder1: builder1CohortDate, builder2: builder2CohortDate } = useCohortSchedule();
+  // Builder 1/2 have no live cohort anymore (permanent, guides-only access) —
+  // the only programs with a "next cohort starts" date are the two live ones.
+  const { vibecoding: vibecodingCohortDate, aimastery: aimasteryCohortDate } = useCohortSchedule();
 
   const popularAgents = [...publicAgents].sort((a, b) => b.xp - a.xp).slice(0, 4);
-  const nextCohort = formatCohortDate(builder1CohortDate) || formatCohortDate(builder2CohortDate);
+  const nextCohort = formatCohortDate(vibecodingCohortDate) || formatCohortDate(aimasteryCohortDate);
 
   return (
     <div>
@@ -341,6 +343,74 @@ export default function Home({ progress, onSelectAgent }) {
         </div>
       </div>
 
+      {/* ── Three programs ── */}
+      <div className="px-4 sm:px-6 lg:px-[5vw] pt-14 pb-14 max-w-6xl mx-auto">
+        <div className="text-center mb-7">
+          <span className="inline-flex items-center gap-2 text-[13px] font-bold px-4 py-1.5 rounded-full bg-[#F3EBFF] dark:bg-brand/15 text-brand mb-3">
+            What we offer
+          </span>
+          <h2 className="font-display font-extrabold text-[30px] text-ink tracking-[-.8px] m-0">Three ways to build with AI</h2>
+          <p className="text-center text-body mt-2">Pick the path that fits — automate real work, ship your own web app, or build a personal assistant</p>
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {PROGRAMS.map((program) => (
+            <Link
+              key={program.to}
+              to={program.to}
+              className={`bg-white dark:bg-[#181818] rounded-[20px] p-6.5 transition-colors ${
+                program.accent === 'green'
+                  ? 'border-[2px] border-green hover:border-green'
+                  : 'border-[2px] border-brand hover:border-brand'
+              }`}
+            >
+              <span
+                className={`inline-flex items-center gap-1.5 font-bold text-[11px] px-2.5 py-1 rounded-full mb-4 ${
+                  program.accent === 'green'
+                    ? 'bg-[#EAFAF1] dark:bg-green/10 text-green'
+                    : 'bg-[#F3EBFF] dark:bg-brand/15 text-brand'
+                }`}
+              >
+                {program.tag}
+              </span>
+              <div
+                className={`w-12 h-12 rounded-[14px] flex items-center justify-center mb-4 ${
+                  program.accent === 'green' ? 'bg-[#EAFAF1] dark:bg-green/10 text-green' : 'bg-[#F3EBFF] dark:bg-brand/15 text-brand'
+                }`}
+              >
+                <program.icon className="w-6 h-6" />
+              </div>
+              <h3 className="font-display font-bold text-xl text-ink mb-2">{program.title}</h3>
+              <p className="text-sm leading-relaxed text-body mb-4">{program.text}</p>
+              <ul className="flex flex-col gap-1.5 mb-5">
+                {program.bullets.map((b) => (
+                  <li key={b} className="flex items-start gap-2 text-[12.5px] text-body-strong">
+                    <CheckCheck className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${program.accent === 'green' ? 'text-green' : 'text-brand'}`} />
+                    <span>{b}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex items-center justify-between pt-4 border-t border-border-soft">
+                <span className="font-display font-extrabold text-ink">{program.price}</span>
+                <span className={`inline-flex items-center gap-1.5 font-bold text-sm ${program.accent === 'green' ? 'text-green' : 'text-brand'}`}>
+                  Explore <ArrowRight className="w-3.5 h-3.5" />
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* ── AI Agent Guides deep dive — everything from here through "Most
+          popular sessions" is specifically about the self-paced guides
+          track, not Vibe Coding or AI Agent Mastery. This divider makes
+          that scope explicit now that it no longer sits right under the
+          hero. ── */}
+      <div className="px-4 sm:px-6 lg:px-[5vw] pt-4 text-center max-w-6xl mx-auto">
+        <span className="inline-flex items-center gap-2 text-[13px] font-bold px-4 py-1.5 rounded-full bg-[#EAFAF1] dark:bg-green/10 text-green">
+          🌱 A closer look: AI Agent Guides
+        </span>
+      </div>
+
       {/* ── Stats row ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 px-4 sm:px-6 lg:px-[5vw] py-10 max-w-6xl mx-auto">
         <div className="bg-[#F3EBFF] dark:bg-[#181818] rounded-[18px] px-5 py-5.5 text-center">
@@ -386,58 +456,6 @@ export default function Home({ progress, onSelectAgent }) {
               <h3 className="font-display font-bold text-lg text-ink mt-4 mb-2">{step.title}</h3>
               <p className="text-sm leading-relaxed text-body m-0">{step.text}</p>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Three programs ── */}
-      <div className="px-4 sm:px-6 lg:px-[5vw] pt-2 pb-14 max-w-6xl mx-auto">
-        <h2 className="font-display font-extrabold text-[30px] text-ink tracking-[-.8px] text-center m-0">Three ways to build with AI</h2>
-        <p className="text-center text-body mt-2 mb-7">Pick the path that fits — automate real work, ship your own web app, or build a personal assistant</p>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {PROGRAMS.map((program) => (
-            <Link
-              key={program.to}
-              to={program.to}
-              className={`bg-white dark:bg-[#181818] rounded-[20px] p-6.5 transition-colors ${
-                program.accent === 'green'
-                  ? 'border-[2px] border-green hover:border-green'
-                  : 'border-[2px] border-brand hover:border-brand'
-              }`}
-            >
-              <span
-                className={`inline-flex items-center gap-1.5 font-bold text-[11px] px-2.5 py-1 rounded-full mb-4 ${
-                  program.accent === 'green'
-                    ? 'bg-[#EAFAF1] dark:bg-green/10 text-green'
-                    : 'bg-[#F3EBFF] dark:bg-brand/15 text-brand'
-                }`}
-              >
-                {program.tag}
-              </span>
-              <div
-                className={`w-12 h-12 rounded-[14px] flex items-center justify-center mb-4 ${
-                  program.accent === 'green' ? 'bg-[#EAFAF1] dark:bg-green/10 text-green' : 'bg-[#F3EBFF] dark:bg-brand/15 text-brand'
-                }`}
-              >
-                <program.icon className="w-6 h-6" />
-              </div>
-              <h3 className="font-display font-bold text-xl text-ink mb-2">{program.title}</h3>
-              <p className="text-sm leading-relaxed text-body mb-4">{program.text}</p>
-              <ul className="flex flex-col gap-1.5 mb-5">
-                {program.bullets.map((b) => (
-                  <li key={b} className="flex items-start gap-2 text-[12.5px] text-body-strong">
-                    <CheckCheck className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${program.accent === 'green' ? 'text-green' : 'text-brand'}`} />
-                    <span>{b}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="flex items-center justify-between pt-4 border-t border-border-soft">
-                <span className="font-display font-extrabold text-ink">{program.price}</span>
-                <span className={`inline-flex items-center gap-1.5 font-bold text-sm ${program.accent === 'green' ? 'text-green' : 'text-brand'}`}>
-                  Explore <ArrowRight className="w-3.5 h-3.5" />
-                </span>
-              </div>
-            </Link>
           ))}
         </div>
       </div>
@@ -559,11 +577,12 @@ export default function Home({ progress, onSelectAgent }) {
               <Video className="w-3.5 h-3.5" /> Live classes
             </span>
             <h2 className="font-display font-extrabold text-[28px] sm:text-[32px] text-ink tracking-[-.7px] mt-4 mb-3">
-              It's not just a self-paced library
+              Prefer real classes over a self-paced library?
             </h2>
             <p className="text-body leading-relaxed mb-5 max-w-[440px]">
-              Every cohort gets scheduled live sessions — walkthroughs, office hours, and Q&A on Zoom — on top of the
-              self-paced builds. Can't make it live? Every session is recorded and added to your replays.
+              Vibe Coding Bootcamp and AI Agent Mastery are both live, instructor-led cohorts — walkthroughs, office
+              hours, and Q&A on Zoom, not just guides to read on your own. Can't make it live? Every session is
+              recorded and added to your replays.
             </p>
             {nextCohort && (
               <p className="inline-flex items-center gap-2 text-sm font-bold text-ink bg-[#F3EBFF] dark:bg-brand/15 px-4 py-2 rounded-full mb-5">
@@ -575,7 +594,7 @@ export default function Home({ progress, onSelectAgent }) {
                 to="/pricing"
                 className="inline-flex bg-brand text-white font-bold text-base px-7 py-[15px] rounded-2xl shadow-[0_10px_22px_rgba(124,58,237,.4)] hover:bg-brand-deep transition-colors"
               >
-                Join the next cohort →
+                See the live cohorts →
               </Link>
             </div>
           </div>
@@ -621,8 +640,8 @@ export default function Home({ progress, onSelectAgent }) {
           style={{ background: 'linear-gradient(120deg, #7C3AED, #9D5CFF)' }}
         >
           <div>
-            <h2 className="font-display font-extrabold text-2xl sm:text-[26px] text-white m-0">Unlock all <span>{publicAgents.length}</span> sessions</h2>
-            <p className="text-[#EDE4FF] mt-2 mb-0 text-[15px]">Get Builder 1, Builder 2, or both bundled as Pro — one-time payment, permanent access, yours to keep.</p>
+            <h2 className="font-display font-extrabold text-2xl sm:text-[26px] text-white m-0">Ready to start building?</h2>
+            <p className="text-[#EDE4FF] mt-2 mb-0 text-[15px]">AI Agent Guides, Vibe Coding, or AI Agent Mastery — every program and price in one place.</p>
           </div>
           <Link
             to="/pricing"
