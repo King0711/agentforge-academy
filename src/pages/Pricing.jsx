@@ -1,14 +1,15 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { m } from 'framer-motion';
-import { CheckCircle2, AlertCircle, Tag, Loader2, Zap, CalendarDays, Info } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Tag, Loader2, Zap, CalendarDays, Info, BookOpen } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { usePro } from '../hooks/usePro';
 import { useCohortSchedule } from '../hooks/useCohortSchedule';
-import { supabase } from '../lib/supabaseClient';
+import { usePaystackCheckout } from '../hooks/usePaystackCheckout';
 import { agents } from '../data/agents';
-import { ANCHOR_PRICE, BUILDER_PRICE, BUILDER_SAVINGS, BUILDER_SAVINGS_PERCENT, PRO_PRICE } from '../data/pricing';
+import {
+  ANCHOR_PRICE, BUILDER_PRICE, BUILDER_SAVINGS, BUILDER_SAVINGS_PERCENT, PRO_PRICE,
+  BUNDLE_PRICES,
+} from '../data/pricing';
 import { usePageSeo } from '../hooks/usePageSeo';
 
 const builder1Count = agents.filter((a) => a.difficulty === 'Builder 1').length;
@@ -54,7 +55,6 @@ export default function Pricing() {
   const { theme } = useTheme();
   const { hasBuilder1, hasBuilder2, isPro } = usePro();
   const { builder1: builder1CohortDate, builder2: builder2CohortDate } = useCohortSchedule();
-  const navigate = useNavigate();
 
   const builder1Cohort = formatCohortDate(builder1CohortDate);
   const builder2Cohort = formatCohortDate(builder2CohortDate);
@@ -65,55 +65,7 @@ export default function Pricing() {
     canonicalPath: '/pricing',
   });
 
-  const [checkoutLoading, setCheckoutLoading] = useState(null); // 'builder1' | 'builder2' | 'pro' | null
-  const [checkoutError, setCheckoutError] = useState('');
-
-  const handleCheckout = async (plan) => {
-    if (!user) {
-      navigate('/welcome');
-      return;
-    }
-    setCheckoutError('');
-    setCheckoutLoading(plan);
-    try {
-      // `user` above can look truthy from cached auth state even when the
-      // underlying session token is gone (e.g. it lived in sessionStorage
-      // only and the tab was closed/reopened) — that combination is what
-      // caused checkout to fire with no Authorization header and fail with
-      // a cryptic "non-2xx status" error. Confirm a real session exists
-      // right before spending a network round-trip on it.
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setCheckoutError('Your session has expired. Please log in again to continue.');
-        setCheckoutLoading(null);
-        navigate('/welcome');
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke('create-paystack-checkout', {
-        body: { plan, redirectOrigin: window.location.origin },
-      });
-      if (error) {
-        // supabase-js's error.message is a generic "non-2xx status" string —
-        // the real reason is in the response body on error.context.
-        if (error.context) {
-          try {
-            const body = await error.context.clone().json();
-            console.error('create-paystack-checkout error response:', error.context.status, body);
-          } catch {
-            const text = await error.context.clone().text();
-            console.error('create-paystack-checkout error response (non-JSON):', error.context.status, text);
-          }
-        }
-        throw error;
-      }
-      if (!data?.authorization_url) throw new Error(data?.error || 'Could not start checkout.');
-      window.location.href = data.authorization_url;
-    } catch (err) {
-      setCheckoutError(err.message || 'Something went wrong starting checkout. Please try again.');
-      setCheckoutLoading(null);
-    }
-  };
+  const { checkout: handleCheckout, loadingKey: checkoutLoading, error: checkoutError } = usePaystackCheckout();
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 text-center">
@@ -131,7 +83,7 @@ export default function Pricing() {
         </p>
         <div className="inline-flex items-center gap-2 text-[13px] font-semibold text-brand bg-[#F3EBFF] dark:bg-brand/15 rounded-full px-4 py-2 mt-4">
           <Info className="w-4 h-4 flex-shrink-0" />
-          You'll need your own paid Claude account (Claude Pro or higher) to complete the builds — that's billed separately by Anthropic.
+          All you need is a free Gemini API key from Google AI Studio — no paid AI subscription required.
         </div>
       </m.div>
 
@@ -292,6 +244,56 @@ export default function Pricing() {
           )}
         </m.div>
       </div>
+
+      {/* A-la-carte guide bundles — permanent, content-only access to a
+          tier's guides, no cohort/live perks or AI credits (see
+          supabase/guide-purchases-setup.sql). Each card is hidden once the
+          user already holds that tier's full (strictly better, same-price-
+          class) subscription access — buying the bundle on top would grant
+          nothing new. */}
+      {(!hasBuilder1 || !hasBuilder2) && (
+        <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="mt-10 pt-10 border-t border-border-soft">
+          <div className="flex items-center justify-center gap-2 mb-1.5">
+            <BookOpen className="w-4 h-4 text-brand" />
+            <h2 className="font-display font-extrabold text-lg text-ink">Just want the guides?</h2>
+          </div>
+          <p className="text-body text-[13.5px] max-w-lg mx-auto mb-6">
+            No cohort, no live sessions, no AI Builder credits — permanent access to a tier's step-by-step guides, priced like a book instead of a subscription.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-2xl mx-auto text-left">
+            {!hasBuilder1 && (
+              <div className="rounded-2xl border border-border-soft bg-white dark:bg-[#181818] p-6 flex flex-col">
+                <div className="font-extrabold text-ink">Builder 1 Guide Bundle</div>
+                <div className="font-display font-extrabold text-2xl text-ink mt-1.5 mb-3">₦{BUNDLE_PRICES.builder1.toLocaleString()}</div>
+                <p className="text-[13px] text-body mb-4 flex-1">All {builder1Count} Builder 1 guides, forever — no expiry.</p>
+                <button
+                  onClick={() => handleCheckout('bundle_builder1')}
+                  disabled={checkoutLoading === 'bundle_builder1'}
+                  className="flex items-center justify-center gap-2 w-full bg-white dark:bg-[#181818] border-[1.5px] border-brand text-brand hover:bg-[#F3EBFF] dark:hover:bg-brand/10 disabled:opacity-60 font-extrabold px-5 py-2.5 rounded-xl transition-colors"
+                >
+                  {checkoutLoading === 'bundle_builder1' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  {user ? 'Buy the bundle' : 'Sign up to get started'}
+                </button>
+              </div>
+            )}
+            {!hasBuilder2 && (
+              <div className="rounded-2xl border border-border-soft bg-white dark:bg-[#181818] p-6 flex flex-col">
+                <div className="font-extrabold text-ink">Builder 2 Guide Bundle</div>
+                <div className="font-display font-extrabold text-2xl text-ink mt-1.5 mb-3">₦{BUNDLE_PRICES.builder2.toLocaleString()}</div>
+                <p className="text-[13px] text-body mb-4 flex-1">All {builder2Count} Builder 2 guides, forever — no expiry.</p>
+                <button
+                  onClick={() => handleCheckout('bundle_builder2')}
+                  disabled={checkoutLoading === 'bundle_builder2'}
+                  className="flex items-center justify-center gap-2 w-full bg-white dark:bg-[#181818] border-[1.5px] border-brand text-brand hover:bg-[#F3EBFF] dark:hover:bg-brand/10 disabled:opacity-60 font-extrabold px-5 py-2.5 rounded-xl transition-colors"
+                >
+                  {checkoutLoading === 'bundle_builder2' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  {user ? 'Buy the bundle' : 'Sign up to get started'}
+                </button>
+              </div>
+            )}
+          </div>
+        </m.div>
+      )}
 
       {/* Payment methods */}
       <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-9 text-center">

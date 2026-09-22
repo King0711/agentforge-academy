@@ -35,3 +35,12 @@ export const PRO_PRICE = 45000;
 // builder1/builder2/pro ladder above. Priced independently; happens to land
 // at the same amount as a single builder track. Added 2026-09-08.
 export const VIBECODING_PRICE = 25000;
+
+// A-la-carte guide purchases (2026-09-19) — a separate, additive path
+// alongside the tiers above (see supabase/guide-purchases-setup.sql).
+// Permanent, one-time access to a single guide or a whole tier's guides,
+// no 6-month expiry, no AI Builder credits, no cohort/live perks — priced
+// and framed like buying a book. Must stay in sync with GUIDE_PRICES /
+// BUNDLE_PRICES in both create-paystack-checkout and paystack-webhook.
+export const GUIDE_PRICES = { builder1: 1999, builder2: 3999 };
+export const BUNDLE_PRICES = { builder1: 14000, builder2: 19999 };

@@ -28,6 +28,14 @@ const PRICES = {
 };
 const AMOUNT_TOLERANCE = 1;
 
+// A-la-carte guide purchases (2026-09-19) — must match
+// create-paystack-checkout's copy of these exactly, same reasoning as
+// PRICES above. Permanent, one-time, no entitlement expiry — granted
+// via guide_purchases rows, never entitlements.builder1_expires_at /
+// builder2_expires_at (those stay reserved for the 6-month tiers).
+const GUIDE_PRICES = { builder1: 1999, builder2: 3999 };
+const BUNDLE_PRICES = { builder1: 14000, builder2: 19999 };
+
 // Paystack can add its own transaction fee on top of the amount we set at
 // checkout, if this account's "customer bears the fee" preference is on
 // (Paystack Dashboard → Settings → Preferences → Transaction fees). When
@@ -39,7 +47,15 @@ const AMOUNT_TOLERANCE = 1;
 // the listed price (minus AMOUNT_TOLERANCE for rounding).
 const FEE_CEILING_MULTIPLIER = 1.06;
 
-const PLAN_LABELS = { builder1: 'Builder 1', builder2: 'Builder 2', pro: 'Pro', vibecoding: 'Vibe Coding Bootcamp' };
+const PLAN_LABELS = {
+  builder1: 'Builder 1',
+  builder2: 'Builder 2',
+  pro: 'Pro',
+  vibecoding: 'Vibe Coding Bootcamp',
+  guide: 'Guide',
+  bundle_builder1: 'Builder 1 Guide Bundle',
+  bundle_builder2: 'Builder 2 Guide Bundle',
+};
 
 function emailShell(innerHtml) {
   return `
@@ -77,6 +93,9 @@ async function sendResendEmail(to, subject, html) {
 // purchase regardless), but surfacing an upcoming date here still helps a
 // buyer know when live/group activity around their tier kicks off.
 async function buildCohortLines(supabase, plan) {
+  // A-la-carte guide/bundle purchases are content-only — no cohort or
+  // live-session perks attached, so there's nothing to surface here.
+  if (plan === 'guide' || plan.startsWith('bundle_')) return '';
   const tiers = plan === 'pro' ? ['builder1', 'builder2'] : [plan];
   const { data } = await supabase.from('cohort_schedule').select('tier, start_date').in('tier', tiers);
   const labels = { builder1: 'Builder 1', builder2: 'Builder 2', vibecoding: 'Vibe Coding Bootcamp' };
@@ -97,8 +116,17 @@ async function buildCohortLines(supabase, plan) {
 // live on the dashboard, not a self-paced build queue), doesn't require any
 // specific paid AI tool (dropped 2026-09-08 — see business-model.md), and
 // has a prompt library instead of per-session portfolio write-up prompts.
-// builder1/builder2/pro keep the original bullets unchanged.
+//
+// guide/bundle_* (added 2026-09-19) get a third variant: no cohort lines,
+// no "6 months" framing (access is permanent), and no credits mention
+// (a-la-carte purchases don't grant AI Builder credits).
+//
+// builder1/builder2/pro used to tell buyers they needed their own paid
+// Claude subscription — stale since the curriculum moved onto each
+// student's own free Gemini API key (2026-09-19); removed rather than
+// reworded, since there's no paid AI tool to mention in its place.
 function welcomeHtml(name, planLabel, cohortLines, plan) {
+  const isAlaCarte = plan === 'guide' || plan.startsWith('bundle_');
   const bullets = plan === 'vibecoding'
     ? `
       <li>Your live classes and replays are on your dashboard under Live Sessions.</li>
@@ -106,14 +134,17 @@ function welcomeHtml(name, planLabel, cohortLines, plan) {
       <li>Stuck on something? Reach us on WhatsApp: <a href="https://wa.me/2349066006963" style="color:#7C3AED;">wa.me/2349066006963</a></li>
     `
     : `
-      <li>You'll need your own paid Claude account (Claude Pro or higher) to follow the builds — billed separately by Anthropic.</li>
+      <li>All you need is a free Gemini API key from Google AI Studio — no paid AI subscription required.</li>
       <li>Every session ends with a portfolio write-up prompt — that's what makes this resume-ready, don't skip it.</li>
       <li>Stuck on a build? Reach us on WhatsApp: <a href="https://wa.me/2349066006963" style="color:#7C3AED;">wa.me/2349066006963</a></li>
     `;
+  const accessLine = isAlaCarte
+    ? `You're in! Your <strong>${planLabel}</strong> access is live right now — yours to keep, no expiry.`
+    : `You're in! Your <strong>${planLabel}</strong> access is live right now, for the next 6 months.`;
   return `
     <p style="font-size:15px;color:#1A1333;">Hey ${name},</p>
     <p style="font-size:15px;color:#3A3358;line-height:1.6;">
-      You're in! Your <strong>${planLabel}</strong> access is live right now, for the next 6 months.
+      ${accessLine}
     </p>
     ${cohortLines}
     <p style="font-size:15px;color:#3A3358;line-height:1.6;">A few things before you start:</p>
@@ -167,12 +198,35 @@ function resolvePlan(metadataPlan, amountNaira, currency) {
   const withinRange = (price) =>
     amountNaira >= price - AMOUNT_TOLERANCE && amountNaira <= price * FEE_CEILING_MULTIPLIER;
 
+  // 'guide' is resolved by the caller (needs an async course_content
+  // lookup to know which tier's price applies) — just confirm it's a
+  // plausible guide amount at all here (below the cheapest bundle) so an
+  // obviously-wrong amount doesn't get an extra DB round-trip for nothing.
+  if (metadataPlan === 'guide' && amountNaira <= BUNDLE_PRICES.builder1) {
+    return 'guide';
+  }
+  if (metadataPlan && metadataPlan.startsWith('bundle_')) {
+    const tier = metadataPlan.slice('bundle_'.length);
+    if (Object.hasOwn(BUNDLE_PRICES, tier) && withinRange(BUNDLE_PRICES[tier])) {
+      return metadataPlan;
+    }
+  }
   if (metadataPlan && Object.hasOwn(PRICES, metadataPlan) && withinRange(PRICES[metadataPlan])) {
     return metadataPlan;
   }
   if (withinRange(PRICES.pro)) return 'pro';
   return null;
 }
+
+// course_ids for each tier, used only to expand a bundle purchase into
+// one guide_purchases row per guide. Mirrors the ranges already implicit
+// in course_content.tier — kept as a literal list rather than re-deriving
+// it from a live query result inline, so the insert below is one
+// straightforward batch rather than a query-then-map dance.
+const TIER_COURSE_IDS = {
+  builder1: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+  builder2: [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
+};
 
 serve(async (req) => {
   const rawBody = await req.text();
@@ -197,6 +251,7 @@ serve(async (req) => {
   const currency = String(payload.data?.currency ?? '');
   const email = payload.data?.customer?.email;
   const metadataUserId = payload.data?.metadata?.user_id;
+  const metadataCourseId = Number(payload.data?.metadata?.course_id);
 
   if (!txId) return new Response('Missing transaction reference', { status: 400 });
 
@@ -226,7 +281,35 @@ serve(async (req) => {
   // Never trust event type or metadata alone — verify the amount matches a
   // real plan price before granting anything.
   const metadataPlan = payload.data?.metadata?.plan;
-  const plan = resolvePlan(metadataPlan, amountNaira, currency);
+  let plan = resolvePlan(metadataPlan, amountNaira, currency);
+
+  // 'guide' needs one more check resolvePlan() can't do on its own: which
+  // price applies depends on course_content.tier for the specific
+  // course_id, which needs a DB read. Downgrade back to unresolved if the
+  // course_id is missing/invalid or the amount doesn't match that tier's
+  // guide price — same amount-verification bar as every other plan here.
+  let guideCourseId = null;
+  if (plan === 'guide') {
+    if (!Number.isInteger(metadataCourseId)) {
+      plan = null;
+    } else {
+      const { data: courseRow } = await supabase
+        .from('course_content')
+        .select('tier')
+        .eq('course_id', metadataCourseId)
+        .maybeSingle();
+      const guidePrice = courseRow ? GUIDE_PRICES[courseRow.tier] : undefined;
+      const withinRange = guidePrice != null &&
+        amountNaira >= guidePrice - AMOUNT_TOLERANCE &&
+        amountNaira <= guidePrice * FEE_CEILING_MULTIPLIER;
+      if (!withinRange) {
+        plan = null;
+      } else {
+        guideCourseId = metadataCourseId;
+      }
+    }
+  }
+
   if (!plan) {
     await supabase.from('payments').insert({
       user_id: null,
@@ -266,29 +349,45 @@ serve(async (req) => {
     return new Response('User not found', { status: 404 });
   }
 
-  // Every plan is a one-time payment for 6 months of access (founder-confirmed).
-  // Pro grants both tracks at once with no prerequisite; Builder 1/2 grant
-  // only their own track.
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 182);
-  const expiresAtIso = expiresAt.toISOString();
+  const isGuideOrBundle = plan === 'guide' || plan.startsWith('bundle_');
 
-  const entitlementUpdate = { payment_provider: 'paystack' };
-  if (plan === 'pro') {
-    entitlementUpdate.builder1_expires_at = expiresAtIso;
-    entitlementUpdate.builder2_expires_at = expiresAtIso;
-  } else if (plan === 'builder1') {
-    entitlementUpdate.builder1_expires_at = expiresAtIso;
-  } else if (plan === 'builder2') {
-    entitlementUpdate.builder2_expires_at = expiresAtIso;
-  } else if (plan === 'vibecoding') {
-    entitlementUpdate.vibecoding_expires_at = expiresAtIso;
+  if (isGuideOrBundle) {
+    // A-la-carte access lives in guide_purchases, never in
+    // entitlements.builder1_expires_at/builder2_expires_at — those two
+    // columns are reserved for the 6-month tier subscriptions, which this
+    // purchase deliberately does not touch or extend.
+    const courseIds = plan === 'guide' ? [guideCourseId] : TIER_COURSE_IDS[plan.slice('bundle_'.length)];
+    await supabase
+      .from('guide_purchases')
+      .upsert(
+        courseIds.map((course_id) => ({ user_id: userId, course_id, provider_transaction_id: txId })),
+        { onConflict: 'user_id,course_id', ignoreDuplicates: true },
+      );
+  } else {
+    // Every tier plan is a one-time payment for 6 months of access
+    // (founder-confirmed). Pro grants both tracks at once with no
+    // prerequisite; Builder 1/2 grant only their own track.
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 182);
+    const expiresAtIso = expiresAt.toISOString();
+
+    const entitlementUpdate = { payment_provider: 'paystack' };
+    if (plan === 'pro') {
+      entitlementUpdate.builder1_expires_at = expiresAtIso;
+      entitlementUpdate.builder2_expires_at = expiresAtIso;
+    } else if (plan === 'builder1') {
+      entitlementUpdate.builder1_expires_at = expiresAtIso;
+    } else if (plan === 'builder2') {
+      entitlementUpdate.builder2_expires_at = expiresAtIso;
+    } else if (plan === 'vibecoding') {
+      entitlementUpdate.vibecoding_expires_at = expiresAtIso;
+    }
+
+    await supabase
+      .from('entitlements')
+      .update(entitlementUpdate)
+      .eq('user_id', userId);
   }
-
-  await supabase
-    .from('entitlements')
-    .update(entitlementUpdate)
-    .eq('user_id', userId);
 
   // AI Builder Credits — deliberately after the entitlement update and
   // wrapped so a failure here can never undo or block it: a student who
@@ -305,12 +404,17 @@ serve(async (req) => {
   // (on payments.provider_transaction_id) already means a retried
   // delivery never reaches this line at all for the same transaction.
   try {
+    // A-la-carte guide/bundle purchases never grant credits — there's no
+    // grantField for them by design, so skip the lookup entirely rather
+    // than calling .select(undefined) for nothing.
     const grantField = { builder1: 'grant_builder1', builder2: 'grant_builder2', pro: 'grant_pro' }[plan];
-    const { data: settings } = await supabase
-      .from('ai_platform_settings')
-      .select(grantField)
-      .eq('id', true)
-      .maybeSingle();
+    const { data: settings } = grantField
+      ? await supabase
+          .from('ai_platform_settings')
+          .select(grantField)
+          .eq('id', true)
+          .maybeSingle()
+      : { data: null };
     const creditAmount = settings?.[grantField];
     if (creditAmount > 0) {
       await supabase.rpc('ai_grant_credits', {

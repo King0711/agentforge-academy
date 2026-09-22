@@ -33,6 +33,14 @@ const PRICES = {
   vibecoding: 25000,
 };
 
+// A-la-carte guide purchases (2026-09-19) — a separate, additive path
+// alongside the tiers above, not a replacement. Permanent access to
+// one guide or a whole tier's guides, no 6-month expiry, no AI Builder
+// credits, no cohort perks — priced and framed like buying a book.
+// Keep these in sync with paystack-webhook's own copy of this object.
+const GUIDE_PRICES = { builder1: 1999, builder2: 3999 };
+const BUNDLE_PRICES = { builder1: 14000, builder2: 19999 };
+
 // This function is called directly from the browser (Pricing.jsx via
 // supabase.functions.invoke), so it needs CORS headers and to answer the
 // browser's preflight OPTIONS request — without these, the browser blocks
@@ -90,18 +98,51 @@ serve(async (req) => {
     return jsonResponse({ error: 'Invalid JSON body' }, 400);
   }
 
-  const { plan, redirectOrigin } = body;
-  if (typeof plan !== 'string' || !Object.hasOwn(PRICES, plan)) {
+  const { plan, redirectOrigin, courseId } = body;
+  if (typeof plan !== 'string') {
     return jsonResponse({ error: 'Unknown plan' }, 400);
   }
-  const amountNaira = PRICES[plan];
 
-  // Embed the verified user id + plan in Paystack's metadata. Paystack
-  // signs the whole webhook payload with our secret key, so when it comes
-  // back we can trust this exactly as much as we trust our own signature
-  // check — this is what lets the webhook grant access by user id instead
-  // of the fragile "match the payer's email" approach.
-  const reference = `sdt_${plan}_${user.id}_${Date.now()}`;
+  let amountNaira;
+  let metadata = { user_id: user.id, plan };
+  let referenceSuffix = plan;
+
+  if (plan === 'guide') {
+    // Individual guide purchase — price depends on which tier the
+    // course_id belongs to, looked up from course_content itself
+    // (never trust a client-supplied tier) rather than a hardcoded
+    // id range, so this stays correct if courses are ever renumbered.
+    const parsedCourseId = Number(courseId);
+    if (!Number.isInteger(parsedCourseId)) {
+      return jsonResponse({ error: 'courseId required for a guide purchase' }, 400);
+    }
+    const service = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const { data: courseRow } = await service
+      .from('course_content')
+      .select('tier')
+      .eq('course_id', parsedCourseId)
+      .maybeSingle();
+    if (!courseRow || !Object.hasOwn(GUIDE_PRICES, courseRow.tier)) {
+      return jsonResponse({ error: 'Unknown or non-purchasable course_id' }, 400);
+    }
+    amountNaira = GUIDE_PRICES[courseRow.tier];
+    metadata = { user_id: user.id, plan, course_id: parsedCourseId };
+    referenceSuffix = `guide${parsedCourseId}`;
+  } else if (Object.hasOwn(BUNDLE_PRICES, plan.replace('bundle_', '')) && plan.startsWith('bundle_')) {
+    amountNaira = BUNDLE_PRICES[plan.replace('bundle_', '')];
+  } else if (Object.hasOwn(PRICES, plan)) {
+    amountNaira = PRICES[plan];
+  } else {
+    return jsonResponse({ error: 'Unknown plan' }, 400);
+  }
+
+  // Embed the verified user id + plan (+ course_id for a single guide) in
+  // Paystack's metadata. Paystack signs the whole webhook payload with our
+  // secret key, so when it comes back we can trust this exactly as much as
+  // we trust our own signature check — this is what lets the webhook grant
+  // access by user id instead of the fragile "match the payer's email"
+  // approach.
+  const reference = `sdt_${referenceSuffix}_${user.id}_${Date.now()}`;
 
   const paystackRes = await fetch('https://api.paystack.co/transaction/initialize', {
     method: 'POST',
@@ -114,7 +155,7 @@ serve(async (req) => {
       amount: amountNaira * 100, // kobo
       currency: 'NGN',
       reference,
-      metadata: { user_id: user.id, plan },
+      metadata,
       callback_url: `${redirectOrigin || ''}/dashboard`,
     }),
   });
