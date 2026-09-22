@@ -108,6 +108,33 @@ export function AuthProvider({ children }) {
     return supabase.auth.signOut();
   }, []);
 
+  // For the checkout modal only (usePaystackCheckout.js / CheckoutAuthModal.jsx)
+  // — unlike sendLoginCode, shouldCreateUser is true here on purpose: the
+  // whole point of that flow is one email+code step that works whether
+  // someone's new or returning, since a buyer mid-checkout doesn't want to
+  // stop and decide "am I signing up or logging in?". /welcome's own
+  // signup (password) and log-in-with-code (existing accounts only) stay
+  // exactly as they are — this is an additional path, not a replacement.
+  // A typed-back code is the same proof of inbox ownership as the
+  // confirmation-link flow signUp() uses, so this doesn't reopen the
+  // "signed up with an email they don't own" issue that flow was
+  // restored to prevent.
+  const sendCheckoutCode = useCallback(async (email) => {
+    if (!isSupabaseConfigured) return { error: { message: 'Supabase is not configured.' } };
+    const isBYU = email.trim().toLowerCase().endsWith('@byupathway.edu');
+    return supabase.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: true,
+        data: {
+          display_name: email.split('@')[0],
+          is_byu_student: isBYU,
+          referral_code: getStoredReferralCode() || undefined,
+        },
+      },
+    });
+  }, []);
+
   const value = {
     session,
     user: session?.user ?? null,
@@ -116,6 +143,7 @@ export function AuthProvider({ children }) {
     signUp,
     signIn,
     sendLoginCode,
+    sendCheckoutCode,
     verifyLoginCode,
     resetPassword,
     updatePassword,

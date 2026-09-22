@@ -4,10 +4,10 @@ import {
   CheckCircle2, ArrowRight, CalendarDays, Info, CircleHelp, Loader2, AlertCircle,
   Bot, Mail, Calendar, Search, MessageSquare, ShieldCheck, X, Zap,
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
 import { usePro } from '../hooks/usePro';
 import { useCohortSchedule } from '../hooks/useCohortSchedule';
 import { usePaystackCheckout } from '../hooks/usePaystackCheckout';
+import CheckoutAuthModal from '../components/CheckoutAuthModal';
 import { usePageSeo } from '../hooks/usePageSeo';
 import { AI_AGENT_MASTERY_PRICE } from '../data/pricing';
 
@@ -110,11 +110,13 @@ function SectionHeading({ eyebrow, children }) {
 }
 
 export default function AIAgentMastery() {
-  const { user } = useAuth();
   const { hasAiMastery } = usePro();
   const { aimastery: cohortDateRaw } = useCohortSchedule();
   const cohortDate = formatCohortDate(cohortDateRaw);
-  const { checkout, loadingKey: checkoutLoading, error: checkoutError } = usePaystackCheckout();
+  const {
+    checkout, loadingKey: checkoutLoading, error: checkoutError,
+    authModalOpen, closeAuthModal, handleAuthenticated,
+  } = usePaystackCheckout();
 
   usePageSeo({
     title: 'AI Agent Mastery | Social Dev Technologies',
@@ -368,15 +370,9 @@ export default function AIAgentMastery() {
               className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-deep disabled:opacity-60 text-white font-extrabold px-5 py-3.5 rounded-xl shadow-[0_10px_22px_rgba(124,58,237,.35)] transition-colors"
             >
               {checkoutLoading === 'aimastery' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              {checkoutLoading === 'aimastery'
-                ? 'Starting checkout…'
-                : user
-                ? `Join the cohort — ₦${AI_AGENT_MASTERY_PRICE.toLocaleString()} →`
-                : 'Sign up to get started'}
+              {checkoutLoading === 'aimastery' ? 'Starting checkout…' : `Join the cohort — ₦${AI_AGENT_MASTERY_PRICE.toLocaleString()} →`}
             </button>
           )}
-
-          {!user && !hasAiMastery && <p className="text-center text-xs text-gray-400 -mt-3 mb-1">Sign up first — then come back to pay.</p>}
 
           <p className="flex items-start gap-1.5 text-[12px] text-body mt-4">
             <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
@@ -405,6 +401,8 @@ export default function AIAgentMastery() {
           </a>
         </div>
       </div>
+
+      <CheckoutAuthModal open={authModalOpen} onClose={closeAuthModal} onAuthenticated={handleAuthenticated} />
     </div>
   );
 }

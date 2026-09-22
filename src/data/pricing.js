@@ -23,8 +23,9 @@ export const BUILDER2_PRICE = 7000;
 export const PRO_PRICE = 10000;
 
 // Vibe Coding bootcamp — a separate live-cohort product, not a tier of the
-// builder1/builder2/pro ladder above. Priced independently. Added 2026-09-08.
-export const VIBECODING_PRICE = 25000;
+// builder1/builder2/pro ladder above. Priced independently. Added 2026-09-08,
+// repriced from 25000 to 50000 on 2026-09-23.
+export const VIBECODING_PRICE = 50000;
 
 // AI Agent Mastery — a new live-cohort product (added 2026-09-22): build a
 // personal-assistant agent. Not a tier of the builder1/builder2/pro ladder

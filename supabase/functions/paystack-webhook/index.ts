@@ -21,13 +21,14 @@ const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 // longer real.
 //
 // vibecoding and aimastery are both separate live-cohort products, each
-// priced independently (aimastery cut from 25000 to 19999, 2026-09-23).
-// resolvePlan() below trusts metadata.plan first, and checkout always sets it.
+// priced independently (aimastery cut from 25000 to 19999 and vibecoding
+// raised from 25000 to 50000, both 2026-09-23). resolvePlan() below trusts
+// metadata.plan first, and checkout always sets it.
 const PRICES = {
   builder1: 5000,
   builder2: 7000,
   pro: 10000,
-  vibecoding: 25000,
+  vibecoding: 50000,
   aimastery: 19999,
 };
 const AMOUNT_TOLERANCE = 1;
@@ -183,7 +184,7 @@ function timingSafeEqual(a, b) {
 }
 
 // Every plan now has a distinct, non-overlapping price (5000/7000/10000/
-// 19999/25000) — still trust the plan embedded in metadata at checkout
+// 19999/50000) — still trust the plan embedded in metadata at checkout
 // creation (see create-paystack-checkout) as the primary signal, but
 // verify its price matches before granting anything. Only fall back to
 // amount-only resolution for payments with no metadata (e.g. a manual

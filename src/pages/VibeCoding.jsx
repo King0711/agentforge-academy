@@ -1,14 +1,14 @@
-import { useCallback, useState, useSyncExternalStore } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useCallback, useSyncExternalStore } from 'react';
+import { Link } from 'react-router-dom';
 import { m } from 'framer-motion';
 import {
   CheckCircle2, ArrowRight, CalendarDays, Info, CircleHelp, Loader2, AlertCircle, Timer,
   Code2, Database, Rocket, Wrench,
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
 import { usePro } from '../hooks/usePro';
 import { useCohortSchedule } from '../hooks/useCohortSchedule';
-import { supabase } from '../lib/supabaseClient';
+import { usePaystackCheckout } from '../hooks/usePaystackCheckout';
+import CheckoutAuthModal from '../components/CheckoutAuthModal';
 import { usePageSeo } from '../hooks/usePageSeo';
 import { VIBECODING_PRICE } from '../data/pricing';
 
@@ -137,14 +137,14 @@ function SectionHeading({ eyebrow, children }) {
 }
 
 export default function VibeCoding() {
-  const { user } = useAuth();
   const { hasVibeCoding } = usePro();
   const { vibecoding: vibecodingCohortDate } = useCohortSchedule();
-  const navigate = useNavigate();
   const cohortDate = formatCohortDate(vibecodingCohortDate);
 
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [checkoutError, setCheckoutError] = useState('');
+  const {
+    checkout, loadingKey: checkoutLoading, error: checkoutError,
+    authModalOpen, closeAuthModal, handleAuthenticated,
+  } = usePaystackCheckout();
 
   usePageSeo({
     title: 'AI Vibe Coding Bootcamp | Social Dev Technologies',
@@ -152,33 +152,7 @@ export default function VibeCoding() {
     canonicalPath: '/vibe-coding',
   });
 
-  const handleCheckout = async () => {
-    if (!user) {
-      navigate('/welcome');
-      return;
-    }
-    setCheckoutError('');
-    setCheckoutLoading(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setCheckoutError('Your session has expired. Please log in again to continue.');
-        setCheckoutLoading(false);
-        navigate('/welcome');
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke('create-paystack-checkout', {
-        body: { plan: 'vibecoding', redirectOrigin: window.location.origin },
-      });
-      if (error) throw error;
-      if (!data?.authorization_url) throw new Error(data?.error || 'Could not start checkout.');
-      window.location.href = data.authorization_url;
-    } catch (err) {
-      setCheckoutError(err.message || 'Something went wrong starting checkout. Please try again.');
-      setCheckoutLoading(false);
-    }
-  };
+  const handleCheckout = () => checkout('vibecoding');
 
   return (
     <div>
@@ -427,11 +401,11 @@ export default function VibeCoding() {
           ) : (
             <button
               onClick={handleCheckout}
-              disabled={checkoutLoading}
+              disabled={checkoutLoading === 'vibecoding'}
               className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-deep disabled:opacity-60 text-white font-extrabold px-5 py-3.5 rounded-xl shadow-[0_10px_22px_rgba(124,58,237,.35)] transition-colors"
             >
-              {checkoutLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              {checkoutLoading ? 'Starting checkout…' : `Join the launch cohort — ₦${VIBECODING_PRICE.toLocaleString()} →`}
+              {checkoutLoading === 'vibecoding' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              {checkoutLoading === 'vibecoding' ? 'Starting checkout…' : `Join the launch cohort — ₦${VIBECODING_PRICE.toLocaleString()} →`}
             </button>
           )}
 
@@ -460,6 +434,8 @@ export default function VibeCoding() {
           </a>
         </div>
       </div>
+
+      <CheckoutAuthModal open={authModalOpen} onClose={closeAuthModal} onAuthenticated={handleAuthenticated} />
     </div>
   );
 }

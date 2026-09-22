@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
 import { m } from 'framer-motion';
 import { CheckCircle2, AlertCircle, Infinity as InfinityIcon, Loader2, Zap, Info, Sparkles, Bot } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { usePro } from '../hooks/usePro';
 import { usePaystackCheckout } from '../hooks/usePaystackCheckout';
+import CheckoutAuthModal from '../components/CheckoutAuthModal';
 import { agents } from '../data/agents';
 import { BUILDER1_PRICE, BUILDER2_PRICE, PRO_PRICE, VIBECODING_PRICE, AI_AGENT_MASTERY_PRICE } from '../data/pricing';
 import { usePageSeo } from '../hooks/usePageSeo';
@@ -65,7 +65,6 @@ const LIVE_COHORTS = [
 ];
 
 export default function Pricing() {
-  const { user } = useAuth();
   const { theme } = useTheme();
   const { hasBuilder1, hasBuilder2, isPro, hasVibeCoding, hasAiMastery } = usePro();
   const cohortAccess = { hasVibeCoding, hasAiMastery };
@@ -76,7 +75,10 @@ export default function Pricing() {
     canonicalPath: '/pricing',
   });
 
-  const { checkout: handleCheckout, loadingKey: checkoutLoading, error: checkoutError } = usePaystackCheckout();
+  const {
+    checkout: handleCheckout, loadingKey: checkoutLoading, error: checkoutError,
+    authModalOpen, closeAuthModal, handleAuthenticated,
+  } = usePaystackCheckout();
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 text-center">
@@ -145,17 +147,14 @@ export default function Pricing() {
               You already have Builder 1
             </div>
           ) : (
-            <div className="space-y-3">
-              <button
-                onClick={() => handleCheckout('builder1')}
-                disabled={checkoutLoading === 'builder1'}
-                className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-deep disabled:opacity-60 text-white font-extrabold px-6 py-3.5 rounded-xl shadow-[0_10px_22px_rgba(124,58,237,.35)] transition-colors"
-              >
-                {checkoutLoading === 'builder1' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {user ? `Pay ₦${BUILDER1_PRICE.toLocaleString()} with Paystack` : 'Sign up to get started'}
-              </button>
-              {!user && <p className="text-center text-xs text-gray-400 mt-1">Sign up first — then come back to pay.</p>}
-            </div>
+            <button
+              onClick={() => handleCheckout('builder1')}
+              disabled={checkoutLoading === 'builder1'}
+              className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-deep disabled:opacity-60 text-white font-extrabold px-6 py-3.5 rounded-xl shadow-[0_10px_22px_rgba(124,58,237,.35)] transition-colors"
+            >
+              {checkoutLoading === 'builder1' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              {checkoutLoading === 'builder1' ? 'Starting checkout…' : `Pay ₦${BUILDER1_PRICE.toLocaleString()} with Paystack`}
+            </button>
           )}
         </m.div>
 
@@ -189,17 +188,14 @@ export default function Pricing() {
               You already have Builder 2
             </div>
           ) : (
-            <div className="space-y-3">
-              <button
-                onClick={() => handleCheckout('builder2')}
-                disabled={checkoutLoading === 'builder2'}
-                className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-deep disabled:opacity-60 text-white font-extrabold px-6 py-3.5 rounded-xl shadow-[0_10px_22px_rgba(124,58,237,.35)] transition-colors"
-              >
-                {checkoutLoading === 'builder2' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {user ? `Pay ₦${BUILDER2_PRICE.toLocaleString()} with Paystack` : 'Sign up to get started'}
-              </button>
-              {!user && <p className="text-center text-xs text-gray-400 mt-1">Sign up first — then come back to pay.</p>}
-            </div>
+            <button
+              onClick={() => handleCheckout('builder2')}
+              disabled={checkoutLoading === 'builder2'}
+              className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-deep disabled:opacity-60 text-white font-extrabold px-6 py-3.5 rounded-xl shadow-[0_10px_22px_rgba(124,58,237,.35)] transition-colors"
+            >
+              {checkoutLoading === 'builder2' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              {checkoutLoading === 'builder2' ? 'Starting checkout…' : `Pay ₦${BUILDER2_PRICE.toLocaleString()} with Paystack`}
+            </button>
           )}
         </m.div>
 
@@ -241,17 +237,14 @@ export default function Pricing() {
               You're on Pro — enjoy full access!
             </div>
           ) : (
-            <div className="space-y-3">
-              <button
-                onClick={() => handleCheckout('pro')}
-                disabled={checkoutLoading === 'pro'}
-                className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-deep disabled:opacity-60 text-white font-extrabold px-6 py-3.5 rounded-xl shadow-[0_10px_22px_rgba(124,58,237,.35)] transition-colors"
-              >
-                {checkoutLoading === 'pro' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {user ? `Pay ₦${PRO_PRICE.toLocaleString()} with Paystack` : 'Sign up to get started'}
-              </button>
-              {!user && <p className="text-center text-xs text-gray-400 mt-1">Sign up first — then come back to pay.</p>}
-            </div>
+            <button
+              onClick={() => handleCheckout('pro')}
+              disabled={checkoutLoading === 'pro'}
+              className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-deep disabled:opacity-60 text-white font-extrabold px-6 py-3.5 rounded-xl shadow-[0_10px_22px_rgba(124,58,237,.35)] transition-colors"
+            >
+              {checkoutLoading === 'pro' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              {checkoutLoading === 'pro' ? 'Starting checkout…' : `Pay ₦${PRO_PRICE.toLocaleString()} with Paystack`}
+            </button>
           )}
         </m.div>
       </div>
@@ -323,6 +316,8 @@ export default function Pricing() {
           Every plan is a one-time payment — no subscription, no auto-renewal. For billing questions email support@socialdevtechnologies.com
         </p>
       </m.div>
+
+      <CheckoutAuthModal open={authModalOpen} onClose={closeAuthModal} onAuthenticated={handleAuthenticated} />
     </div>
   );
 }

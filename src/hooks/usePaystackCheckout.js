@@ -1,39 +1,45 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabaseClient';
 
 /**
  * Starts a Paystack checkout via create-paystack-checkout and redirects to
- * the returned authorization_url. Shared by every purchase surface (tier
- * plans on Pricing.jsx, a-la-carte guide/bundle buttons) so the session
- * freshness check below — fixing a real bug where cached-but-expired auth
- * state caused checkout to fire with no Authorization header — only lives
- * in one place.
+ * the returned authorization_url. Shared by every purchase surface (guide
+ * tiers on Pricing.jsx, Vibe Coding, AI Agent Mastery) so this logic — and
+ * the auth-modal flow below — only lives in one place.
+ *
+ * Unauthenticated clicks no longer navigate to /welcome (founder-confirmed
+ * 2026-09-23: paying should never leave the page). Instead this opens
+ * CheckoutAuthModal in place, remembers which plan was requested, and
+ * resumes the actual checkout automatically once the modal reports success
+ * — the caller just needs to render `<CheckoutAuthModal open={authModalOpen}
+ * onClose={closeAuthModal} onAuthenticated={handleAuthenticated} />`
+ * alongside its checkout button(s).
  */
 export function usePaystackCheckout() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [loadingKey, setLoadingKey] = useState(null);
   const [error, setError] = useState('');
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  // The plan/extra a checkout() call was made with, replayed once the auth
+  // modal reports success — a ref rather than state since it's write-then-
+  // read-once, never rendered.
+  const pendingRef = useRef(null);
 
-  const checkout = async (plan, extra = {}) => {
-    if (!user) {
-      navigate('/welcome');
-      return;
-    }
+  const runCheckout = async (plan, extra) => {
     setError('');
     setLoadingKey(plan);
     try {
-      // `user` above can look truthy from cached auth state even when the
-      // underlying session token is gone (e.g. it lived in sessionStorage
-      // only and the tab was closed/reopened) — confirm a real session
-      // exists right before spending a network round-trip on it.
+      // A cached-but-expired session (e.g. it lived in sessionStorage only
+      // and the tab was closed/reopened) can look authenticated from React
+      // state alone — confirm a real session exists right before spending a
+      // network round-trip on it. If it's actually gone, resolve it through
+      // the same modal rather than a dead end.
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        setError('Your session has expired. Please log in again to continue.');
+        pendingRef.current = { plan, extra };
         setLoadingKey(null);
-        navigate('/welcome');
+        setAuthModalOpen(true);
         return;
       }
 
@@ -62,5 +68,31 @@ export function usePaystackCheckout() {
     }
   };
 
-  return { checkout, loadingKey, error, setError };
+  const checkout = async (plan, extra = {}) => {
+    if (!user) {
+      pendingRef.current = { plan, extra };
+      setAuthModalOpen(true);
+      return;
+    }
+    await runCheckout(plan, extra);
+  };
+
+  // Passed to CheckoutAuthModal as onAuthenticated. supabase.auth.getSession()
+  // inside runCheckout reads the client's live session directly, so this is
+  // safe to call immediately after verifyOtp() resolves even though the
+  // AuthContext `user` value (driven by the onAuthStateChange listener) may
+  // not have re-rendered yet.
+  const handleAuthenticated = async () => {
+    setAuthModalOpen(false);
+    const pending = pendingRef.current;
+    pendingRef.current = null;
+    if (pending) await runCheckout(pending.plan, pending.extra);
+  };
+
+  const closeAuthModal = () => {
+    pendingRef.current = null;
+    setAuthModalOpen(false);
+  };
+
+  return { checkout, loadingKey, error, setError, authModalOpen, closeAuthModal, handleAuthenticated };
 }
