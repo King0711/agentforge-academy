@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Mail, Bot, GitBranch, MessageSquare, FileText, Sparkles, Brain, Zap, Check } from 'lucide-react';
 
 // Everything here loops forever from a fully-visible first frame (CSS + SVG
@@ -61,6 +62,18 @@ function Packet({ d, from, to, color, roundTrip }) {
   );
 }
 
+// transform/opacity only, so the pulse stays on the compositor instead of
+// repainting a box-shadow every frame.
+function Ping({ color, delay, scale = 1.4 }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="absolute inset-0 animate-node-ping"
+      style={{ borderRadius: 'inherit', background: color, animationDelay: `${delay * CYCLE}s`, '--ping-scale': scale }}
+    />
+  );
+}
+
 function NodeLabel({ title, sub }) {
   return (
     <div className="absolute left-1/2 top-full -translate-x-1/2 mt-[1.1cqw] text-center whitespace-nowrap">
@@ -74,13 +87,10 @@ function FlowNode({ x, y, icon: Icon, accent, title, sub, delay, trigger }) {
   return (
     <div className="absolute -translate-x-1/2 -translate-y-1/2" style={pct(x, y)}>
       <div
-        className="relative w-[6.4cqw] h-[6.4cqw] animate-node-ping"
-        style={{
-          borderRadius: trigger ? '3.2cqw 1.3cqw 1.3cqw 3.2cqw' : '1.3cqw',
-          '--glow-color': `${accent}99`,
-          animationDelay: `${delay * CYCLE}s`,
-        }}
+        className="relative w-[6.4cqw] h-[6.4cqw]"
+        style={{ borderRadius: trigger ? '3.2cqw 1.3cqw 1.3cqw 3.2cqw' : '1.3cqw' }}
       >
+        <Ping color={`${accent}99`} delay={delay} />
         <div
           className="absolute inset-0 flex items-center justify-center border-[1.5px]"
           style={{
@@ -106,16 +116,14 @@ function FlowNode({ x, y, icon: Icon, accent, title, sub, delay, trigger }) {
 function SubNode({ x, y, icon: Icon, accent, title, delay }) {
   return (
     <div className="absolute -translate-x-1/2 -translate-y-1/2" style={pct(x, y)}>
-      <div
-        className="w-[4.8cqw] h-[4.8cqw] rounded-full flex items-center justify-center border-[1.5px] border-dashed animate-node-ping"
-        style={{
-          borderColor: `${accent}B3`,
-          background: 'linear-gradient(145deg, #2C2350 0%, #1B1433 100%)',
-          '--glow-color': `${accent}99`,
-          animationDelay: `${delay * CYCLE}s`,
-        }}
-      >
-        <Icon style={{ width: '2cqw', height: '2cqw', color: accent }} strokeWidth={2.2} />
+      <div className="relative w-[4.8cqw] h-[4.8cqw] rounded-full">
+        <Ping color={`${accent}99`} delay={delay} scale={1.5} />
+        <div
+          className="absolute inset-0 rounded-full flex items-center justify-center border-[1.5px] border-dashed"
+          style={{ borderColor: `${accent}B3`, background: 'linear-gradient(145deg, #2C2350 0%, #1B1433 100%)' }}
+        >
+          <Icon style={{ width: '2cqw', height: '2cqw', color: accent }} strokeWidth={2.2} />
+        </div>
       </div>
       <NodeLabel title={title} />
     </div>
@@ -125,10 +133,8 @@ function SubNode({ x, y, icon: Icon, accent, title, delay }) {
 function AgentNode() {
   return (
     <div className="absolute -translate-x-1/2 -translate-y-1/2" style={pct(330, 220)}>
-      <div
-        className="relative w-[17cqw] h-[6.4cqw] rounded-[1.3cqw] animate-node-ping"
-        style={{ '--glow-color': '#A78BFA99', animationDelay: `${0.18 * CYCLE}s` }}
-      >
+      <div className="relative w-[17cqw] h-[6.4cqw] rounded-[1.3cqw]">
+        <Ping color="#A78BFA99" delay={0.18} scale={1.15} />
         <div
           className="absolute inset-0 rounded-[1.3cqw] border-[1.5px] border-[#A78BFA] flex items-center gap-[1.1cqw] px-[1.2cqw]"
           style={{
@@ -152,8 +158,28 @@ function AgentNode() {
 }
 
 export default function AutomationFlowDiagram() {
+  const rootRef = useRef(null);
+
+  // Pause everything while scrolled out of view, and restart the SMIL and CSS
+  // clocks together so packets arrive in step with the node pulses.
+  useEffect(() => {
+    const root = rootRef.current;
+    const svg = root.querySelector('svg');
+    svg.setCurrentTime(0);
+    root.getAnimations({ subtree: true }).forEach((a) => { a.currentTime = 0; });
+
+    const io = new IntersectionObserver(([entry]) => {
+      root.dataset.flowPaused = String(!entry.isIntersecting);
+      if (entry.isIntersecting) svg.unpauseAnimations();
+      else svg.pauseAnimations();
+    });
+    io.observe(root);
+    return () => io.disconnect();
+  }, []);
+
   return (
     <div
+      ref={rootRef}
       role="img"
       aria-label="Animated automation workflow: a new Gmail email triggers an AI agent, which uses Gemini and memory to decide, then routes the task to send a Slack reply and log it in Notion."
       className="relative rounded-[24px] overflow-hidden border border-white/10 bg-[#130E24] shadow-[0_30px_60px_-24px_rgba(80,40,160,.6)]"
