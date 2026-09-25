@@ -77,8 +77,9 @@ const CASES: Array<[string, number, boolean]> = [
 
 // Production runs gemini-3.7-flash. That model's free tier is often congested
 // and answers 503, which has nothing to do with the prompt — so allow an
-// override to check the voice on a quieter model:
-//   GEMINI_MODEL=gemini-2.5-flash npm run test:voice
+// override to check the voice on a quieter model (not gemini-2.5-flash —
+// Google has closed it to new API keys and is retiring it):
+//   GEMINI_MODEL=gemini-3.6-flash npm run test:voice
 const MODEL = process.env.GEMINI_MODEL ?? 'gemini-3.7-flash';
 
 const URL_ =

@@ -357,7 +357,7 @@ const HTML_BODY = `
 
         <div class="accordion go-further">
           <button class="accordion-trigger"><span><span class="gf-label">Go further</span>Know your fallback models<span class="gf-diff">🛠️</span></span><span class="accordion-chev">⌄</span></button>
-          <div class="accordion-panel"><div class="accordion-panel-inner">Google ships several free-tier Gemini models (3.6 Flash, 2.5 Flash, and others as they're released). If one is ever slow or briefly unavailable, you can switch models from the same dropdown later, in Build 4, without reconnecting anything.</div></div>
+          <div class="accordion-panel"><div class="accordion-panel-inner">Google ships several free-tier Gemini Flash models and adds newer ones as they're released. If one is ever slow or briefly unavailable, you can switch models from the same dropdown later, in Build 4, without reconnecting anything.</div></div>
         </div>
 
         <div class="completion">
@@ -443,7 +443,7 @@ Summary: {{2.rssFields.description}}</code></pre>
         <div class="step-cat">Build 4 · Step 5 of 7</div>
         <h1 class="step-title">Build 4 — Turn headlines into a decision-ready briefing</h1>
         <p class="step-dek">One carefully structured prompt, and Gemini will dedupe, filter, and design a colorful HTML email — not just repeat the news back at you.</p>
-        <div class="pill-row"><span class="pill">20 min</span><span class="pill">AI · Gemini 2.5 Flash (Free)</span></div>
+        <div class="pill-row"><span class="pill">20 min</span><span class="pill">AI · Gemini Flash (Free)</span></div>
 
         <div class="block concept">
           <div class="concept-eyebrow">Concept</div>
@@ -466,7 +466,7 @@ Summary: {{2.rssFields.description}}</code></pre>
         </div>
 
         <div class="block step-list" style="margin-top:26px;">
-          <div class="step-item"><div class="step-num">1</div><div class="step-body">Open the Gemini module from Build 2. Under <strong>AI Model</strong>, choose <strong>Gemini 2.5 Flash</strong> (or the newest Flash model available — Flash models are the free-tier-friendly ones; skip anything labeled "Pro," which usually needs billing enabled).</div></div>
+          <div class="step-item"><div class="step-num">1</div><div class="step-body">Open the Gemini module from Build 2. Under <strong>AI Model</strong>, choose <strong>the newest Gemini Flash model in the list</strong> (the highest version number with "Flash" in its name). Flash models are the free-tier-friendly ones — skip anything labeled "Pro," which usually needs billing enabled, and skip Gemini 1.5 and 2.x models, which Google has retired or closed to new API keys.</div></div>
           <div class="step-item"><div class="step-num">2</div><div class="step-body">Scroll to <strong>System Instructions</strong> and paste this, filling in the bracketed parts for your own business and beats:
             <div class="prompt-block">
               <div class="prompt-head"><span>SYSTEM INSTRUCTIONS</span><button class="copy-btn">Copy</button></div>
@@ -566,7 +566,7 @@ Write today's briefing following the system instructions.</code></pre>
 
         <div class="accordion">
           <button class="accordion-trigger">Getting a "503 / high demand" error from Gemini?<span class="accordion-chev">⌄</span></button>
-          <div class="accordion-panel"><div class="accordion-panel-inner">This means Google's servers are temporarily overloaded on that specific model — not that anything in your setup is wrong. Open the Gemini module, change the <strong>AI Model</strong> dropdown to a different Flash version (2.5 Flash is a safe alternate), and click <strong>Run once</strong> again.</div></div>
+          <div class="accordion-panel"><div class="accordion-panel-inner">This means Google's servers are temporarily overloaded on that specific model — not that anything in your setup is wrong. Open the Gemini module, change the <strong>AI Model</strong> dropdown to a different recent Flash version (not 1.5 or 2.x — new API keys can't use those), and click <strong>Run once</strong> again.</div></div>
         </div>
 
         <div class="accordion">
