@@ -401,6 +401,35 @@ insert into gemini_fix_guide4 values
 
 
 -- ----------------------------------------------------------------------------
+-- 4a. Self-check: the text in sections 1-3 must be byte-for-byte what was
+--     reviewed and tested. Catches copy/paste or transcription damage to
+--     this file, which the drift checks below cannot see.
+-- ----------------------------------------------------------------------------
+do $$
+begin
+  if (select md5(new_sdt_ai) from gemini_fix_text) <> '265aee1f8ca263bb5ffcec5e85208704' then
+    raise exception 'sdt_ai.py text in this file is not the reviewed copy - nothing was changed.';
+  end if;
+  if (select md5(concat_ws(E'\x1f', old_model, new_model, old_tip, new_tip, new_issue,
+                           new_issue_fix, instruction_note, new_sdt_ai))
+        from gemini_fix_text) <> 'a469b1fc4a0a0e2549ae4435e8682850' then
+    raise exception 'Section 1 text in this file is not the reviewed copy - nothing was changed.';
+  end if;
+  if (select md5(string_agg(h, '' order by h collate "C"))
+        from (select md5(concat_ws(E'\x1f', course_id::text, step_path::text,
+                                   old_prompt_md5, old_instruction_md5)) as h
+                from gemini_fix_targets) s) <> '6150683a2f21c06066c0d69802c23924' then
+    raise exception 'Section 2 in this file is not the reviewed copy - nothing was changed.';
+  end if;
+  if (select md5(string_agg(h, '' order by h collate "C"))
+        from (select md5(concat_ws(E'\x1f', col, path::text, old_value, new_value)) as h
+                from gemini_fix_guide4) s) <> '3a50eb7bd87b508bef27a05acf4f3320' then
+    raise exception 'Section 3 in this file is not the reviewed copy - nothing was changed.';
+  end if;
+end $$;
+
+
+-- ----------------------------------------------------------------------------
 -- 4. Pre-flight: abort, changing nothing, if live content has drifted.
 -- ----------------------------------------------------------------------------
 do $$
