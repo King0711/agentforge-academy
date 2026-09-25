@@ -157,13 +157,25 @@ function sleep(ms) {
 // gemini-3.7-flash first: current stable/GA flash model, free-tier
 // eligible — this is a repetitive daily curation/drafting job (dedupe, pick
 // notable stories, write in a fixed voice), well within its capability.
-// gemini-2.5-flash is a fallback, not a downgrade-and-forget: on 2026-08-23
+// gemini-3.6-flash is a fallback, not a downgrade-and-forget: on 2026-08-23
 // gemini-3.7-flash returned "high demand" 503s on every attempt for over 30
 // hours straight (two consecutive daily cron runs), and there was no other
 // path to a digest that day short of a human noticing and re-running it by
 // hand. A different model is a different capacity pool, so it's likely to
 // still be up during a 3.7-specific outage.
-const GEMINI_MODELS = ['gemini-3.7-flash', 'gemini-2.5-flash'];
+//
+// The fallback was gemini-2.5-flash until 2026-09-25. Google has closed 2.5
+// to new API keys and shuts it down for everyone around 2026-10-16..20,
+// after which it would only 404. 3.6-flash is a stable Flash model with a
+// free tier (checked 2026-09-25). When Google retires it, pick the
+// replacement from https://ai.google.dev/gemini-api/docs/models — any
+// current free-tier Flash model other than the first entry here.
+//
+// A fallback only helps if it answers early: the whole run has to fit in
+// the Edge Function wall-clock limit (150s on the Free plan). On 2026-09-21
+// both scheduled runs got 503s from 3.7 AND from 2.5, and were shut down
+// with a 546 about 150s in, before the fallback had a chance to finish.
+const GEMINI_MODELS = ['gemini-3.7-flash', 'gemini-3.6-flash'];
 
 async function draftWithGeminiModel(model, rawItems, recentlyCovered) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
