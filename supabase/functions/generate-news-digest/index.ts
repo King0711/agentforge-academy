@@ -68,6 +68,12 @@ const AGENT_CATALOG = [
 
 const rssParser = new Parser();
 
+// Sources are fetched in parallel, but the run waits for the slowest one, so
+// a server that accepts the connection and never answers stalls everything
+// behind it. On 2026-09-25 that took ~130s of the run's 135s budget before
+// Gemini was asked at all. Past this, the source is skipped for the run.
+const FEED_TIMEOUT_MS = 15_000;
+
 // Fetches one source's raw items. RSS sources are parsed as feeds; HTML
 // sources (no clean feed — e.g. Anthropic's newsroom has none) are fetched
 // as plain text and handed to the LLM directly to pull headlines from.
@@ -77,6 +83,7 @@ async function fetchSource(source) {
   try {
     const res = await fetch(source.feed_url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SocialDevTechnologiesNewsBot/1.0)' },
+      signal: AbortSignal.timeout(FEED_TIMEOUT_MS),
     });
     if (!res.ok) {
       console.error(`Source "${source.name}" returned ${res.status}`);
@@ -99,7 +106,8 @@ async function fetchSource(source) {
       published: item.isoDate || item.pubDate || '',
     }));
   } catch (err) {
-    console.error(`Failed to fetch source "${source.name}":`, err.message);
+    const why = err.name === 'TimeoutError' ? `no response within ${FEED_TIMEOUT_MS / 1000}s, skipped` : err.message;
+    console.error(`Failed to fetch source "${source.name}":`, why);
     return [];
   }
 }
@@ -266,7 +274,9 @@ async function draftWithGemini(rawItems, recentlyCovered, deadline) {
       if (remaining < MIN_ATTEMPT_MS) {
         throw new Error(
           `No time left for another Gemini attempt (${Math.round(remaining / 1000)}s of the run's budget remain). `
-            + `Last error: ${lastError?.message ?? 'none'}`,
+            + (lastError
+              ? `Last error: ${lastError.message}`
+              : 'No Gemini attempt had started, so the time went on the steps before drafting.'),
         );
       }
       try {
@@ -366,6 +376,10 @@ serve(async (req) => {
 
   const fetched = await Promise.all((sources || []).map(fetchSource));
   const rawItems = fetched.flat();
+  console.log(
+    `Fetched ${rawItems.length} items from ${(sources || []).length} sources; `
+      + `${Math.round((Date.now() - WORKER_STARTED_AT) / 1000)}s of the run's budget used so far`,
+  );
   if (rawItems.length === 0) return jsonResponse({ ok: true, drafted: 0, reason: 'No items fetched from any source' });
 
   // What the bot already published, so it doesn't re-draft a story that's
