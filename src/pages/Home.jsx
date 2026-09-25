@@ -2,9 +2,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { m } from 'framer-motion';
 import {
   Code2, Bot, KeyRound, MessageCircle, Video, CalendarDays, PlayCircle, Send, CheckCheck, Sparkles, ArrowRight,
-  Users, Award, TrendingUp, Wallet, Zap,
+  Users, Award, TrendingUp, Wallet, Zap, Workflow,
 } from 'lucide-react';
 import AgentCard from '../components/AgentCard';
+import AutomationFlowDiagram from '../components/AutomationFlowDiagram';
 import YouTubeFacade from '../components/YouTubeFacade';
 import TestimonialsSection from '../components/TestimonialsSection';
 import { agents, getBuilder1Agents, groupAgentsByWeek, getAgentBySlug, getBuilderPagePath } from '../data/agents';
@@ -361,6 +362,21 @@ export default function Home({ progress, onSelectAgent }) {
             </span>
           ))}
         </div>
+      </div>
+
+      {/* ── Automation flow showcase ── */}
+      <div className="px-4 sm:px-6 lg:px-[5vw] pt-14 max-w-6xl mx-auto">
+        <div className="text-center mb-8">
+          <span className="inline-flex items-center gap-2 text-[13px] font-bold px-4 py-1.5 rounded-full bg-[#F3EBFF] dark:bg-brand/15 text-brand mb-3">
+            <Workflow className="w-3.5 h-3.5" /> See an agent at work
+          </span>
+          <h2 className="font-display font-extrabold text-[30px] text-ink tracking-[-.8px] m-0">From trigger to done — automatically</h2>
+          <p className="text-center text-body mt-2 max-w-xl mx-auto">
+            An email lands, your AI agent reads it, decides what matters, and acts — replying on Slack and logging it
+            in Notion. This is the kind of automation you'll build yourself.
+          </p>
+        </div>
+        <AutomationFlowDiagram />
       </div>
 
       {/* ── Three programs ── */}
