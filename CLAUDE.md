@@ -8,12 +8,14 @@ Supabase project ref: `qkrfpuckvymjpewcszgs`. Two other webhook functions exist 
 
 ## Access model
 
+**Since the 2026-09-22 repricing, new sales are permanent guide purchases**, not subscriptions: Builder 1 ₦5,000 (12 guides), Builder 2 ₦7,000 (13 guides), Pro ₦10,000 (both). `paystack-webhook` inserts one `guide_purchases` row per course_id in the tier (see `supabase/guide-purchases-setup.sql`). Prices live in `src/data/pricing.js`, `paystack-webhook` `PRICES`, `create-paystack-checkout`, and the WhatsApp bot's `knowledge-base.ts` — all four must move together. Vibe Coding (₦50,000) and AI Agent Mastery (₦19,999) are separate live cohorts with 6-month access.
+
 `entitlements` table (RLS: no client write, service-role/Edge-Function/admin-RPC only):
-- `builder1_expires_at` / `builder2_expires_at` — per-tier, one-time ₦50,000 payment, 6 months access each. `pro` plan (₦90,000) grants both at once.
+- `builder1_expires_at` / `builder2_expires_at` — the old 6-month subscriptions, kept working for grandfathered subscribers only.
 - `is_admin` — bypasses all gating.
 - `is_pro` / `pro_expires_at` — legacy columns, no longer read or written anywhere, kept for historical data only.
 
-`course_content` RLS policy checks `builder1_expires_at`/`builder2_expires_at` directly against `now()`, or `is_admin`.
+`course_content` RLS policy allows `is_admin`, OR an unexpired `builder1_expires_at`/`builder2_expires_at` matching the row's tier, OR a `guide_purchases` row for that course_id.
 
 Admin panel (`/admin`, `src/pages/Admin.jsx`) uses SECURITY DEFINER RPCs in `supabase/admin-setup.sql` (`admin_get_all_profiles`, `admin_set_user_pro`, `admin_set_user_admin`) — self-check inside each function, only callable by an existing admin.
 
@@ -74,6 +76,16 @@ Note the policies read the caller's `entitlements` row, which works only because
 This was fixed once (2026-08-19, measured LCP 532→400ms, TBT ~218→151ms, console #418→clean) by making `src/main.jsx` always use `createRoot`. It was reverted minutes later with no recorded reason, silently erasing this note along with it — which is exactly how the regression went unnoticed until it surfaced again as a **Google Search Console soft-404 on `/vibe-coding`** (2026-09-16): the raw served HTML is fully populated (verified directly), but Googlebot's rendering pass executes the same JS a real visitor does, and catches the page mid-teardown/rebuild — sometimes before `useAuth`/`usePro`/`useCohortSchedule` resolve — which can look thin enough to trip the soft-404 heuristic. The homepage has the same animation pattern and almost certainly has the same defect; it just hasn't been flagged in GSC yet.
 
 Re-applied the `createRoot`-always fix in `src/main.jsx` on 2026-09-16. **Re-running `npm run prerender` does not fix this** — it just bakes a different random animation frame. `hydrateRoot` only becomes viable again if mount animations are dropped from prerendered routes, making the first client render deterministic. Until then, `createRoot` is correct, not a workaround — if you're tempted to revert this again, fix the animation-snapshot mismatch first, or at minimum re-run `npm run prerender` + Puppeteer content-length checks against every route in `scripts/prerender-routes.mjs` before merging, and leave a reason in the commit this time.
+
+## Course guides, Gemini, and the jobs that call it (2026-09-25)
+
+- **Live guides (`course_content` 1-25) are what students see; `supabase/course-content-drafts/` and `supabase/starter-projects/` are not.** 24 of the 25 guides paste one shared `sdt_ai.py` (all identical since `supabase/course-content-gemini-model-fix.sql`, migration `20260925220658`): default model `gemini-flash-latest`, `thinkingConfig: {thinkingBudget: 0}` plus a 1024-token allowance on top of `max_tokens`, readable errors for empty (`MAX_TOKENS`) and 404 replies. Pre-migration copy of rows 1-25 is in `course_content_backup_20260925` (RLS on, anon/authenticated revoked).
+- **`course_content_draft` holds 24 unpublished drafts whose `sdt_ai.py` is older** (falls back to `gemini-2.5-flash`, no thinking fix, `max_tokens=50` self-test). `admin_publish_course_draft()` overwrites the whole live row — publishing one would silently undo the fix above. Update the drafts before publishing any.
+- **Gemini facts, checked 2026-09-25:** `gemini-2.5-flash` returns 404 "no longer available to new users" for new API keys and shuts down ~2026-10-16..20; 2.0 Flash shut down 2026-06-01. Thinking tokens count against `maxOutputTokens`. `thinkingBudget` works on 2.5 and 3.x; `thinkingLevel` errors on 2.5. Current Flash models: 3.8, 3.7, 3.6, 3.5-flash-lite.
+- **Editing guide content:** write a migration that guards every edit (md5 of the old value), checksums its own new text, asserts the end state, backs up first (CREATE TABLE AS does not carry RLS — enable it and revoke anon/authenticated), and runs as one transaction. Dry-run it on a local Postgres copy of the rows first.
+- **`generate-news-digest`** runs weekly (Mon 06:00 UTC, 12:00 catch-up if no articles that day); drafts land as `pending_review`. The Free plan kills an Edge Function at 150s wall clock (HTTP 546, nothing logged), and `gemini-3.7-flash` has returned "high demand" at 06:00 on every recorded run — so the function alternates 3.7/3.6 inside a 135s budget and times out each feed at 15s. Before 2026-09-25 it had silently produced nothing since 09-15.
+- **`whatsapp-support-agent`**: every fact it may say is in `knowledge-base.ts`; keep it in step with pricing (it quoted the old ₦25,000 prices for three days after the repricing). Opening hours there are still unconfirmed placeholders. It had received 0 messages as of 2026-09-25.
+- **Claude cloud sessions can't reach** ai.google.dev, firebase.google.com, socialdevtechnologies.com or *.vercel.app (egress policy). Google's API discovery doc (`generativelanguage.googleapis.com/$discovery/rest?version=v1beta`) and raw.githubusercontent.com (google-gemini/cookbook, googleapis/python-genai) are reachable and authoritative. Confirm a production deploy via the GitHub commit-status API instead of fetching the site.
 
 ## Workflow preferences (confirmed with project owner)
 
