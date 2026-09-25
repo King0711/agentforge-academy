@@ -147,8 +147,22 @@ You will receive raw items (titles/snippets from RSS feeds, or raw HTML excerpts
 
 Respond with ONLY a JSON array of these objects, no prose before or after, no markdown code fence.`;
 
-const GEMINI_MAX_ATTEMPTS = 3;
+// Up to this many passes over GEMINI_MODELS — each pass asks every model
+// once — and never past the time budget below.
+const GEMINI_MAX_ROUNDS = 3;
 const GEMINI_RETRY_DELAY_MS = 2000;
+
+// The run has to finish inside the Edge Function wall-clock limit (150s on
+// the Free plan, 400s on paid plans), which counts from when the worker
+// boots. Past it the worker is shut down mid-request with a 546 and nothing
+// says why — that is how both 2026-09-21 runs died. 135s leaves room for the
+// inserts after drafting.
+const WORKER_STARTED_AT = Date.now();
+const RUN_BUDGET_MS = 135_000;
+// The one successful draft in the logs (2026-09-15) took ~63s. With less
+// than this left, another attempt can only run into the budget, so the run
+// stops and fails cleanly instead — the 12:00 catch-up cron re-runs it.
+const MIN_ATTEMPT_MS = 65_000;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -170,14 +184,12 @@ function sleep(ms) {
 // free tier (checked 2026-09-25). When Google retires it, pick the
 // replacement from https://ai.google.dev/gemini-api/docs/models — any
 // current free-tier Flash model other than the first entry here.
-//
-// A fallback only helps if it answers early: the whole run has to fit in
-// the Edge Function wall-clock limit (150s on the Free plan). On 2026-09-21
-// both scheduled runs got 503s from 3.7 AND from 2.5, and were shut down
-// with a 546 about 150s in, before the fallback had a chance to finish.
 const GEMINI_MODELS = ['gemini-3.7-flash', 'gemini-3.6-flash'];
 
-async function draftWithGeminiModel(model, rawItems, recentlyCovered) {
+// One request to one model. Returns the parsed drafts, or throws an error
+// whose `retryable` says whether asking again (this model or another) could
+// help. Aborts with a TimeoutError once `timeoutMs` runs out.
+async function draftOnce(model, rawItems, recentlyCovered, timeoutMs) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
   const body = JSON.stringify({
     systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
@@ -198,57 +210,78 @@ async function draftWithGeminiModel(model, rawItems, recentlyCovered) {
     generationConfig: { maxOutputTokens: 32000, responseMimeType: 'application/json' },
   });
 
-  let lastError;
-  for (let attempt = 1; attempt <= GEMINI_MAX_ATTEMPTS; attempt++) {
-    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
-    if (res.ok) {
-      const data = await res.json();
-      // Join every part rather than reading parts[0]: Gemini may split one
-      // response across several parts, and taking only the first silently
-      // truncates it. (This was first suspected as the cause of the
-      // "Unterminated string" failures below; it wasn't — those were the
-      // output-token ceiling — but concatenating is still the correct way
-      // to read the response.)
-      const text = (data.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? '').join('') || '[]';
-      try {
-        return JSON.parse(text);
-      } catch (parseErr) {
-        // A 200 with truncated/malformed JSON is retryable, same as a 503 —
-        // seen live from gemini-2.5-flash (2026-08-24): request/response
-        // both fine, the model just cut the response off mid-string. Same
-        // request replayed can easily come back well-formed.
-        // finishReason is the tell for *why*: MAX_TOKENS means the output
-        // ceiling above is too low for the day's volume rather than the
-        // model misbehaving, and that distinction is invisible from the
-        // parse error alone.
-        const finishReason = data.candidates?.[0]?.finishReason ?? 'unknown';
-        lastError = new Error(
-          `Gemini returned malformed JSON (finishReason: ${finishReason}): ${parseErr.message}`,
-        );
-        if (attempt === GEMINI_MAX_ATTEMPTS) throw lastError;
-        console.error(`Gemini attempt ${attempt}/${GEMINI_MAX_ATTEMPTS} returned malformed JSON, retrying:`, lastError.message);
-        await sleep(GEMINI_RETRY_DELAY_MS * attempt);
-        continue;
-      }
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body,
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+  if (res.ok) {
+    const data = await res.json();
+    // Join every part rather than reading parts[0]: Gemini may split one
+    // response across several parts, and taking only the first silently
+    // truncates it. (This was first suspected as the cause of the
+    // "Unterminated string" failures below; it wasn't — those were the
+    // output-token ceiling — but concatenating is still the correct way
+    // to read the response.)
+    const text = (data.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? '').join('') || '[]';
+    try {
+      return JSON.parse(text);
+    } catch (parseErr) {
+      // A 200 with truncated/malformed JSON is retryable, same as a 503 —
+      // seen live from gemini-2.5-flash (2026-08-24): request/response
+      // both fine, the model just cut the response off mid-string. Same
+      // request replayed can easily come back well-formed.
+      // finishReason is the tell for *why*: MAX_TOKENS means the output
+      // ceiling above is too low for the day's volume rather than the
+      // model misbehaving, and that distinction is invisible from the
+      // parse error alone.
+      const finishReason = data.candidates?.[0]?.finishReason ?? 'unknown';
+      const err = new Error(`Gemini returned malformed JSON (finishReason: ${finishReason}): ${parseErr.message}`);
+      err.retryable = true;
+      throw err;
     }
-    lastError = new Error(`Gemini API returned ${res.status}: ${await res.text()}`);
-    // Only retry on transient server-side errors (e.g. 503 "high demand") —
-    // a 4xx (bad key, bad request) will just fail the same way every time.
-    if (res.status < 500 || attempt === GEMINI_MAX_ATTEMPTS) throw lastError;
-    console.error(`Gemini attempt ${attempt}/${GEMINI_MAX_ATTEMPTS} failed, retrying:`, lastError.message);
-    await sleep(GEMINI_RETRY_DELAY_MS * attempt);
   }
-  throw lastError;
+  const err = new Error(`Gemini API returned ${res.status}: ${await res.text()}`);
+  // Only transient server-side errors (e.g. 503 "high demand") are worth
+  // asking again — a 4xx (bad key, bad request, retired model) fails the
+  // same way every time.
+  err.retryable = res.status >= 500;
+  throw err;
 }
 
-async function draftWithGemini(rawItems, recentlyCovered) {
+// Alternates between the models instead of exhausting one before trying the
+// next: gemini-3.7-flash answered "high demand" at 06:00 on every run in the
+// logs (2026-09-14, 09-15 and 09-21), and three back-to-back retries on it
+// used ~30s of the budget before the fallback was ever asked. On 09-15 that
+// left just enough time for the fallback's second try to succeed; on 09-21 it
+// didn't, and the run was shut down (546) before the fallback could finish.
+async function draftWithGemini(rawItems, recentlyCovered, deadline) {
+  const usable = [...GEMINI_MODELS];
   let lastError;
-  for (const model of GEMINI_MODELS) {
-    try {
-      return await draftWithGeminiModel(model, rawItems, recentlyCovered);
-    } catch (err) {
-      lastError = err;
-      console.error(`Model "${model}" failed after ${GEMINI_MAX_ATTEMPTS} attempts, trying next:`, err.message);
+  for (let round = 1; round <= GEMINI_MAX_ROUNDS && usable.length > 0; round++) {
+    if (round > 1) await sleep(GEMINI_RETRY_DELAY_MS * (round - 1));
+    for (const model of [...usable]) {
+      const remaining = deadline - Date.now();
+      if (remaining < MIN_ATTEMPT_MS) {
+        throw new Error(
+          `No time left for another Gemini attempt (${Math.round(remaining / 1000)}s of the run's budget remain). `
+            + `Last error: ${lastError?.message ?? 'none'}`,
+        );
+      }
+      try {
+        return await draftOnce(model, rawItems, recentlyCovered, remaining);
+      } catch (err) {
+        if (err.name === 'TimeoutError') {
+          throw new Error(`${model} was still drafting when the run's time budget ran out`);
+        }
+        lastError = err;
+        if (!err.retryable) usable.splice(usable.indexOf(model), 1);
+        console.error(
+          `Gemini ${model} failed (round ${round}/${GEMINI_MAX_ROUNDS})${err.retryable ? '' : ', not asking it again this run'}:`,
+          err.message,
+        );
+      }
     }
   }
   throw lastError;
@@ -360,7 +393,7 @@ serve(async (req) => {
 
   let drafts;
   try {
-    drafts = await draftWithGemini(rawItems, recentlyCovered);
+    drafts = await draftWithGemini(rawItems, recentlyCovered, WORKER_STARTED_AT + RUN_BUDGET_MS);
   } catch (err) {
     console.error('Drafting failed:', err.message);
     return jsonResponse({ error: 'Drafting failed', detail: err.message }, 500);
