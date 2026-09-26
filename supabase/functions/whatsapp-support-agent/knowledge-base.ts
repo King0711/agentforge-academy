@@ -21,11 +21,10 @@
 // on 2026-09-25: after the 2026-09-22 repricing this file was still quoting
 // ₦25,000/₦25,000/₦45,000, 6-month access and a required Claude Pro plan.
 
-// ⚠️ CONFIRM THESE — placeholder hours, set to your real ones.
+// Confirmed by the owner on 2026-09-26: 10am-5pm every day except Sunday.
 export const FACTS_HOURS = `
 Timezone: WAT (UTC+1)
-Mon-Fri: 9:00am - 6:00pm
-Saturday: 10:00am - 4:00pm
+Monday-Saturday: 10:00am - 5:00pm
 Sunday: closed
 Outside those hours: a human reply may take until the next working day
 The courses themselves: available 24/7, hours only affect human reply speed
@@ -244,7 +243,7 @@ Q: "i dont know how to code"
   from scratch."
 
 Q: "una dey open now?"
-- "We're around Mon-Fri 9-6 and Saturdays 10-4, WAT. Send your question
+- "We're around 10am-5pm WAT, Monday to Saturday. Send your question
   either way and someone picks it up."
 
 Notice they share no sentence structure. Yours shouldn't either.
