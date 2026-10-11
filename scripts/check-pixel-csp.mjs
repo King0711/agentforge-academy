@@ -54,16 +54,23 @@ async function main() {
       problems.push(`${rel}: still loads /meta-pixel-init.js (removed — the pixel is inline now)`);
     }
 
-    let found = false;
+    // fbevents.js and its per-pixel config are injected at runtime; a static tag
+    // means a prerender snapshot captured one (see scripts/prerender.mjs).
+    if (/<script[^>]*\bsrc="https:\/\/connect\.facebook\.net\//.test(html)) {
+      problems.push(`${rel}: has a baked-in connect.facebook.net <script> tag (captured by a prerender run)`);
+    }
+
+    let found = 0;
     for (const match of html.matchAll(INLINE_SCRIPT)) {
       if (!match[1].includes("fbq('init'")) continue;
-      found = true;
+      found += 1;
       checked += 1;
       const hash = sha256(match[1].replace(/\r\n/g, '\n'));
       if (!scriptSrc.includes(hash)) {
         problems.push(`${rel}: inline Meta Pixel hash ${hash} is not in the script-src of vercel.json`);
       }
     }
+    if (found > 1) problems.push(`${rel}: ${found} inline Meta Pixel scripts (expected one)`);
     if (!found && rel === 'index.html') problems.push('index.html: inline Meta Pixel script not found');
   }
 

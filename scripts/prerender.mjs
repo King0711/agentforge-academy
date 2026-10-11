@@ -93,14 +93,21 @@ async function main() {
         await page.goto(`${BASE_URL}${route}`, { waitUntil: 'networkidle2', timeout: 20000 });
         await new Promise((r) => setTimeout(r, 300));
 
-        // Drop nodes that runtime code injected into the DOM (currently the
-        // deferred gtag.js loader — see public/gtag-init.js). page.content()
-        // serializes the live DOM, so anything a script appended would
-        // otherwise be committed into the snapshot as if it had been in the
-        // source HTML all along — re-introducing on page load exactly the
-        // request the runtime injection exists to defer.
+        // Drop nodes that runtime code injected into the DOM (the deferred
+        // gtag.js loader — see public/gtag-init.js — and the Meta Pixel's
+        // fbevents.js). page.content() serializes the live DOM, so anything a
+        // script appended would otherwise be committed into the snapshot as if
+        // it had been in the source HTML all along.
+        //
+        // fbevents.js then injects its own per-pixel config script
+        // (connect.facebook.net/signals/config/<id>), which we can't mark, so
+        // every connect.facebook.net script goes too. The 2026-10-07 refresh
+        // baked that config tag into all 41 snapshots: it loaded the config
+        // ahead of fbevents.js on every visit (Meta logged
+        // "__fbeventsModules[e] is not a function") and kept pointing at an old
+        // pixel. scripts/check-pixel-csp.mjs now fails the build if one is back.
         await page.evaluate(() => {
-          document.querySelectorAll('[data-runtime-injected]').forEach((el) => el.remove());
+          document.querySelectorAll('[data-runtime-injected], script[src^="https://connect.facebook.net/"]').forEach((el) => el.remove());
         });
 
         // Drop client-only, time-varying subtrees (currently the /ai-builder

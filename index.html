@@ -2,6 +2,40 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- Start the Meta Pixel's library and its event endpoint right away: the
+         pixel snippet below creates its script tag at run time, which the
+         browser's look-ahead scanner can't see, so without this fbevents.js
+         starts after the fonts and the app bundle. No crossorigin, to match
+         the plain script tag the snippet makes. -->
+    <link rel="preload" href="https://connect.facebook.net/en_US/fbevents.js" as="script" />
+    <link rel="preconnect" href="https://www.facebook.com" />
+    <!-- Meta Pixel — Meta's standard base code, placed first in the head
+         (right after the charset, which must stay first) so it starts before
+         anything else on the page. It is inline so Meta's own tooling
+         (Events Manager, Pixel Helper) can see it in the page source. The CSP
+         has no script-src 'unsafe-inline', so this one script is allowed by its
+         sha256 hash in vercel.json; `npm run build` runs
+         scripts/check-pixel-csp.mjs and fails if the two drift apart (editing
+         even one character of the script changes the hash). The only change
+         from Meta's snippet is data-runtime-injected on the script tag it
+         creates, so scripts/prerender.mjs strips fbevents.js from committed
+         snapshots. The noscript fallback is the first thing inside the body.
+         SPA route changes are reported by AppShell in src/App.jsx. (Keep the
+         literal body-open tag out of comments up here: scripts/inject-home.mjs
+         splices the homepage in at the first one.) -->
+    <script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.setAttribute('data-runtime-injected','1');
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1495611502404463');
+fbq('track', 'PageView');
+</script>
     <link rel="icon" type="image/webp" href="/logo-icon.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="google-site-verification" content="X2KwzZq-EQSujt9OBzLfAlQxX8bzHPvrJwTM_6IkB4A" />
@@ -27,32 +61,6 @@
          queued into dataLayer immediately either way, so nothing is lost
          for anyone who stays on the page. -->
     <script defer src="/gtag-init.js"></script>
-    <!-- Meta Pixel — Meta's standard base code, inline so Meta's own tooling
-         (Events Manager "Set up events", Pixel Helper) can see it in the page
-         source. The CSP has no script-src 'unsafe-inline', so this one script
-         is allowed by its sha256 hash in vercel.json instead; `npm run build`
-         runs scripts/check-pixel-csp.mjs and fails if the two ever drift
-         apart (editing even one character of the script changes the hash).
-         The only change from Meta's snippet is data-runtime-injected on the
-         script tag it creates, so scripts/prerender.mjs strips fbevents.js
-         from committed snapshots. The noscript fallback is the first thing
-         inside the body. SPA route changes are reported by AppShell in
-         src/App.jsx. (Keep the literal body-open tag out of comments up here:
-         scripts/inject-home.mjs splices the homepage in at the first one.) -->
-    <script>
-!function(f,b,e,v,n,t,s)
-{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-n.queue=[];t=b.createElement(e);t.async=!0;
-t.setAttribute('data-runtime-injected','1');
-t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window, document,'script',
-'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '1148513550838930');
-fbq('init', '1873208177173460');
-fbq('track', 'PageView');
-</script>
 
     <!-- Fonts are self-hosted (public/fonts, @font-face in src/index.css), so
          there is no third-party font request and nothing render-blocking: the
@@ -143,7 +151,7 @@ fbq('track', 'PageView');
     </script>
   </head>
   <body>
-  <noscript><img height="1" width="1" style="display:none" alt="" src="https://www.facebook.com/tr?id=1148513550838930&ev=PageView&noscript=1" /></noscript><noscript><img height="1" width="1" style="display:none" alt="" src="https://www.facebook.com/tr?id=1873208177173460&ev=PageView&noscript=1" /></noscript>
+  <noscript><img height="1" width="1" style="display:none" alt="" src="https://www.facebook.com/tr?id=1495611502404463&ev=PageView&noscript=1" /></noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
