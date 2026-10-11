@@ -697,12 +697,24 @@ worked. Do not send, delete or modify anything.</code></pre>
               <div class="prompt-head"><span>UBUNTU (WSL)</span><button class="copy-btn">Copy</button></div>
               <pre><code>composio login</code></pre>
             </div>
-            <p style="margin-top:12px;">If it tells you to run <span class="inline-code">composio login --poll</span>, run that to finish. Then check you're signed in — if this prints nothing, you're not signed in yet:</p>
+            <p style="margin-top:12px;">If it tells you to run <span class="inline-code">composio login --poll</span>, run that to finish. Then check you're signed in — if this prints nothing, or shows <span class="inline-code">"email":null</span>, the login hasn't finished yet:</p>
             <div class="prompt-block">
               <div class="prompt-head"><span>UBUNTU (WSL)</span><button class="copy-btn">Copy</button></div>
               <pre><code>composio whoami</code></pre>
             </div>
-            <p style="margin-top:12px;">Mac and Linux users can skip steps 1 and 2 and run the rest in their normal terminal. On a Mac, skip step 3 too — unzip is built in. On Linux other than Ubuntu or Debian, install unzip with your own package manager.</p>
+            <p style="margin-top:12px;"><strong>7. Let Hermes use it.</strong> Hermes on Windows runs its commands in Git Bash, which can't see programs inside Ubuntu — ask it to use Composio now and it reports "no composio". Paste this into Hermes to give it a shortcut. It uses the same login as step 6:</p>
+            <div class="prompt-block">
+              <div class="prompt-head"><span>PROMPT — PASTE IN HERMES</span><button class="copy-btn">Copy</button></div>
+              <pre><code>The Composio CLI is installed inside WSL (Ubuntu), so your terminal can't
+see it. Create a file at ~/bin/composio with exactly these lines, using
+Unix line endings, then run "composio --version" and show me the result:
+
+#!/bin/sh
+export MSYS_NO_PATHCONV=1
+export MSYS2_ARG_CONV_EXCL='*'
+exec /c/Windows/System32/wsl.exe -d Ubuntu -e bash -lc 'exec composio "$@"' composio "$@"</code></pre>
+            </div>
+            <p style="margin-top:12px;">Mac and Linux users can skip steps 1, 2 and 7 and run the rest in their normal terminal. On a Mac, skip step 3 too — unzip is built in. On Linux other than Ubuntu or Debian, install unzip with your own package manager.</p>
           </div></div>
         </div>
 
