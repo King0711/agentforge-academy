@@ -36,6 +36,22 @@ function corsHeadersFor(req: Request) {
   };
 }
 
+// Two-step verification (supabase/admin-mfa.sql). While admin_security_settings.require_mfa
+// is on, an admin session must be aal2 (it proved an authenticator code) to use this. The
+// JWT was already verified by getUser() above, so reading its `aal` claim is safe. Any
+// failure to find out counts as "not satisfied".
+async function mfaSatisfied(sb: any, authHeader: string): Promise<boolean> {
+  const { data, error } = await sb.from('admin_security_settings').select('require_mfa').eq('id', true).maybeSingle();
+  if (error) return false;
+  if (!data?.require_mfa) return true;
+  try {
+    const part = authHeader.replace(/^Bearer /i, '').split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(part)).aal === 'aal2';
+  } catch {
+    return false;
+  }
+}
+
 serve(async (req) => {
   const corsHeaders = corsHeadersFor(req);
 
@@ -69,6 +85,9 @@ serve(async (req) => {
       .maybeSingle();
 
     if (!entitlement?.is_admin) return jsonResponse({ error: 'Not authorized' }, 403);
+    if (!(await mfaSatisfied(admin, req.headers.get('Authorization') ?? ''))) {
+      return jsonResponse({ error: 'Two-step verification required' }, 403);
+    }
 
     const { phone, body } = await req.json();
 

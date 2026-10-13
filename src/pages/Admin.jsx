@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { usePro } from '../hooks/usePro';
 import AdminSidebar from '../components/admin/AdminSidebar';
+import AdminMfaGate from '../components/admin/AdminMfaGate';
 import AdminUsers from './admin/AdminUsers';
 import AdminCohorts from './admin/AdminCohorts';
 import AdminLiveSessions from './admin/AdminLiveSessions';
@@ -58,6 +59,7 @@ export default function Admin() {
   }
 
   return (
+    <AdminMfaGate>
     <div className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid lg:grid-cols-[240px_1fr] gap-8 items-start">
@@ -96,5 +98,6 @@ export default function Admin() {
         </m.div>
       )}
     </div>
+    </AdminMfaGate>
   );
 }
