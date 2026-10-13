@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabaseClient';
 import { invokeWithRetry } from '../lib/invokeFunction';
+import { trackInitiateCheckout } from '../lib/pixel';
 
 /**
  * Starts a Paystack checkout via create-paystack-checkout and redirects to
@@ -44,6 +45,7 @@ export function usePaystackCheckout() {
         return;
       }
 
+      trackInitiateCheckout(plan);
       const { data, error: fnError } = await invokeWithRetry('create-paystack-checkout', {
         body: { plan, redirectOrigin: window.location.origin, ...extra },
       });

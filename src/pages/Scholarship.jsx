@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Loader2, AlertCircle, CheckCircle2, GraduationCap, Lock } from 'lucide-react';
 import { usePageSeo } from '../hooks/usePageSeo';
 import { submitScholarshipApplication } from '../lib/scholarship';
+import { pixelTrack } from '../lib/pixel';
 import {
   SCHOLARSHIP_CLOSES_AT,
   SCHOLARSHIP_PRICE_NAIRA,
@@ -91,6 +92,7 @@ export default function Scholarship() {
     setStatus('sending');
     const result = await submitScholarshipApplication({ ...form, website });
     if (result.ok) {
+      pixelTrack('Lead', { content_name: 'scholarship-application' });
       setStatus('done');
       return;
     }
