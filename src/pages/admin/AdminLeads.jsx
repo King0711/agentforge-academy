@@ -21,6 +21,14 @@ const fmtDate = (iso) =>
 
 const csvCell = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
 
+// Names and emails come from a public form, so a cell that starts with = + - @
+// (or a tab / carriage return) would run as a formula when the file is opened
+// in Excel or Sheets. A leading single quote makes it plain text.
+const csvText = (value) => {
+  const text = String(value ?? '');
+  return csvCell(/^[=+\-@	]/.test(text) ? `'${text}` : text);
+};
+
 // Checkout leads: everyone who filled in the name / email / phone form before
 // going to Paystack (supabase/guest-checkout.sql). One row per attempt, so
 // somebody who tried twice appears twice; a lead is "paid" once the webhook has
@@ -63,7 +71,7 @@ export default function AdminLeads() {
   const exportCsv = () => {
     const header = ['Name', 'Email', 'Phone', 'Plan', 'Paid', 'Date'];
     const lines = visible.map((r) =>
-      [r.name, r.email, r.phone, PLAN_LABELS[r.plan] || r.plan, r.paid ? 'yes' : 'no', r.created_at].map(csvCell).join(','),
+      [csvText(r.name), csvText(r.email), csvText(r.phone), csvText(PLAN_LABELS[r.plan] || r.plan), csvCell(r.paid ? 'yes' : 'no'), csvCell(r.created_at)].join(','),
     );
     const blob = new Blob([[header.join(','), ...lines].join('\n')], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
