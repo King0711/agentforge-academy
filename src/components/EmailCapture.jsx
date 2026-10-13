@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Loader2, MailCheck, AlertCircle, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { callEmailLeads } from '../lib/emailLeads';
+import { pixelTrack } from '../lib/pixel';
 
 // Email capture for the free AI agent starter series (see
 // supabase/functions/email-leads). Double opt-in: submitting only sends a
@@ -32,6 +33,7 @@ export default function EmailCapture({ source = 'site', className = '' }) {
       setStatus('idle');
       return;
     }
+    pixelTrack('Lead', { content_name: 'starter-series', ...(source ? { source } : {}) });
     setStatus('sent');
   };
 

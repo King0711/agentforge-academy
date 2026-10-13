@@ -8,6 +8,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { setRememberMe } from '../lib/supabaseClient';
+import { pixelTrack } from '../lib/pixel';
 import { agents } from '../data/agents';
 import { isVisibleToPublic } from '../data/departments';
 import { usePageSeo } from '../hooks/usePageSeo';
@@ -169,6 +170,7 @@ export default function Welcome() {
       if (mode === 'signup') {
         const { data, error: err } = await signUp(email, password, name);
         if (err) throw err;
+        pixelTrack('CompleteRegistration', { content_name: 'signup' });
         if (data?.session) {
           navigate('/dashboard');
         } else {

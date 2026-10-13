@@ -6,6 +6,7 @@ import Footer from './components/Footer';
 import ProfileInfoModal from './components/ProfileInfoModal';
 import WhatsAppFloatButton from './components/WhatsAppFloatButton';
 import { captureReferralFromLocation } from './lib/referral';
+import { usePixelEvents } from './lib/pixel';
 import Home from './pages/Home';
 import Catalog from './pages/Catalog';
 import PathDetail from './pages/PathDetail';
@@ -100,6 +101,8 @@ function AppShell() {
     }
     if (typeof window.fbq === 'function') window.fbq('track', 'PageView');
   }, [location.pathname]);
+  // Clicks, product views and verified purchases (src/lib/pixel.js).
+  usePixelEvents(user);
 
   // A referral link can land on any page, not just /welcome — capture it
   // here so browsing around before signing up doesn't lose attribution.
