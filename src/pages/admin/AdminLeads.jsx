@@ -26,7 +26,7 @@ const csvCell = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
 // in Excel or Sheets. A leading single quote makes it plain text.
 const csvText = (value) => {
   const text = String(value ?? '');
-  return csvCell(/^[=+\-@	]/.test(text) ? `'${text}` : text);
+  return csvCell(/^[=+\-@\t\r]/.test(text) ? `'${text}` : text);
 };
 
 // Checkout leads: everyone who filled in the name / email / phone form before
