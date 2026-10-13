@@ -242,7 +242,7 @@ export default function AIAgentMastery() {
   const { hasAiMastery } = usePro();
   const {
     checkout, loadingKey: checkoutLoading, error: checkoutError,
-    authModalOpen, closeAuthModal, handleAuthenticated,
+    authModalOpen, closeAuthModal, submitLead, leadLoading, leadError,
   } = usePaystackCheckout();
   const { hash } = useLocation();
   useEffect(() => {
@@ -605,7 +605,7 @@ export default function AIAgentMastery() {
         </div>
       </div>
 
-      <CheckoutAuthModal open={authModalOpen} onClose={closeAuthModal} onAuthenticated={handleAuthenticated} />
+      <CheckoutAuthModal open={authModalOpen} onClose={closeAuthModal} onSubmit={submitLead} loading={leadLoading} error={leadError} />
     </div>
   );
 }

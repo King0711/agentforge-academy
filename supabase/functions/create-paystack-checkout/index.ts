@@ -111,6 +111,58 @@ function corsHeadersFor(req) {
   };
 }
 
+// ---- Guest checkout (2026-10-13, supabase/guest-checkout.sql) ----
+// A signed-out visitor sends { lead: { name, email, phone, country } } instead of
+// a JWT. We store it as a checkout_leads row (so abandoned buyers stay on the
+// list) and charge with metadata.lead_id; paystack-webhook creates or finds the
+// account only after a verified payment, and the email is verified at the
+// buyer's first login. Guests can only buy the plain plans: no Pro upgrade
+// (needs their purchase history) and no scholarship price (needs a confirmed
+// email) — both stay signed-in-only.
+const MAX_LEADS_PER_IP_PER_HOUR = 20; // many Nigerian users share one carrier NAT
+const MAX_LEADS_PER_HOUR = 400;
+const HOUR_MS = 60 * 60 * 1000;
+const EMAIL_RE = /^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/;
+
+function validateLead(raw) {
+  const lead = raw && typeof raw === 'object' ? raw : {};
+  // Honeypot: a real visitor never sees or fills this field.
+  if (typeof lead.website === 'string' && lead.website.trim() !== '') return { error: 'Invalid details.' };
+  const name = String(lead.name ?? '').replace(/\s+/g, ' ').trim();
+  const email = String(lead.email ?? '').trim().toLowerCase();
+  const phone = String(lead.phone ?? '').trim();
+  const country = String(lead.country ?? '').trim().toUpperCase();
+  const referral = String(lead.referral_code ?? '').trim().toUpperCase();
+  if (name.length < 2 || name.length > 80 || /[<>]/.test(name)) return { error: 'Enter your full name.' };
+  if (email.length > 254 || !EMAIL_RE.test(email)) return { error: 'Enter a valid email address.' };
+  if (!/^\+[1-9][0-9]{7,14}$/.test(phone)) return { error: 'Enter a valid phone number with its country code.' };
+  return {
+    value: {
+      name,
+      email,
+      phone,
+      country_iso: /^[A-Z]{2}$/.test(country) ? country : null,
+      // Not a security boundary: handle_new_user validates it against real codes.
+      referral_code: /^[A-Z0-9]{4,20}$/.test(referral) ? referral : null,
+    },
+  };
+}
+
+// Keyed hash of the caller's IP — counts submissions per source without keeping
+// the address. The service-role key is the secret, so no new env var.
+async function hashIp(ip) {
+  if (!ip) return null;
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(SUPABASE_SERVICE_ROLE_KEY),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(ip));
+  return Array.from(new Uint8Array(sig), (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 serve(async (req) => {
   const corsHeaders = corsHeadersFor(req);
 
@@ -127,13 +179,14 @@ serve(async (req) => {
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405);
 
   // Identify the caller from their Supabase JWT (this function requires
-  // verify_jwt: true) — never trust a client-supplied user id.
+  // verify_jwt: true) — never trust a client-supplied user id. A visitor who
+  // isn't signed in carries only the anon key, so getUser() finds no user and
+  // the request is treated as a guest checkout (below) if it carries a lead.
   const authHeader = req.headers.get('Authorization') ?? '';
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     global: { headers: { Authorization: authHeader } },
   });
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  if (userError || !user) return jsonResponse({ error: 'Unauthorized' }, 401);
+  const { data: { user } } = await supabase.auth.getUser();
 
   let body;
   try {
@@ -143,11 +196,59 @@ serve(async (req) => {
   }
 
   const { plan, redirectOrigin } = body;
+  if (!user && !body.lead) return jsonResponse({ error: 'Unauthorized' }, 401);
   if (typeof plan !== 'string' || (plan !== 'proupgrade' && !Object.hasOwn(PRICES, plan))) {
     return jsonResponse({ error: 'Unknown plan' }, 400);
   }
+  if (!user && plan === 'proupgrade') {
+    return jsonResponse({ error: 'Please log in to upgrade — the upgrade price depends on what you already own.' }, 401);
+  }
 
   const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+  // Guest: validate, rate-limit, and store the lead before anything is charged.
+  let lead; // { id, email } for a guest checkout
+  if (!user) {
+    const checked = validateLead(body.lead);
+    if (checked.error) return jsonResponse({ error: checked.error }, 400);
+
+    // cf-connecting-ip is set by the edge proxy and can't be forged by the caller.
+    const clientIp = (
+      req.headers.get('cf-connecting-ip') ??
+      req.headers.get('x-forwarded-for')?.split(',')[0] ??
+      ''
+    ).trim();
+    const ipHash = await hashIp(clientIp);
+    const since = new Date(Date.now() - HOUR_MS).toISOString();
+    if (ipHash) {
+      const { count: fromIp } = await serviceClient
+        .from('checkout_leads')
+        .select('id', { count: 'exact', head: true })
+        .eq('ip_hash', ipHash)
+        .gte('created_at', since);
+      if ((fromIp ?? 0) >= MAX_LEADS_PER_IP_PER_HOUR) {
+        return jsonResponse({ error: 'Too many attempts. Please wait a little and try again.' }, 429);
+      }
+    }
+    const { count: lastHour } = await serviceClient
+      .from('checkout_leads')
+      .select('id', { count: 'exact', head: true })
+      .gte('created_at', since);
+    if ((lastHour ?? 0) >= MAX_LEADS_PER_HOUR) {
+      return jsonResponse({ error: 'We are busy right now. Please try again in a few minutes.' }, 429);
+    }
+
+    const { data: inserted, error: leadError } = await serviceClient
+      .from('checkout_leads')
+      .insert({ ...checked.value, plan, ip_hash: ipHash })
+      .select('id, email')
+      .single();
+    if (leadError || !inserted) {
+      console.error('checkout lead insert failed:', leadError?.code);
+      return jsonResponse({ error: 'Could not start checkout. Please try again.' }, 500);
+    }
+    lead = inserted;
+  }
 
   let amountNaira = PRICES[plan];
 
@@ -158,7 +259,7 @@ serve(async (req) => {
   // normal one.
   let scholarshipId;
   if (
-    plan === 'aimastery' && !!user.email_confirmed_at &&
+    plan === 'aimastery' && !!user?.email_confirmed_at &&
     Date.now() < SCHOLARSHIP_EXPIRES_AT
   ) {
     scholarshipId = (await findApprovedScholarshipId(serviceClient, user.email)) ?? undefined;
@@ -192,7 +293,9 @@ serve(async (req) => {
   // back we can trust this exactly as much as we trust our own signature
   // check — this is what lets the webhook grant access by user id instead
   // of the fragile "match the payer's email" approach.
-  const reference = `sdt_${plan}_${user.id}_${Date.now()}`;
+  // For a guest the id in the reference is the lead's, not a user's (there is no
+  // account yet); the webhook resolves it through metadata.lead_id.
+  const reference = `sdt_${plan}_${user?.id ?? lead.id}_${Date.now()}`;
 
   // Where Paystack sends the browser afterwards. The client supplies it, so
   // restrict it to our own sites (same list as CORS) rather than trusting it.
@@ -207,18 +310,20 @@ serve(async (req) => {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      email: user.email,
+      email: user?.email ?? lead.email,
       amount: amountNaira * 100, // kobo
       currency: 'NGN',
       reference,
       metadata: {
-        user_id: user.id,
+        ...(user ? { user_id: user.id } : { lead_id: lead.id }),
         plan,
         ...(upgradeFrom ? { upgrade_from: upgradeFrom } : {}),
         // paystack-webhook marks this application redeemed once the payment is verified.
         ...(scholarshipId ? { scholarship_id: scholarshipId } : {}),
       },
-      callback_url: `${callbackOrigin}/dashboard`,
+      // A guest has no session to land in /dashboard with: send them to a page
+      // that confirms the payment and gets them logged in with an emailed code.
+      callback_url: `${callbackOrigin}${user ? '/dashboard' : '/checkout/complete'}`,
     }),
   });
 
@@ -232,12 +337,15 @@ serve(async (req) => {
   // the caller's own JWT has no insert grant on checkout_attempts (by design
   // — only the service role and admin RPCs touch this table). Best-effort:
   // a logging failure here must never block the actual checkout redirect.
+  // Guests are tracked in checkout_leads instead (no user id to attach yet).
   try {
-    await serviceClient.from('checkout_attempts').insert({
-      user_id: user.id,
-      plan,
-      provider_reference: reference,
-    });
+    if (user) {
+      await serviceClient.from('checkout_attempts').insert({
+        user_id: user.id,
+        plan,
+        provider_reference: reference,
+      });
+    }
   } catch (_err) {
     // non-fatal — see comment above
   }

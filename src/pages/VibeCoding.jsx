@@ -143,7 +143,7 @@ export default function VibeCoding() {
 
   const {
     checkout, loadingKey: checkoutLoading, error: checkoutError,
-    authModalOpen, closeAuthModal, handleAuthenticated,
+    authModalOpen, closeAuthModal, submitLead, leadLoading, leadError,
   } = usePaystackCheckout();
 
   usePageSeo({
@@ -423,7 +423,7 @@ export default function VibeCoding() {
         </div>
       </div>
 
-      <CheckoutAuthModal open={authModalOpen} onClose={closeAuthModal} onAuthenticated={handleAuthenticated} />
+      <CheckoutAuthModal open={authModalOpen} onClose={closeAuthModal} onSubmit={submitLead} loading={leadLoading} error={leadError} />
     </div>
   );
 }

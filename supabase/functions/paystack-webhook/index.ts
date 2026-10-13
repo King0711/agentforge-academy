@@ -173,7 +173,7 @@ function upgradeUpsell(plan) {
 //   a self-paced build queue), plus its prompt library.
 // - aimastery: live-taught like vibecoding, but no prompt-library bullet —
 //   this program has no equivalent reference-library table.
-function welcomeHtml(name, planLabel, cohortLines, plan) {
+function welcomeHtml(name, planLabel, cohortLines, plan, guest = false) {
   const isPermanentGuides = plan === 'builder1' || plan === 'builder2' || plan === 'pro';
   let bullets;
   if (plan === 'vibecoding') {
@@ -208,10 +208,14 @@ function welcomeHtml(name, planLabel, cohortLines, plan) {
     <ul style="font-size:14px;color:#1F2C3D;line-height:1.7;padding-left:20px;">
       ${bullets}
     </ul>
+    ${guest ? `<p style="font-size:15px;color:#1F2C3D;line-height:1.6;">
+      <strong>To open your dashboard,</strong> log in with the email you paid with: choose
+      “Log in with an emailed code instead” and enter the code we send you. There is no password to remember.
+    </p>` : ''}
     <div style="text-align:center;margin:28px 0;">
-      <a href="https://socialdevtechnologies.com/dashboard"
+      <a href="https://socialdevtechnologies.com/${guest ? 'welcome?mode=login' : 'dashboard'}"
          style="display:inline-block;background:#264D73;color:#fff;padding:12px 28px;border-radius:10px;text-decoration:none;font-weight:700;">
-        Go to my dashboard →
+        ${guest ? 'Log in to my dashboard →' : 'Go to my dashboard →'}
       </a>
     </div>
   `;
@@ -276,6 +280,71 @@ const TIER_COURSE_IDS = {
   builder1: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
   builder2: [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
 };
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// profiles.email mirrors auth.users.email (handle_new_user) and is not client-
+// writable since profiles-column-grants.sql, so it is a safe lookup key.
+async function findUserIdByEmail(supabase, email) {
+  const { data } = await supabase.from('profiles').select('id').eq('email', email).limit(1);
+  return data?.[0]?.id ?? null;
+}
+
+// Guest checkout (supabase/guest-checkout.sql, create-paystack-checkout): the
+// buyer paid without an account, so the signed metadata carries a lead_id
+// instead of a user_id. Only called after the signature check and the amount
+// check above, i.e. for a real, verified payment. Finds the account for the
+// lead's email or creates one (email NOT confirmed — they prove they own the
+// address at their first login, with an emailed code), copies their phone
+// onto the profile and links the lead. Returns the user id, or null on a
+// failure (the caller answers 404, so Paystack retries the webhook later).
+async function resolveGuestBuyer(supabase, leadId, txId) {
+  const { data: lead, error } = await supabase
+    .from('checkout_leads')
+    .select('id, email, name, phone, referral_code, user_id')
+    .eq('id', leadId)
+    .maybeSingle();
+  if (error || !lead) {
+    console.error('guest lead lookup failed:', txId, error?.code);
+    return null;
+  }
+
+  let userId = lead.user_id ?? (await findUserIdByEmail(supabase, lead.email));
+  if (!userId) {
+    // user_metadata is what handle_new_user reads for the display name and the
+    // referral code (so referral commission works for pay-first buyers too).
+    const { data: created, error: createError } = await supabase.auth.admin.createUser({
+      email: lead.email,
+      email_confirm: false,
+      user_metadata: {
+        display_name: lead.name,
+        ...(lead.referral_code ? { referral_code: lead.referral_code } : {}),
+      },
+    });
+    userId = created?.user?.id ?? null;
+    if (!userId) {
+      // Lost a race with a concurrent webhook or signup for the same address.
+      userId = await findUserIdByEmail(supabase, lead.email);
+      if (!userId) {
+        console.error('guest account creation failed:', txId, createError?.message);
+        return null;
+      }
+    }
+  }
+
+  // Best-effort: neither of these may cost a paying buyer their access.
+  try {
+    // Only fills a missing phone, so a returning customer's own number stands.
+    await supabase.from('profiles').update({ phone: lead.phone }).eq('id', userId).is('phone', null);
+    await supabase
+      .from('checkout_leads')
+      .update({ user_id: userId, paid_at: new Date().toISOString(), payment_reference: txId })
+      .eq('id', lead.id);
+  } catch (_err) {
+    // non-fatal — see comment above
+  }
+  return userId;
+}
 
 serve(async (req) => {
   const rawBody = await req.text();
@@ -349,6 +418,9 @@ serve(async (req) => {
   // only for payments that didn't originate from our own checkout flow
   // (e.g. a manual charge created directly in the Paystack dashboard).
   let userId = metadataUserId || null;
+  const metadataLeadId = String(payload.data?.metadata?.lead_id ?? '');
+  const isGuestCheckout = !userId && UUID_RE.test(metadataLeadId);
+  if (isGuestCheckout) userId = await resolveGuestBuyer(supabase, metadataLeadId, txId);
   if (!userId && email) {
     const { data: users } = await supabase
       .from('profiles')
@@ -534,7 +606,7 @@ serve(async (req) => {
         const planLabel = PLAN_LABELS[effectivePlan] || effectivePlan;
         const cohortLines = await buildCohortLines(supabase, effectivePlan);
         const subject = `Welcome to ${planLabel} — you're in!`;
-        const ok = await sendResendEmail(recipientEmail, subject, emailShell(welcomeHtml(name, planLabel, cohortLines, effectivePlan)));
+        const ok = await sendResendEmail(recipientEmail, subject, emailShell(welcomeHtml(name, planLabel, cohortLines, effectivePlan, isGuestCheckout)));
         if (ok) {
           await supabase.from('email_log').insert({
             user_id: userId,

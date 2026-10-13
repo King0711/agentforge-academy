@@ -174,6 +174,23 @@ function rememberSent(ref) {
   }
 }
 
+// Sends the Purchase event for a verified payment ({ amount, currency, plan }
+// from the payments row, or from guest-checkout-status for a guest), once per
+// reference. Shared by the signed-in return to /dashboard (above) and the
+// guest return to /checkout/complete.
+export function trackPurchase(reference, payment) {
+  if (readSent().includes(reference)) return;
+  const value = Number(payment.amount);
+  pixelTrack('Purchase', {
+    value: Number.isFinite(value) ? value : undefined,
+    currency: payment.currency || CURRENCY,
+    content_name: payment.plan || undefined,
+    content_ids: payment.plan ? [payment.plan] : undefined,
+    content_type: 'product',
+  }, reference);
+  rememberSent(reference);
+}
+
 function usePixelPurchase(user) {
   const { pathname, search } = useLocation();
   const handled = useRef(new Set());
@@ -201,15 +218,7 @@ function usePixelPurchase(user) {
         .maybeSingle();
       if (cancelled) return;
       if (data && String(data.status).startsWith('granted')) {
-        const value = Number(data.amount);
-        pixelTrack('Purchase', {
-          value: Number.isFinite(value) ? value : undefined,
-          currency: data.currency || CURRENCY,
-          content_name: data.plan || undefined,
-          content_ids: data.plan ? [data.plan] : undefined,
-          content_type: 'product',
-        }, reference);
-        rememberSent(reference);
+        trackPurchase(reference, data);
         return;
       }
       if (tries < POLL_TRIES) timer = setTimeout(check, POLL_MS);
