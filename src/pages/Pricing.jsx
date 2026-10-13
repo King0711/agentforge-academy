@@ -104,7 +104,7 @@ export default function Pricing() {
 
   const {
     checkout: handleCheckout, loadingKey: checkoutLoading, error: checkoutError,
-    authModalOpen, closeAuthModal, handleAuthenticated,
+    authModalOpen, closeAuthModal, submitLead, leadLoading, leadError,
   } = usePaystackCheckout();
 
   return (
@@ -338,7 +338,7 @@ export default function Pricing() {
         </p>
       </div>
 
-      <CheckoutAuthModal open={authModalOpen} onClose={closeAuthModal} onAuthenticated={handleAuthenticated} />
+      <CheckoutAuthModal open={authModalOpen} onClose={closeAuthModal} onSubmit={submitLead} loading={leadLoading} error={leadError} />
     </div>
   );
 }

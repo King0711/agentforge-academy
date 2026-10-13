@@ -7,7 +7,7 @@ import CheckoutAuthModal from './CheckoutAuthModal';
 // display: create-paystack-checkout recomputes it from their purchases.
 export default function UpgradeOfferCard({ offer }) {
   const {
-    checkout, loadingKey, error, authModalOpen, closeAuthModal, handleAuthenticated,
+    checkout, loadingKey, error, authModalOpen, closeAuthModal, submitLead, leadLoading, leadError,
   } = usePaystackCheckout();
   const loading = loadingKey === 'proupgrade';
 
@@ -39,7 +39,7 @@ export default function UpgradeOfferCard({ offer }) {
         {loading && <Loader2 className="w-4 h-4 animate-spin" />}
         {loading ? 'Starting checkout…' : `Upgrade for ₦${offer.price.toLocaleString()} →`}
       </button>
-      <CheckoutAuthModal open={authModalOpen} onClose={closeAuthModal} onAuthenticated={handleAuthenticated} />
+      <CheckoutAuthModal open={authModalOpen} onClose={closeAuthModal} onSubmit={submitLead} loading={leadLoading} error={leadError} />
     </section>
   );
 }
