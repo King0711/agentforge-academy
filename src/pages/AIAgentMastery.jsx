@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   CheckCircle2, ArrowRight, CalendarDays, Info, CircleHelp, Loader2, AlertCircle,
   Bot, Mail, Calendar, Search, MessageSquare, ShieldCheck, X, Zap, Timer,
+  Palette, Image as ImageIcon, Code2,
 } from 'lucide-react';
 import { usePro } from '../hooks/usePro';
 import { usePaystackCheckout } from '../hooks/usePaystackCheckout';
@@ -25,7 +26,7 @@ import { EmojiText } from '../components/EmojiIcon';
 //
 // Deliberately does not name the underlying agent framework the curriculum
 // is built on anywhere on this page (founder-confirmed, 2026-09-22) —
-// every section describes the outcome (a working personal-assistant agent)
+// every section describes the outcome (a chief of staff leading a team of agents)
 // rather than the tooling used to get there.
 
 // 3 live days, confirmed by the founder 2026-09-27 — day 3 is dedicated to
@@ -36,14 +37,14 @@ const CURRICULUM_DAYS = [
   {
     day: 'Day 1',
     title: 'Agent Architecture & Your First Connections',
-    text: 'Design an agent that holds context across tasks, then wire it into your real inbox and calendar so it starts triaging and scheduling for you.',
+    text: 'Set up your first agent on your own computer, message it from your phone, and wire it into your real inbox and calendar so it starts triaging and scheduling for you.',
     tags: ['AGENT ARCHITECTURE', 'INBOX', 'CALENDAR'],
   },
   {
     day: 'Day 2',
-    title: 'Memory, Multi-Step Tasks & Guardrails',
-    text: "Give your agent memory so it improves with use, teach it to handle research and messaging tasks it can't finish in one shot, and add the guardrails that keep it asking before it acts.",
-    tags: ['MEMORY', 'RESEARCH & MESSAGING', 'GUARDRAILS'],
+    title: 'Your Agent Team, Memory & Guardrails',
+    text: "Give your agent memory so it improves with use, turn it into a chief of staff that hands research, design, image and coding work to specialist agents on a shared board, and add the guardrails that keep it asking before it acts.",
+    tags: ['MEMORY', 'AGENT TEAMS', 'GUARDRAILS'],
   },
   {
     day: 'Day 3',
@@ -61,21 +62,23 @@ const FORMAT = [
 const CAPABILITIES = [
   { icon: Mail, name: 'Inbox', text: 'Reads, triages, and drafts replies to your email before you even open it.' },
   { icon: Calendar, name: 'Calendar', text: 'Finds time, schedules meetings, and untangles conflicts on your behalf.' },
-  { icon: Search, name: 'Research', text: 'Pulls together answers, summaries, and briefings from across the web.' },
-  { icon: MessageSquare, name: 'Messaging', text: 'Drafts and sends messages in your voice, on the channels you already use.' },
+  { icon: Search, name: 'Research & planning', text: 'A research specialist pulls together answers, summaries, and briefings, and plans the work before it starts.' },
+  { icon: Palette, name: 'Design', text: 'A design specialist turns a brief into layouts and concepts while you get on with something else.' },
+  { icon: ImageIcon, name: 'Images', text: 'An image specialist generates the visuals your posts, pages, and decks need.' },
+  { icon: Code2, name: 'Coding & video', text: 'A coding specialist builds and fixes small tools, and handles video edits, without you opening an editor.' },
 ];
 
 const WHO_FOR = [
-  { title: 'Founders & operators', text: 'You want an assistant handling the busywork that eats your week, not another app to babysit.' },
-  { title: 'Builder 1 / Builder 2 graduates', text: "You've shipped individual agents — now build the one that ties everything together." },
+  { title: 'Founders & operators', text: 'You want a team of agents handling the busywork that eats your week, not another app to babysit.' },
+  { title: 'Builder 1 / Builder 2 graduates', text: "You've shipped individual agents — now build the team that ties everything together." },
   { title: 'Consultants & freelancers', text: 'You want to reclaim the hours lost to admin, so you can bill for the work that actually matters.' },
-  { title: 'Anyone tired of context-switching', text: 'You want one assistant that remembers context across your inbox, calendar, and tasks — not five disconnected tools.' },
+  { title: 'Anyone tired of context-switching', text: 'You want one chief of staff that remembers context and delegates the work — not five disconnected tools.' },
   { title: 'Anyone who wants a new income stream', text: "Once you can build one for yourself, you can build one for someone else's business too — a skill most people in your market can't deliver yet." },
 ];
 
 // Self-assessment, same pattern AIBuilder.jsx uses ("A quick gut check")
 // for the automation-guides program — written fresh here for
-// personal-assistant-specific pain points (inbox/calendar/follow-up),
+// busywork-specific pain points (inbox/calendar/follow-up),
 // not copy-pasted from that page.
 const HONEST_CHECK = [
   { title: 'Your inbox runs your day', items: ['You lose the first hour of your day just triaging what came in overnight', 'The same few questions come in on repeat, and you type the same answer every time'] },
@@ -84,7 +87,7 @@ const HONEST_CHECK = [
 ];
 
 // Same "using it vs. owning it" framing as AIBuilder.jsx's "Using AI vs.
-// Building with AI" — adapted for a personal assistant specifically
+// Building with AI" — adapted for an AI team specifically
 // rather than agent-building in general.
 const USING_TOOLS = [
   'Opens a chat tool when they remember to, for one question at a time',
@@ -94,11 +97,11 @@ const USING_TOOLS = [
 const OWNING_ASSISTANT = [
   'Runs continuously, not just when you remember to open it',
   'Remembers context across your inbox, calendar, and tasks',
-  'Handles the triage, the scheduling, and the follow-up — and checks with you before anything risky',
+  'A chief of staff hands each job to the right specialist agent — and checks with you before anything risky',
 ];
 
 const FOR_YOU = [
-  'You want an assistant handling real busywork, not another app to babysit',
+  'You want a team of agents handling real busywork, not another app to babysit',
   'You can commit to showing up live and building alongside the cohort',
   'You want a skill you could also offer to other businesses',
 ];
@@ -112,17 +115,19 @@ const OUTCOMES = [
   'Design an agent architecture that can hold context across tasks',
   'Wire an agent into real inbox, calendar, and messaging tools',
   'Give an agent memory so it improves the more you use it',
+  'Build a chief of staff that delegates work to a squad of specialist agents',
   'Handle multi-step tasks an agent can\'t finish in one shot',
   'Add guardrails so an agent asks before it acts on anything risky',
   'Debug an agent when it gets something wrong',
-  'Deploy your assistant somewhere you can actually keep using it',
+  'Run your agents somewhere you can actually keep using them',
 ];
 
 const FAQS = [
-  { q: 'Is this the same as Builder 1 / Builder 2?', a: "No — those are self-paced, permanent-access guides for individual agent builds. AI Agent Mastery is live/cohort-taught, and the goal is one integrated personal-assistant agent, not a portfolio of separate builds." },
-  { q: 'Do I need to have done Builder 1 / Builder 2 first?', a: "It helps, but it isn't required — the cohort starts from the fundamentals of agent architecture before building up to the full assistant." },
-  { q: 'What will my assistant actually be able to do?', a: 'By the end, an agent that can triage your inbox, manage your calendar, do research on request, and draft messages in your voice — with guardrails so it checks with you before anything risky.' },
-  { q: 'Do I need to pay for any tools?', a: "The cohort is built around free-tier tools wherever possible — anything with an unavoidable cost is called out before you need it." },
+  { q: 'Is this the same as Builder 1 / Builder 2?', a: "No — those are self-paced, permanent-access guides for individual agent builds. AI Agent Mastery is live/cohort-taught, and the goal is a team of agents led by one chief of staff, not a portfolio of separate builds." },
+  { q: 'Do I need to have done Builder 1 / Builder 2 first?', a: "It helps, but it isn't required — the cohort starts from the fundamentals of agent architecture before building up to the full team." },
+  { q: 'What will my AI team actually be able to do?', a: 'By the end, a chief of staff you can message from your phone. It triages your inbox, manages your calendar, and hands research, design, image, coding, and video work to specialist agents on a shared board — with guardrails so it checks with you before anything risky.' },
+  { q: 'Will it really replace a team?', a: "It takes over the repetitive work a team would otherwise do — triage, scheduling, research, first drafts — so you stop paying for, or doing, that busywork. It checks with you before anything risky, so you stay in charge of the decisions." },
+  { q: 'Do I need to pay for any tools?', a: "Mostly no — Telegram, the shared task board, and the app connections we use are free. The one thing that can cost money is the AI model that powers your agents: in class we use a ChatGPT Plus plan, and other paid model plans work too. You can complete the build with a single model. We tell you exactly what to have ready before the first class." },
   { q: 'What if I miss a live class?', a: 'Class recordings are available so you can catch up, though attending live is strongly recommended.' },
   { q: 'How long will I have access?', a: "The cohort runs over 3 live days — the third dedicated to monetizing your new skill — and you'll have access for 6 months to the classes, recordings, resources, and your project." },
 ];
@@ -256,7 +261,7 @@ export default function AIAgentMastery() {
 
   usePageSeo({
     title: 'AI Agent Mastery | Social Dev Technologies',
-    description: `Build your own AI personal assistant — inbox, calendar, research, and messaging, handled for you. Live cohort, ₦${AI_AGENT_MASTERY_PRICE.toLocaleString()} one-time.`,
+    description: `Build an AI team that does the work of a whole team — a chief of staff plus specialist agents for inbox, calendar, research, design, and more, run from your phone. Live cohort, ₦${AI_AGENT_MASTERY_PRICE.toLocaleString()} one-time.`,
     canonicalPath: '/ai-agent-mastery',
   });
 
@@ -341,7 +346,7 @@ export default function AIAgentMastery() {
       {/* Curriculum */}
       <div className="bg-[#F6F8FB] dark:bg-[#141416] border-y border-border-soft px-4 sm:px-6 lg:px-[5vw] py-16">
         <div className="max-w-3xl mx-auto">
-          <SectionHeading eyebrow="The curriculum">Three days, one working assistant</SectionHeading>
+          <SectionHeading eyebrow="The curriculum">Three days, one working AI team</SectionHeading>
           <div className="flex flex-col gap-4 mb-8">
             {CURRICULUM_DAYS.map((d) => (
               <div key={d.day} className="bg-white dark:bg-[#131E2F] border-[1.5px] border-border-soft rounded-2xl p-5 sm:p-6 text-left">
@@ -382,14 +387,14 @@ export default function AIAgentMastery() {
           ))}
         </div>
         <p className="text-center font-display font-bold text-[15px] sm:text-lg text-ink max-w-xl mx-auto">
-          If two or more sound like your week, you don't need another app. <span className="text-link">You need an assistant that just handles it.</span>
+          If two or more sound like your week, you don't need another app. <span className="text-link">You need a team that just handles it.</span>
         </p>
       </div>
 
       {/* Capabilities */}
       <div id="capabilities" className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto scroll-mt-20">
-        <SectionHeading eyebrow="One assistant, four jobs">What your agent will handle</SectionHeading>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3.5 max-w-4xl mx-auto">
+        <SectionHeading eyebrow="One chief of staff, a whole team">What your agents will handle</SectionHeading>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3.5 max-w-4xl mx-auto">
           {CAPABILITIES.map((c) => (
             <div key={c.name} className="bg-white dark:bg-[#131E2F] border-[1.5px] border-border-soft rounded-2xl p-5 text-center">
               <div className="w-11 h-11 mx-auto rounded-full bg-[#E8EDF3] dark:bg-brand/15 text-link flex items-center justify-center mb-3">
@@ -404,7 +409,7 @@ export default function AIAgentMastery() {
 
       {/* Using tools vs. owning an assistant */}
       <div className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto">
-        <SectionHeading>Using AI tools vs. owning an assistant</SectionHeading>
+        <SectionHeading>Using AI tools vs. owning an AI team</SectionHeading>
         <div className="grid sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
           <div className="bg-white dark:bg-[#131E2F] border-[1.5px] border-border-soft rounded-2xl p-5">
             <div className="flex items-center gap-2.5 mb-3">
@@ -420,7 +425,7 @@ export default function AIAgentMastery() {
           <div className="bg-white dark:bg-[#131E2F] border-[2px] border-brand rounded-2xl p-5 shadow-[0_16px_36px_-18px_rgba(15,26,42,.4)]">
             <div className="flex items-center gap-2.5 mb-3">
               <div className="w-9 h-9 rounded-lg bg-[#E8EDF3] dark:bg-brand/15 text-link flex items-center justify-center"><Zap className="w-4.5 h-4.5" /></div>
-              <h3 className="font-display font-bold text-[15px] text-ink">Owning an assistant</h3>
+              <h3 className="font-display font-bold text-[15px] text-ink">Owning an AI team</h3>
             </div>
             <ul className="space-y-2">
               {OWNING_ASSISTANT.map((t) => (
@@ -463,8 +468,8 @@ export default function AIAgentMastery() {
         <div className="flex items-start gap-3 bg-[#E8EDF3] dark:bg-brand/10 rounded-2xl p-5">
           <ShieldCheck className="w-5 h-5 text-link mt-0.5 flex-shrink-0" />
           <p className="text-[13.5px] text-body-strong leading-relaxed">
-            An assistant that can send emails and manage your calendar needs real guardrails, not blind trust — a core
-            part of the cohort is building in the checks that keep your agent asking before it acts on anything risky.
+            A team of agents that can send emails and manage your calendar needs real guardrails, not blind trust — a core
+            part of the cohort is building in the checks that keep your chief of staff asking before it acts on anything risky.
           </p>
         </div>
       </div>
@@ -543,7 +548,7 @@ export default function AIAgentMastery() {
             {[
               '3 live evenings (Fri, Sat, Mon at 7 PM WAT) — day 3 on monetizing your new skill',
               '6 months access to classes, replays, and resources',
-              'One integrated personal-assistant agent, built end to end',
+              'A chief of staff plus a squad of specialist agents, built end to end',
               'Guardrails and safety checks built in from the start',
               'Community/support',
               'Certificate of completion',
@@ -591,9 +596,9 @@ export default function AIAgentMastery() {
         >
           <div>
             <h2 className="font-display font-extrabold text-2xl sm:text-[26px] text-white m-0 flex items-center gap-2.5">
-              <Bot className="w-6 h-6" /> Ready to build your assistant?
+              <Bot className="w-6 h-6" /> Ready to build your AI team?
             </h2>
-            <p className="text-[#D5DEE9] mt-2 mb-0 text-[15px]">Live cohort. One agent that actually runs your busywork.</p>
+            <p className="text-[#D5DEE9] mt-2 mb-0 text-[15px]">Live cohort. A team of agents that actually runs your busywork.</p>
           </div>
           <a
             href="#pricing"
