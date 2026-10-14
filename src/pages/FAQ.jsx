@@ -9,16 +9,16 @@ const FAQS = [
     a: 'No. Builder 1 assumes no prior coding experience — sessions walk through copy-paste prompts and step-by-step setup. Builder 2 builds on that with more advanced, multi-step, API-integrated agents.',
   },
   {
-    q: 'What do I need to actually follow along?',
-    a: 'A free Gemini API key from Google AI Studio — no paid AI subscription required. Beyond that, just the free tools each session connects to (Gmail, Slack, Notion, etc., depending on the build).',
+    q: 'What do I need to follow along with the AI Agent Guides?',
+    a: 'A free Gemini API key from Google AI Studio — no paid AI subscription required. Beyond that, just the free tools each session connects to (Gmail, Slack, Notion, etc., depending on the build). AI Agent Mastery is different — see the questions below.',
   },
   {
     q: 'Is access instant?',
-    a: 'Instant. Buying a plan unlocks your sessions immediately and it\'s fully self-paced, permanent access — no cohort or start date to wait for.',
+    a: 'For the AI Agent Guides, yes. Buying a plan unlocks your sessions immediately and it\'s fully self-paced, permanent access — no cohort or start date to wait for. AI Agent Mastery and the Vibe Coding Bootcamp are live cohorts, so they start on the next class date instead.',
   },
   {
     q: 'How long does my access last?',
-    a: 'Every plan — Builder 1, Builder 2, or Pro — is a one-time payment for permanent access. There\'s no expiry, no auto-renewal, and nothing recurring to remember to cancel.',
+    a: 'Every AI Agent Guides plan — Builder 1, Builder 2, or Pro — is a one-time payment for permanent access. There\'s no expiry, no auto-renewal, and nothing recurring to remember to cancel. AI Agent Mastery is also a one-time payment, with 6 months of access to its classes, recordings, and resources.',
   },
   {
     q: 'What\'s the refund policy?',
@@ -27,6 +27,18 @@ const FAQS = [
   {
     q: 'Do I have to do Builder 1 before Builder 2?',
     a: 'Builder 2 is designed to build on Builder 1\'s foundations, so that\'s the recommended order — but nothing technically stops you from starting with Builder 2, or getting both at once with Pro.',
+  },
+  {
+    q: 'What is AI Agent Mastery, and how is it different from the guides?',
+    a: 'AI Agent Mastery is a live cohort where you build a team of AI agents: a chief of staff you message from your phone, plus specialist agents for research, design, images, and coding and video, all working on a shared board. It runs over 3 live evenings, with the third dedicated to monetizing the skill. The guides are self-paced builds of individual agents with permanent access.',
+  },
+  {
+    q: 'When are the AI Agent Mastery classes?',
+    a: 'A new cohort starts every week: three live classes on Friday, Saturday, and Monday at 7:00 PM WAT, on Zoom. If you pay after a cohort has begun, you join the following week\'s. Recordings are included if you miss a class.',
+  },
+  {
+    q: 'Do I need to pay for any tools for AI Agent Mastery?',
+    a: 'Mostly no: Telegram, the shared task board, and the app connections we use are free. The one thing that can cost money is the AI model that powers your agents. In class we use a ChatGPT Plus plan, and other paid model plans work too. You can complete the build with a single model, and we tell you exactly what to have ready before the first class.',
   },
   {
     q: 'Do I get a certificate?',
@@ -58,7 +70,7 @@ export default function FAQ() {
     if (metaDesc) {
       metaDesc.setAttribute(
         'content',
-        'Common questions about Social Dev Technologies — pricing, access, refunds, certificates, and what you need to get started building AI agents.'
+        'Common questions about Social Dev Technologies — pricing, access, refunds, certificates, live AI Agent Mastery classes, and what you need to get started building AI agents.'
       );
     }
 
