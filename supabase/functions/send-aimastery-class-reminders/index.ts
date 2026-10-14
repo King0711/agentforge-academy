@@ -8,14 +8,16 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '
 const CRON_SECRET = Deno.env.get('CRON_SECRET') ?? '';
 
 // AI Agent Mastery runs as a rolling weekly cohort: Fri/Sat/Mon at 7:00 PM
-// WAT, first cohort Friday 2026-10-09 (founder-confirmed 2026-09-29). This is
-// a copy of src/data/aiMasteryCohort.js's arithmetic — keep the two in step.
+// WAT (the third class moved from Sunday to Monday on 2026-10-06), first cohort
+// Friday 2026-10-09 (founder-confirmed 2026-09-29). This is a copy of
+// src/data/aiMasteryCohort.js's arithmetic — keep the two in step (CLASS_DAY_OFFSETS
+// here is that file's CLASS_DAY_OFFSETS; this function still said Sunday until
+// 2026-10-11, so the Friday email listed the wrong third day).
 // WAT is UTC+1 year-round, so every cohort start is a fixed 7 days apart.
 const FIRST_START_UTC = Date.UTC(2026, 9, 9, 18, 0, 0);
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
-// Days after the Friday start that each class falls on: Fri, Sat, Mon. Keep in
-// step with CLASS_DAY_OFFSETS in src/data/aiMasteryCohort.js.
+// Days after the Friday start that each class evening falls on: Fri, Sat, Mon.
 const CLASS_DAY_OFFSETS = [0, 1, 3];
 const REMINDER_WINDOW_MS = 24 * 60 * 60 * 1000;
 
@@ -58,7 +60,7 @@ function emailShell(innerHtml) {
       ${innerHtml}
       <div style="margin-top:32px;padding-top:16px;border-top:1px solid #E7ECF2;font-size:12px;color:#4A5B6C;text-align:center;">
         Social Dev Technologies · You're receiving this because you registered for AI Agent Mastery.<br/>
-        Questions? Reply to this email or contact support@socialdevtechnologies.com.
+        Need help? Message us on WhatsApp: <a href="https://wa.me/2349066006963" style="color:#264D73;">wa.me/2349066006963</a>
       </div>
     </div>
   `;
@@ -83,7 +85,33 @@ async function sendResendEmail(to, subject, html) {
 
 const fmtDay = (d, opts) => d.toLocaleDateString('en-GB', { timeZone: 'Africa/Lagos', ...opts });
 
-function hourReminderHtml(name) {
+// joinLink is the Zoom room from aimastery_room (it carries the meeting passcode, so
+// it's read server-side at send time and only ever goes to registered students). With
+// no usable link the email falls back to pointing at the dashboard's Live Sessions.
+function hourReminderHtml(name, joinLink) {
+  if (joinLink) {
+    return `
+    <p style="font-size:15px;color:#0F1A2A;">Hey ${escapeHtml(name)},</p>
+    <p style="font-size:15px;color:#1F2C3D;line-height:1.6;">
+      Your <strong>AI Agent Mastery</strong> class starts in <strong>1 hour</strong> — <strong>7:00 PM WAT</strong> tonight.
+      Here's your link to join the call:
+    </p>
+    <div style="text-align:center;margin:28px 0;">
+      <a href="${escapeHtml(joinLink)}"
+         style="display:inline-block;background:#264D73;color:#fff;padding:12px 28px;border-radius:10px;text-decoration:none;font-weight:700;">
+        Join the class →
+      </a>
+    </div>
+    <p style="font-size:13px;color:#4A5B6C;line-height:1.6;word-break:break-all;">
+      Button not working? Copy this link into your browser:<br/>
+      <a href="${escapeHtml(joinLink)}" style="color:#264D73;">${escapeHtml(joinLink)}</a>
+    </p>
+    <p style="font-size:14px;color:#1F2C3D;line-height:1.6;">
+      The link is also on your dashboard under <strong>Live Sessions</strong>:
+      <a href="https://socialdevtechnologies.com/dashboard/live-sessions" style="color:#264D73;">open my dashboard</a>.
+    </p>
+  `;
+  }
   return `
     <p style="font-size:15px;color:#0F1A2A;">Hey ${escapeHtml(name)},</p>
     <p style="font-size:15px;color:#1F2C3D;line-height:1.6;">
@@ -96,6 +124,31 @@ function hourReminderHtml(name) {
       <a href="https://socialdevtechnologies.com/dashboard/live-sessions"
          style="display:inline-block;background:#264D73;color:#fff;padding:12px 28px;border-radius:10px;text-decoration:none;font-weight:700;">
         Join the class →
+      </a>
+    </div>
+  `;
+}
+
+// Sent once to everyone who got a schedule email that listed the wrong third day.
+function scheduleCorrectionHtml(name, dayLines, day3) {
+  return `
+    <p style="font-size:15px;color:#0F1A2A;">Hey ${escapeHtml(name)},</p>
+    <p style="font-size:15px;color:#1F2C3D;line-height:1.6;">
+      A quick correction to the <strong>AI Agent Mastery</strong> schedule email we sent earlier: your third class,
+      <strong>Day 3</strong>, is on <strong>${escapeHtml(day3)} at 7:00 PM WAT</strong> — not on Sunday. Sorry for the mix-up.
+    </p>
+    <p style="font-size:15px;color:#1F2C3D;line-height:1.6;">Here is the full schedule, all three evenings at 7:00 PM WAT:</p>
+    <ul style="font-size:15px;color:#1F2C3D;line-height:1.8;padding-left:20px;margin:12px 0;">
+      ${dayLines.map((l) => `<li>${l}</li>`).join('')}
+    </ul>
+    <p style="font-size:15px;color:#1F2C3D;line-height:1.6;">
+      It's the same Zoom link as the first two classes. You'll find it on your dashboard under <strong>Live Sessions</strong> —
+      log in a few minutes early so you're in when we start.
+    </p>
+    <div style="text-align:center;margin:28px 0;">
+      <a href="https://socialdevtechnologies.com/dashboard/live-sessions"
+         style="display:inline-block;background:#264D73;color:#fff;padding:12px 28px;border-radius:10px;text-decoration:none;font-weight:700;">
+        Open my live sessions →
       </a>
     </div>
   `;
@@ -150,11 +203,82 @@ serve(async (req) => {
     if (authError) return jsonResponse({ error: 'Unauthorized' }, 403);
   }
 
-  let dryRun = false;
+  let body: { dryRun?: boolean; correction?: string; cohortStart?: string } = {};
   try {
-    dryRun = (await req.json())?.dryRun === true;
+    body = (await req.json()) ?? {};
   } catch {
     // no body (cron) — a real run
+  }
+  const dryRun = body.dryRun === true;
+
+  // One-off, admin/cron-secret only: tell the people we emailed a cohort's schedule
+  // what the right schedule is. Recipients are exactly the rows in email_log for that
+  // cohort's full-schedule reminder, at the address we used then, and each person is
+  // sent it once (its own email_log type). Body: { correction: 'schedule',
+  // cohortStart: '<ISO start of a cohort that has begun>', dryRun?: true }.
+  if (body.correction === 'schedule') {
+    const cStartMs = Date.parse(String(body.cohortStart ?? ''));
+    const weeksIn = (cStartMs - FIRST_START_UTC) / WEEK_MS;
+    if (!Number.isFinite(cStartMs) || weeksIn < 0 || !Number.isInteger(weeksIn) || cStartMs > Date.now()) {
+      return jsonResponse({ error: 'cohortStart must be the ISO start of a cohort that has already begun' }, 400);
+    }
+    const cStartIso = new Date(cStartMs).toISOString();
+    const days = CLASS_DAY_OFFSETS.map((i) => new Date(cStartMs + i * DAY_MS));
+    const scheduleLines = days.map((d) => `${fmtDay(d, { weekday: 'long', day: 'numeric', month: 'long' })} — 7:00 PM WAT`);
+    const day3 = fmtDay(days[2], { weekday: 'long', day: 'numeric', month: 'long' });
+
+    const { data: scheduleSent, error: sentErr } = await serviceClient
+      .from('email_log')
+      .select('user_id, email')
+      .eq('email_type', EMAIL_TYPES.morning)
+      .contains('metadata', { cohort_start: cStartIso });
+    if (sentErr) {
+      console.error('email_log read failed:', sentErr.message);
+      return jsonResponse({ error: 'Could not load who was sent the schedule' }, 500);
+    }
+    const { data: alreadyCorrected } = await serviceClient
+      .from('email_log')
+      .select('user_id')
+      .eq('email_type', 'aimastery_schedule_correction')
+      .contains('metadata', { cohort_start: cStartIso });
+    const doneSet = new Set((alreadyCorrected || []).map((r) => r.user_id));
+    const recipients = new Map<string, string>();
+    for (const r of scheduleSent || []) {
+      if (r.user_id && r.email && !doneSet.has(r.user_id)) recipients.set(r.user_id, r.email);
+    }
+
+    if (dryRun) {
+      return jsonResponse({
+        ok: true, dryRun: true, correction: 'schedule', cohortStart: cStartIso,
+        schedule: scheduleLines, subject: `Correction: AI Agent Mastery Day 3 is ${day3}, 7 PM WAT`,
+        wouldSend: recipients.size, alreadyCorrected: doneSet.size,
+      });
+    }
+
+    const { data: nameRows } = await serviceClient
+      .from('profiles')
+      .select('id, display_name')
+      .in('id', [...recipients.keys()]);
+    const nameById = new Map((nameRows || []).map((p) => [p.id, p.display_name]));
+    const subject = `Correction: AI Agent Mastery Day 3 is ${day3}, 7 PM WAT`;
+
+    let correctionSent = 0;
+    for (const [userId, email] of recipients) {
+      const name = nameById.get(userId) || email.split('@')[0];
+      const ok = await sendResendEmail(email, subject, emailShell(scheduleCorrectionHtml(name, scheduleLines, day3)));
+      if (ok) {
+        correctionSent += 1;
+        const { error: logErr } = await serviceClient.from('email_log').insert({
+          user_id: userId,
+          email,
+          email_type: 'aimastery_schedule_correction',
+          subject,
+          metadata: { cohort_start: cStartIso },
+        });
+        if (logErr) console.error('email_log insert failed:', logErr.code, logErr.message);
+      }
+    }
+    return jsonResponse({ ok: true, correction: 'schedule', cohortStart: cStartIso, matched: recipients.size, sent: correctionSent });
   }
 
   // The cohort that starts within the next 24 hours, if any. The cron fires
@@ -212,9 +336,28 @@ serve(async (req) => {
     return `${fmtDay(d, { weekday: 'long', day: 'numeric', month: 'long' })} — 7:00 PM WAT`;
   });
 
+  // The one-hour email carries the Zoom room link. Read it here, server-side, from the
+  // service role (RLS keeps it away from everyone but enrolled students and admins);
+  // only an https URL is used, and if the lookup fails the email falls back to the
+  // dashboard wording instead of failing to send.
+  let joinLink = null;
+  if (kind === 'hour') {
+    const { data: room, error: roomErr } = await serviceClient
+      .from('aimastery_room')
+      .select('join_link')
+      .eq('id', 1)
+      .maybeSingle();
+    if (roomErr) console.error('aimastery_room query failed:', roomErr.message);
+    const link = String(room?.join_link ?? '').trim();
+    joinLink = /^https:\/\/\S+$/.test(link) ? link : null;
+  }
+
   const todo = (profiles || []).filter((p) => p.email && !sentSet.has(p.id));
   if (dryRun) {
-    return jsonResponse({ ok: true, dryRun: true, kind, cohortStart: startIso, registered: userIds.length, wouldSend: todo.length });
+    return jsonResponse({
+      ok: true, dryRun: true, kind, cohortStart: startIso, registered: userIds.length, wouldSend: todo.length,
+      ...(kind === 'hour' ? { joinLinkSet: Boolean(joinLink) } : {}),
+    });
   }
 
   let sent = 0;
@@ -223,19 +366,25 @@ serve(async (req) => {
     const subject = kind === 'hour'
       ? 'Starting in 1 hour: AI Agent Mastery, 7 PM WAT tonight'
       : 'Your AI Agent Mastery cohort starts today at 7 PM WAT';
-    const html = kind === 'hour' ? hourReminderHtml(name) : reminderHtml(name, dayLines);
+    const html = kind === 'hour' ? hourReminderHtml(name, joinLink) : reminderHtml(name, dayLines);
     const ok = await sendResendEmail(p.email, subject, emailShell(html));
     if (ok) {
       sent += 1;
-      await serviceClient.from('email_log').insert({
+      const { error: logErr } = await serviceClient.from('email_log').insert({
         user_id: p.id,
         email: p.email,
         email_type: emailType,
         subject,
         metadata: { cohort_start: startIso },
       });
+      // A failed insert blinds the dedupe above (it did silently until
+      // supabase/email-log-aimastery-types.sql), so say so rather than swallow it.
+      if (logErr) console.error('email_log insert failed:', logErr.code, logErr.message);
     }
   }
 
-  return jsonResponse({ ok: true, kind, cohortStart: startIso, registered: userIds.length, matched: todo.length, sent });
+  return jsonResponse({
+    ok: true, kind, cohortStart: startIso, registered: userIds.length, matched: todo.length, sent,
+    ...(kind === 'hour' ? { joinLinkSet: Boolean(joinLink) } : {}),
+  });
 });
