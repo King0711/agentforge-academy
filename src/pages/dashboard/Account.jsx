@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 import { industries } from '../../data/industries';
 import { useInstallPrompt } from '../../hooks/useInstallPrompt';
+import DeleteAccount from '../../components/dashboard/DeleteAccount';
 
 export default function Account() {
   const { user } = useAuth();
@@ -159,6 +160,8 @@ export default function Account() {
               )}
             </div>
           )}
+
+          <DeleteAccount />
         </div>
       )}
     </div>
