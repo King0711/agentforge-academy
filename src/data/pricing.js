@@ -37,7 +37,7 @@ export const PRO_UPGRADE_FROM_BUILDER2 = PRO_PRICE - BUILDER2_PRICE;
 export const VIBECODING_PRICE = 50000;
 
 // AI Agent Mastery — a new live-cohort product (added 2026-09-22): build a
-// personal-assistant agent. Not a tier of the builder1/builder2/pro ladder
+// chief of staff leading a squad of specialist agents. Not a tier of the builder1/builder2/pro ladder
 // either. Priced independently of Vibe Coding, not at parity with it
 // (changed from 25000 to 19999, 2026-09-22).
 export const AI_AGENT_MASTERY_PRICE = 19999;

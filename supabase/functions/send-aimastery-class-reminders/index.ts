@@ -7,13 +7,16 @@ const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const CRON_SECRET = Deno.env.get('CRON_SECRET') ?? '';
 
-// AI Agent Mastery runs as a rolling weekly cohort: Fri/Sat/Sun at 7:00 PM
+// AI Agent Mastery runs as a rolling weekly cohort: Fri/Sat/Mon at 7:00 PM
 // WAT, first cohort Friday 2026-10-09 (founder-confirmed 2026-09-29). This is
 // a copy of src/data/aiMasteryCohort.js's arithmetic — keep the two in step.
 // WAT is UTC+1 year-round, so every cohort start is a fixed 7 days apart.
 const FIRST_START_UTC = Date.UTC(2026, 9, 9, 18, 0, 0);
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
+// Days after the Friday start that each class falls on: Fri, Sat, Mon. Keep in
+// step with CLASS_DAY_OFFSETS in src/data/aiMasteryCohort.js.
+const CLASS_DAY_OFFSETS = [0, 1, 3];
 const REMINDER_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 // Two reminders per cohort, told apart by how close the start is when the
@@ -204,7 +207,7 @@ serve(async (req) => {
     .contains('metadata', { cohort_start: startIso });
   const sentSet = new Set((alreadySent || []).map((r) => r.user_id));
 
-  const dayLines = [0, 1, 2].map((i) => {
+  const dayLines = CLASS_DAY_OFFSETS.map((i) => {
     const d = new Date(startMs + i * DAY_MS);
     return `${fmtDay(d, { weekday: 'long', day: 'numeric', month: 'long' })} — 7:00 PM WAT`;
   });
