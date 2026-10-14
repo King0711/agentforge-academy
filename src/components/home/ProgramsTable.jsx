@@ -17,8 +17,8 @@ function programs({ buildCount, totalHours }) {
       bestFor: 'Founders, operators, consultants and freelancers',
       length: '3 live evenings, 7 PM WAT',
       access: '6 months, with replays and resources',
-      build: 'One assistant that triages your inbox, runs your calendar, does research and drafts messages, with guardrails built in',
-      includes: ['Live instructor-led classes', 'One assistant, built end to end', 'Certificate of completion'],
+      build: 'A chief of staff plus a squad of specialist agents (research, design, images, coding, video) that you run from your phone, with guardrails built in',
+      includes: ['Live instructor-led classes', 'A team that works while you sleep', 'Certificate of completion'],
     },
     {
       to: '/ai-builder',

@@ -74,10 +74,10 @@ export default function MasterySection() {
     <>
       <div className="grid lg:grid-cols-[1fr_1.15fr] gap-9 lg:gap-14 items-center mb-11 lg:mb-16">
         <div className="min-w-0">
-          <h2 className="t-h2 text-ink">Build your own AI personal assistant</h2>
+          <h2 className="t-h2 text-ink">Build an AI team that does the work of a whole team</h2>
           <p className="t-lead text-body mt-4 mb-5 lg:mb-6 max-w-[30em]">
-            Live cohort. Build one integrated assistant that triages your inbox, runs your calendar, does research, and
-            drafts messages, with guardrails built in.
+            Live cohort. Build a chief of staff plus a squad of specialist agents (research, design, images, coding, video)
+            that you run from your phone, with guardrails built in.
           </p>
           <ul className="flex flex-col gap-2.5 mb-6 lg:mb-7">
             {POINTS.map((p) => (
