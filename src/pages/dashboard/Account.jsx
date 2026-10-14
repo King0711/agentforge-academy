@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { UserCircle2, Mail, Save, Loader2, CheckCircle2, KeyRound, Smartphone, Download } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
@@ -8,7 +7,7 @@ import { useInstallPrompt } from '../../hooks/useInstallPrompt';
 import DeleteAccount from '../../components/dashboard/DeleteAccount';
 
 export default function Account() {
-  const { user } = useAuth();
+  const { user, resetPassword } = useAuth();
   const { installed, canPrompt, isIOS, promptInstall } = useInstallPrompt();
   const [name, setName] = useState('');
   const [industry, setIndustry] = useState('');
@@ -17,6 +16,8 @@ export default function Account() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
+  const [pwStatus, setPwStatus] = useState('idle'); // 'idle' | 'sending' | 'sent'
+  const [pwError, setPwError] = useState('');
 
   useEffect(() => {
     if (!user || !isSupabaseConfigured) {
@@ -57,6 +58,23 @@ export default function Account() {
     } finally {
       setSaving(false);
     }
+  };
+
+  // Emails a reset link (the same flow as "Forgot password?" on /welcome). The
+  // old link pointed at /welcome, which bounces signed-in people straight back
+  // to the dashboard, so it did nothing. The emailed link also works for
+  // accounts that signed up with a code or Google and have no password yet.
+  const handleChangePassword = async () => {
+    if (!user?.email || pwStatus === 'sending') return;
+    setPwError('');
+    setPwStatus('sending');
+    const { error: err } = await resetPassword(user.email);
+    if (err) {
+      setPwError(err.message || 'Could not send the email. Please try again in a minute.');
+      setPwStatus('idle');
+      return;
+    }
+    setPwStatus('sent');
   };
 
   return (
@@ -128,9 +146,21 @@ export default function Account() {
               <KeyRound className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <div>
                 <p className="text-xs text-gray-400">Password</p>
-                <Link to="/welcome" className="text-sm font-semibold text-link hover:underline">
-                  Change your password
-                </Link>
+                {pwStatus === 'sent' ? (
+                  <p className="text-sm text-ink">
+                    We emailed a link to <span className="font-semibold">{user?.email}</span>. Open it to set a new password.
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleChangePassword}
+                    disabled={pwStatus === 'sending'}
+                    className="text-sm font-semibold text-link hover:underline disabled:opacity-60"
+                  >
+                    {pwStatus === 'sending' ? 'Sending…' : 'Change your password'}
+                  </button>
+                )}
+                {pwError && <p className="text-xs text-rose mt-1">{pwError}</p>}
               </div>
             </div>
           </div>
