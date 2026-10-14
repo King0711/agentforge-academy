@@ -15,7 +15,7 @@ import { DEMO_VIDEO, DEMO_LOOP } from '../data/demoMedia';
 import InstructorSection from '../components/InstructorSection';
 import AgentBuildTestimonials from '../components/AgentBuildTestimonials';
 import { usePageSeo } from '../hooks/usePageSeo';
-import { nextAiMasteryCohortStart, formatCohortRange } from '../data/aiMasteryCohort';
+import { nextAiMasteryCohortStart } from '../data/aiMasteryCohort';
 import { SCHOLARSHIP_PRICE_NAIRA, isScholarshipOpen } from '../data/scholarship';
 import { AI_AGENT_MASTERY_PRICE } from '../data/pricing';
 
@@ -133,10 +133,12 @@ const FAQS = [
 ];
 
 // Cohorts roll weekly (Fri/Sat/Mon 7 PM WAT, first one 9 Oct 2026) — see
-// src/data/aiMasteryCohort.js. These leaf components tick on their own so the
-// rest of the page doesn't re-render every second, and return null on the
-// server/prerender snapshot so a frozen date is never baked into the HTML
-// (same reasoning as VibeCoding.jsx's CohortCountdown).
+// src/data/aiMasteryCohort.js. The copy just says "Friday" rather than a date:
+// a date computed in the browser got baked into the prerendered snapshot (the
+// snapshot is taken from a live page) and went stale within a week. The
+// countdown below is the only exact-time element; it ticks on its own so the
+// rest of the page doesn't re-render every second, and is stripped from the
+// snapshot (data-client-only).
 function subscribeToTick(onChange) {
   const id = setInterval(onChange, 1000);
   return () => clearInterval(id);
@@ -148,11 +150,6 @@ function useNextCohort() {
   if (nowSec === null) return null;
   const start = nextAiMasteryCohortStart(nowSec * 1000);
   return { start, secondsLeft: Math.max(0, Math.floor(start.getTime() / 1000) - nowSec) };
-}
-
-function CohortRange() {
-  const cohort = useNextCohort();
-  return cohort ? `${formatCohortRange(cohort.start)}, 7:00 PM WAT` : 'the next live cohort';
 }
 
 function CohortCountdown() {
@@ -295,7 +292,7 @@ export default function AIAgentMastery() {
           <p
             className="text-[17px] leading-relaxed text-body mt-5 max-w-lg mx-auto"
           >
-            Stop copying tutorials that break. Join us <strong className="text-body-strong"><CohortRange /></strong> to
+            Stop copying tutorials that break. Join us <strong className="text-body-strong">on Friday at 7:00 PM WAT</strong> to
             connect your own AI agents to Telegram and WhatsApp, build a multi-agent dashboard, and cut repetitive
             manual work for good — even if you've never coded before.
           </p>
@@ -542,7 +539,7 @@ export default function AIAgentMastery() {
             <p className="text-[12.5px] font-bold text-green mb-3">Scholarship price applied</p>
           )}
           <span className="inline-flex items-center gap-1 bg-white dark:bg-[#131E2F] text-link font-bold text-[12px] px-2.5 py-1 rounded-full w-fit mb-4">
-            <CalendarDays className="w-3.5 h-3.5" /> Next cohort: <CohortRange />
+            <CalendarDays className="w-3.5 h-3.5" /> Next cohort starts Friday, 7:00 PM WAT
           </span>
           <ul className="flex flex-col gap-2.5 mb-6">
             {[
