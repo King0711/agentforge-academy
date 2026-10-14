@@ -2,7 +2,6 @@ import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Check, LayoutGrid } from 'lucide-react';
 import { useAutoplayInView } from '../../hooks/useAutoplayInView';
-import { useNextAiMasteryCohortStart, formatCohortDay } from '../../hooks/useNextAiMasteryCohort';
 import { AI_AGENT_MASTERY_PRICE } from '../../data/pricing';
 import { DEMO_LOOP } from '../../data/demoMedia';
 
@@ -39,14 +38,6 @@ const DAYS = [
     text: 'Turn what you just built into an income stream: how to package and offer this same kind of build as a paid service to other businesses.',
   },
 ];
-
-// Rendered only in the browser (and stripped from the prerendered snapshot),
-// so the date is always the real next Friday cohort.
-function NextCohort() {
-  const start = useNextAiMasteryCohortStart();
-  if (!start) return null;
-  return <span data-client-only> Next cohort starts {formatCohortDay(start)}.</span>;
-}
 
 function DemoVideo() {
   const ref = useRef(null);
@@ -93,7 +84,7 @@ export default function MasterySection() {
             </Link>
             <p className="text-[15px] font-semibold text-body text-center sm:text-left">
               <span>₦{AI_AGENT_MASTERY_PRICE.toLocaleString()} one-time.</span>
-              <NextCohort />
+              <span> Next cohort starts on Friday.</span>
             </p>
           </div>
         </div>
