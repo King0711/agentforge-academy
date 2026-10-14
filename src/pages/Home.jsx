@@ -13,7 +13,6 @@ import { agents } from '../data/agents';
 import { departments, isVisibleToPublic } from '../data/departments';
 import { INSTRUCTOR } from '../data/instructor';
 import { useCohortSchedule } from '../hooks/useCohortSchedule';
-import { useNextAiMasteryCohortStart, formatCohortDay } from '../hooks/useNextAiMasteryCohort';
 import { BUILDER1_PRICE } from '../data/pricing';
 
 // Returns a display string for a cohort start date, or null if it's unset or
@@ -215,15 +214,13 @@ function BeforeYouStart() {
   );
 }
 
-// The Vibe Coding date an admin set, otherwise the computed AI Agent Mastery
-// start. The admin `aimastery` row is skipped on purpose: it no longer drives
-// the Mastery page (CLAUDE.md) and is out of date. Client-only, like the date
-// in the Mastery section.
+// The Vibe Coding date an admin set, otherwise "Friday" (AI Agent Mastery
+// starts a new cohort every Friday; see src/data/aiMasteryCohort.js). The admin
+// `aimastery` row is skipped on purpose: it no longer drives the Mastery page
+// (CLAUDE.md) and is out of date. Client-only because the Vibe Coding date is.
 function NextCohortPill() {
   const { vibecoding } = useCohortSchedule();
-  const masteryStart = useNextAiMasteryCohortStart();
-  const date = formatCohortDate(vibecoding) || (masteryStart && formatCohortDay(masteryStart));
-  if (!date) return null;
+  const date = formatCohortDate(vibecoding) || 'Friday';
   return (
     <p
       data-client-only
