@@ -1,6 +1,46 @@
-const WHATSAPP_LINK = 'https://wa.me/2349066006963?text=' + encodeURIComponent(
-  "Hi! I'd like to know more about Social Dev Technologies."
-);
+import { useEffect, useState } from 'react';
+import { X } from 'lucide-react';
+import { saveCheckoutPrefill } from '../lib/checkoutPrefill';
+import { AI_AGENT_MASTERY_PRICE, VIBECODING_PRICE, BUILDER1_PRICE, BUILDER2_PRICE, PRO_PRICE } from '../data/pricing';
+
+const WA_NUMBER = '2349066006963';
+const naira = (n) => `₦${n.toLocaleString('en-NG')}`;
+
+const COURSES = [
+  { id: 'aimastery', label: 'AI Agent Mastery', desc: `3 live evenings · ${naira(AI_AGENT_MASTERY_PRICE)}` },
+  { id: 'vibecoding', label: 'Vibe Coding Bootcamp', desc: `Build a full product · ${naira(VIBECODING_PRICE)}` },
+];
+
+const GUIDES = [
+  { id: 'builder1', label: 'Builder 1 guides', option: `Builder 1 — 12 guides · ${naira(BUILDER1_PRICE)}` },
+  { id: 'builder2', label: 'Builder 2 guides', option: `Builder 2 — 13 guides · ${naira(BUILDER2_PRICE)}` },
+  { id: 'pro', label: 'Pro guides (Builder 1 + 2)', option: `Pro (both) — 25 guides · ${naira(PRO_PRICE)}` },
+];
+
+const LABELS = Object.fromEntries([...COURSES, ...GUIDES].map((c) => [c.id, c.label]));
+
+const inputClass =
+  'w-full px-4 py-3 rounded-xl border border-border text-sm text-ink bg-transparent placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/40';
+
+// A single live cohort goes to its own page; guides (or a mix) go to /pricing.
+function payNowPath(ids) {
+  if (ids.length === 1) {
+    if (ids[0] === 'aimastery') return '/ai-agent-mastery#pricing';
+    if (ids[0] === 'vibecoding') return '/vibe-coding#pricing';
+  }
+  return '/pricing';
+}
+
+function buildWaMessage(name, email, ids) {
+  const names = ids.map((id) => LABELS[id]).filter(Boolean);
+  const courseText =
+    names.length <= 1 ? names[0] || '' : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+
+  let msg = `Hello, my name is ${name.trim()}.`;
+  if (courseText) msg += ` I am interested in the ${courseText}.`;
+  if (email.trim()) msg += ` My email is ${email.trim()}.`;
+  return msg;
+}
 
 // Real WhatsApp glyph (not a lucide icon — lucide has no brand icons) so the
 // button reads instantly as "chat on WhatsApp" rather than a generic
@@ -20,17 +60,191 @@ function WhatsAppGlyph({ className }) {
 // A pre-sale contact channel — distinct from the (post-purchase) student
 // WhatsApp community removed from the homepage's community section, which
 // is only shared once someone actually signs up.
+//
+// It opens a short form first so the advisor starts with context: name, an
+// optional email and what the person is interested in. From there they either
+// send that as the WhatsApp message or go and pay — in which case the name and
+// email are handed to the checkout form (src/lib/checkoutPrefill.js).
 export default function WhatsAppFloatButton() {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [courses, setCourses] = useState([]);
+  const [guide, setGuide] = useState('');
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (e) => e.key === 'Escape' && setOpen(false);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open]);
+
+  const selected = guide ? [...courses, guide] : courses;
+  const canSend = name.trim().length > 0 && selected.length > 0;
+
+  const toggleCourse = (id) =>
+    setCourses((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  const handlePayNow = () => {
+    if (!canSend) return;
+    saveCheckoutPrefill({ name, email });
+    window.location.assign(payNowPath(selected));
+  };
+
+  const handleWhatsApp = () => {
+    if (!canSend) return;
+    const text = encodeURIComponent(buildWaMessage(name, email, selected));
+    window.open(`https://wa.me/${WA_NUMBER}?text=${text}`, '_blank', 'noreferrer');
+    setOpen(false);
+  };
+
   return (
-    <a
-      href={WHATSAPP_LINK}
-      target="_blank"
-      rel="noreferrer"
-      aria-label="Chat with an advisor on WhatsApp"
-      title="Chat with an advisor on WhatsApp"
-      className="fixed bottom-5 right-5 z-30 w-14 h-14 rounded-full bg-[#128C7E] hover:bg-[#075E54] text-white flex items-center justify-center transition-colors"
-    >
-      <WhatsAppGlyph className="w-7 h-7" />
-    </a>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="Chat with an advisor on WhatsApp"
+        title="Chat with an advisor on WhatsApp"
+        className="fixed bottom-5 right-5 z-30 w-14 h-14 rounded-full bg-[#128C7E] hover:bg-[#075E54] text-white flex items-center justify-center transition-colors"
+      >
+        <WhatsAppGlyph className="w-7 h-7" />
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto" onClick={() => setOpen(false)}>
+          <div
+            className="relative w-full max-w-sm bg-white dark:bg-[#131E2F] rounded-[22px] p-6 sm:p-7 shadow-[0_30px_70px_-20px_rgba(15,26,42,.5)] my-auto"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="wa-form-title"
+          >
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-ink transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h2 id="wa-form-title" className="font-display font-extrabold text-xl text-ink mb-1.5 pr-6">
+              Chat with an advisor
+            </h2>
+            <p className="text-[13.5px] text-body mb-5">
+              Tell us a little about you and what you're after, then message us on WhatsApp or pay right away.
+              We reply 10am–5pm WAT, Monday to Saturday.
+            </p>
+
+            <div className="space-y-3">
+              <div>
+                <label htmlFor="wa-name" className="block text-xs font-semibold text-body-strong mb-1">Your name</label>
+                <input
+                  id="wa-name"
+                  type="text"
+                  autoComplete="name"
+                  autoFocus
+                  maxLength={80}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your full name"
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label htmlFor="wa-email" className="block text-xs font-semibold text-body-strong mb-1">
+                  Email <span className="font-normal text-body">(optional)</span>
+                </label>
+                <input
+                  id="wa-email"
+                  type="email"
+                  autoComplete="email"
+                  maxLength={254}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className={inputClass}
+                />
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-body-strong mb-1.5">What are you interested in?</p>
+                <div className="flex flex-col gap-2">
+                  {COURSES.map((c) => {
+                    const checked = courses.includes(c.id);
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        role="checkbox"
+                        aria-checked={checked}
+                        onClick={() => toggleCourse(c.id)}
+                        className={`flex items-start gap-3 w-full text-left px-3.5 py-3 rounded-xl border transition-colors ${
+                          checked ? 'border-brand bg-brand/10' : 'border-border hover:border-brand/50'
+                        }`}
+                      >
+                        <span
+                          className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center ${
+                            checked ? 'bg-brand border-brand' : 'border-border-strong'
+                          }`}
+                        >
+                          {checked && (
+                            <svg viewBox="0 0 10 8" className="w-2.5 h-2.5 text-white fill-none stroke-current stroke-2">
+                              <polyline points="1 4 3.5 6.5 9 1" />
+                            </svg>
+                          )}
+                        </span>
+                        <span>
+                          <span className="block text-[13.5px] font-semibold text-ink leading-snug">{c.label}</span>
+                          <span className="block text-xs text-body mt-0.5">{c.desc}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+
+                  <div className={`px-3.5 py-3 rounded-xl border transition-colors ${guide ? 'border-brand bg-brand/10' : 'border-border'}`}>
+                    <label htmlFor="wa-guide" className="block text-[13.5px] font-semibold text-ink leading-snug">Guides</label>
+                    <span className="block text-xs text-body mt-0.5 mb-2">Self-paced, one-time payment · pick a track</span>
+                    <select
+                      id="wa-guide"
+                      value={guide}
+                      onChange={(e) => setGuide(e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-lg border border-border text-sm text-ink bg-white dark:bg-[#131E2F] focus:outline-none focus:ring-2 focus:ring-brand/40"
+                    >
+                      <option value="">Not interested in guides</option>
+                      {GUIDES.map((g) => (
+                        <option key={g.id} value={g.id}>{g.option}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={handleWhatsApp}
+                disabled={!canSend}
+                className="flex items-center justify-center gap-2 w-full bg-[#128C7E] hover:bg-[#075E54] disabled:opacity-50 disabled:cursor-not-allowed text-white font-extrabold px-5 py-3 rounded-xl transition-colors"
+              >
+                <WhatsAppGlyph className="w-4 h-4" /> Send to WhatsApp
+              </button>
+              <button
+                type="button"
+                onClick={handlePayNow}
+                disabled={!canSend}
+                className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-deep disabled:opacity-50 disabled:cursor-not-allowed text-white font-extrabold px-5 py-3 rounded-xl transition-colors"
+              >
+                Pay now →
+              </button>
+              {!canSend && (
+                <p className="text-xs text-body text-center">Add your name and pick at least one option to continue.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

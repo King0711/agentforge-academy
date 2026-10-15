@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { X, Loader2, AlertCircle, Lock } from 'lucide-react';
 import { COUNTRIES, DEFAULT_COUNTRY, buildE164, findCountry } from '../data/countryCodes';
+import { readCheckoutPrefill } from '../lib/checkoutPrefill';
 
 const inputClass =
   'w-full px-4 py-3 rounded-xl border border-border text-sm text-ink bg-transparent focus:outline-none focus:ring-2 focus:ring-brand/40';
@@ -13,16 +14,21 @@ const inputClass =
 // they confirm their email with an emailed code the first time they log in
 // (see CheckoutComplete.jsx). The file keeps its old name because every
 // checkout surface already renders it.
-export default function CheckoutAuthModal({ open, onClose, onSubmit, loading = false, error = '', planLabel }) {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+export default function CheckoutAuthModal({ open, ...props }) {
+  // The form mounts fresh on every open, so its fields start from whatever the
+  // WhatsApp pre-chat form saved (src/lib/checkoutPrefill.js).
+  return open ? <CheckoutForm {...props} /> : null;
+}
+
+function CheckoutForm({ onClose, onSubmit, loading = false, error = '', planLabel }) {
+  const [prefill] = useState(readCheckoutPrefill);
+  const [name, setName] = useState(prefill.name);
+  const [email, setEmail] = useState(prefill.email);
   const [countryIso, setCountryIso] = useState(DEFAULT_COUNTRY);
   const [phone, setPhone] = useState('');
   // Honeypot: real visitors never see or fill this.
   const [website, setWebsite] = useState('');
   const [localError, setLocalError] = useState('');
-
-  if (!open) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
