@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, m } from 'framer-motion';
 import { CheckCircle2, Circle, ChevronDown, Flag } from 'lucide-react';
-import { getBuilderPagePath, groupAgentsByWeek } from '../data/agents';
+import { getBuilderPagePath } from '../data/agents';
 import ProgressBar from './ProgressBar';
 
 // Tiers with a dedicated pre-course guide — rendered as item 0 in the same
@@ -47,7 +47,6 @@ function LessonRow({ agent, i, currentSlug, progress, onNavigate }) {
 function LessonList({ tier, tierAgents, currentSlug, progress, onNavigate }) {
   const location = useLocation();
   const guidePath = GUIDE_PATH[tier];
-  const weeks = groupAgentsByWeek(tierAgents);
 
   const guideItem = guidePath && (
     <li>
@@ -67,43 +66,10 @@ function LessonList({ tier, tierAgents, currentSlug, progress, onNavigate }) {
     </li>
   );
 
-  // Weeks 1-4, one section each with its own header — falls back to a flat
-  // list for tiers without week data (Builder 2 doesn't have it yet).
-  // Start indices are computed up front (not mutated during the render map)
-  // so numbering stays 1, 2, 3... continuously across week boundaries.
-  if (weeks.length > 0) {
-    const weeksWithStart = weeks.reduce((acc, w) => {
-      const prev = acc[acc.length - 1];
-      const startIndex = prev ? prev.startIndex + prev.agents.length : 0;
-      return [...acc, { ...w, startIndex }];
-    }, []);
-
-    return (
-      <div className="flex flex-col gap-3">
-        <ul className="flex flex-col gap-0.5">{guideItem}</ul>
-        {weeksWithStart.map(({ week, agents: weekAgents, startIndex }) => {
-          return (
-            <div key={week}>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-3 mb-1">Week <span>{week}</span></p>
-              <ul className="flex flex-col gap-0.5">
-                {weekAgents.map((agent, i) => (
-                  <LessonRow
-                    key={agent.id}
-                    agent={agent}
-                    i={startIndex + i}
-                    currentSlug={currentSlug}
-                    progress={progress}
-                    onNavigate={onNavigate}
-                  />
-                ))}
-              </ul>
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
-
+  // One flat, continuously numbered list in the order set in agentsBeginner.js.
+  // Week headers were dropped 2026-10-15: the weeks only mattered to the live
+  // cohort, and the founder's order cuts across them. Week certificates still
+  // work (they key on each week's main guide id, not on position).
   return (
     <ul className="flex flex-col gap-0.5">
       {guideItem}
