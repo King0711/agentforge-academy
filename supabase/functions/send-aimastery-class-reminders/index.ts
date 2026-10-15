@@ -7,23 +7,26 @@ const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const CRON_SECRET = Deno.env.get('CRON_SECRET') ?? '';
 
-// AI Agent Mastery runs as a rolling weekly cohort: Fri/Sat/Mon at 7:00 PM
-// WAT (the third class moved from Sunday to Monday on 2026-10-06), first cohort
-// Friday 2026-10-09 (founder-confirmed 2026-09-29). This is a copy of
+// AI Agent Mastery runs as a rolling weekly cohort: Thu/Fri/Sat at 7:00 PM WAT.
+// It was Fri/Sat/Mon until 2026-10-15; with no class on Fri 16 Oct the founder
+// moved the next start to Thursday 2026-10-22. This is a copy of
 // src/data/aiMasteryCohort.js's arithmetic — keep the two in step (CLASS_DAY_OFFSETS
-// here is that file's CLASS_DAY_OFFSETS; this function still said Sunday until
-// 2026-10-11, so the Friday email listed the wrong third day).
+// here is that file's CLASS_DAY_OFFSETS).
 // WAT is UTC+1 year-round, so every cohort start is a fixed 7 days apart.
-const FIRST_START_UTC = Date.UTC(2026, 9, 9, 18, 0, 0);
+const FIRST_START_UTC = Date.UTC(2026, 9, 22, 18, 0, 0);
+// The 22 Oct cohort is the first one on this schedule, but earlier registrants for
+// the cohort that began on Fri 9 Oct already attended it. So the first cohort only
+// takes payments made after that one began (the one on Fri 16 Oct did not run).
+const FIRST_REGISTRATIONS_FROM_UTC = Date.UTC(2026, 9, 9, 18, 0, 0);
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
-// Days after the Friday start that each class evening falls on: Fri, Sat, Mon.
-const CLASS_DAY_OFFSETS = [0, 1, 3];
+// Days after the Thursday start that each class evening falls on: Thu, Fri, Sat.
+const CLASS_DAY_OFFSETS = [0, 1, 2];
 const REMINDER_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 // Two reminders per cohort, told apart by how close the start is when the
-// function runs: the Friday-morning cron (~9h out) sends the full-schedule
-// email, the Friday-evening cron (~1h out) sends the short "starting soon"
+// function runs: the Thursday-morning cron (~9h out) sends the full-schedule
+// email, the Thursday-evening cron (~1h out) sends the short "starting soon"
 // nudge. Each has its own email_log type, so dedup never lets one block the other.
 const HOUR_WINDOW_MS = 90 * 60 * 1000;
 const EMAIL_TYPES = { morning: 'aimastery_class_reminder', hour: 'aimastery_class_reminder_1h' };
@@ -282,7 +285,7 @@ serve(async (req) => {
   }
 
   // The cohort that starts within the next 24 hours, if any. The cron fires
-  // Friday morning, so this is "today's" cohort; any other day is a no-op.
+  // Thursday morning, so this is "today's" cohort; any other day is a no-op.
   const now = Date.now();
   const weeks = now < FIRST_START_UTC ? 0 : Math.floor((now - FIRST_START_UTC) / WEEK_MS) + 1;
   const startMs = FIRST_START_UTC + weeks * WEEK_MS;
@@ -295,16 +298,15 @@ serve(async (req) => {
 
   // Everyone who registered for THIS cohort: paid after the previous cohort
   // began (they were told they'd join the next one) and before this one began.
-  // The very first cohort also takes everyone who paid before it opened.
+  // The first cohort takes everyone who paid since the last cohort that ran.
   let query = serviceClient
     .from('payments')
     .select('user_id, created_at')
     .eq('plan', 'aimastery')
     .eq('status', 'granted')
     .lt('created_at', startIso);
-  if (startMs > FIRST_START_UTC) {
-    query = query.gte('created_at', new Date(startMs - WEEK_MS).toISOString());
-  }
+  const registrationsFromMs = startMs > FIRST_START_UTC ? startMs - WEEK_MS : FIRST_REGISTRATIONS_FROM_UTC;
+  query = query.gte('created_at', new Date(registrationsFromMs).toISOString());
   const { data: payments, error: payErr } = await query;
   if (payErr) {
     console.error('payments query failed:', payErr.message);

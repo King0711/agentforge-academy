@@ -67,18 +67,18 @@ async function sendResendEmail(to, subject, html) {
   return res.ok;
 }
 
-// AI Agent Mastery is a rolling weekly cohort (Fri/Sat/Mon 7:00 PM WAT, first
-// one Fri 9 Oct 2026). This is the third copy of that arithmetic — keep
-// FIRST_START_UTC in step with src/data/aiMasteryCohort.js and
+// AI Agent Mastery is a rolling weekly cohort (Thu/Fri/Sat 7:00 PM WAT, first
+// one Thu 22 Oct 2026; was Fri/Sat/Mon until 2026-10-15). This is a copy of that
+// arithmetic — keep FIRST_START_UTC in step with src/data/aiMasteryCohort.js and
 // send-aimastery-class-reminders.
-const FIRST_START_UTC = Date.UTC(2026, 9, 9, 18, 0, 0);
+const FIRST_START_UTC = Date.UTC(2026, 9, 22, 18, 0, 0);
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 function nextMasteryCohortLine(now = Date.now()) {
   const weeks = now < FIRST_START_UTC ? 0 : Math.floor((now - FIRST_START_UTC) / WEEK_MS) + 1;
   const start = new Date(FIRST_START_UTC + weeks * WEEK_MS);
   const day = start.toLocaleDateString('en-GB', { timeZone: 'Africa/Lagos', weekday: 'long', day: 'numeric', month: 'long' });
-  return `The next cohort starts <strong>${day} at 7:00 PM WAT</strong> (classes run Friday, Saturday and Monday).`;
+  return `The next cohort starts <strong>${day} at 7:00 PM WAT</strong> (classes run Thursday to Saturday).`;
 }
 
 // What each checkout_attempts.plan is, where to send the person back to, and
@@ -136,7 +136,7 @@ const PRODUCTS = {
     label: 'AI Agent Mastery',
     path: '/ai-agent-mastery',
     facts: [
-      'Three live evenings, Friday, Saturday and Monday at 7:00 PM WAT',
+      'Three live evenings (Thu, Fri, Sat) at 7:00 PM WAT',
       'Build a chief of staff plus a squad of specialist agents end to end — inbox, calendar, research, design and more',
       'Classes and replays are on your dashboard',
     ],

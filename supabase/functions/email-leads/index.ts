@@ -190,7 +190,7 @@ function dripEmail(step, unsubscribeUrl) {
         <li><strong>Builder 2 — ${fmt(BUILDER2_PRICE)}.</strong> 13 multi-step, API-integrated agent builds. One payment, yours permanently.</li>
         <li><strong>Pro — ${fmt(PRO_PRICE)}.</strong> Both tracks together — cheaper than buying them separately.</li>
       </ul>
-      ${p(`Prefer to learn live? <strong>AI Agent Mastery</strong> is a three-evening live cohort (Friday, Saturday and Monday) where you build a chief of staff and a squad of specialist agents,
+      ${p(`Prefer to learn live? <strong>AI Agent Mastery</strong> is a three-evening live cohort (Thursday, Friday and Saturday) where you build a chief of staff and a squad of specialist agents,
         and the <strong>Vibe Coding Bootcamp</strong> is four weeks of live classes taking you from an idea to a deployed product.`)}
       ${button(`${SITE}/pricing`, 'See every option →')}
       ${p(`Questions before you decide? Message us on WhatsApp: ${link('https://wa.me/2349066006963', 'wa.me/2349066006963')} (we reply 10am–5pm WAT, Monday to Saturday).`)}
