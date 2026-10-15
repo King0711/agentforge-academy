@@ -7,11 +7,12 @@ const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const CRON_SECRET = Deno.env.get('CRON_SECRET') ?? '';
 
-// AI Agent Mastery runs as a rolling weekly cohort: Fri/Sat/Sun at 7:00 PM
-// WAT, first cohort Friday 2026-10-09 (founder-confirmed 2026-09-29). This is
-// a copy of src/data/aiMasteryCohort.js's arithmetic — keep the two in step.
-// WAT is UTC+1 year-round, so every cohort start is a fixed 7 days apart.
-const FIRST_START_UTC = Date.UTC(2026, 9, 9, 18, 0, 0);
+// AI Agent Mastery runs as a rolling weekly cohort: Thu/Fri/Sat at 7:00 PM
+// WAT, first cohort Thursday 2026-10-22 (changed from Fri/Sat/Mon on
+// 2026-10-15). This is a copy of src/data/aiMasteryCohort.js's arithmetic —
+// keep the two in step. WAT is UTC+1 year-round, so every cohort start is a
+// fixed 7 days apart.
+const FIRST_START_UTC = Date.UTC(2026, 9, 22, 18, 0, 0);
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const REMINDER_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -78,6 +79,28 @@ async function sendResendEmail(to, subject, html) {
   return res.ok;
 }
 
+// A button that survives mail clients which strip `background` from an <a>
+// (the old version was white text on a stripped background = invisible), plus
+// a plain-text link underneath for anyone whose client hides the button.
+const LIVE_SESSIONS_URL = 'https://socialdevtechnologies.com/dashboard/live-sessions';
+function ctaButton(label) {
+  return `
+    <table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:28px auto 12px;">
+      <tr>
+        <td align="center" bgcolor="#7C3AED" style="background-color:#7C3AED;border-radius:10px;">
+          <a href="${LIVE_SESSIONS_URL}"
+             style="display:inline-block;padding:12px 28px;font-size:15px;font-weight:700;color:#FFFFFF;text-decoration:none;">
+            <font color="#FFFFFF">${label}</font>
+          </a>
+        </td>
+      </tr>
+    </table>
+    <p style="font-size:13px;color:#6B6485;text-align:center;margin:0 0 8px;">
+      Button not showing? Open <a href="${LIVE_SESSIONS_URL}" style="color:#7C3AED;">${LIVE_SESSIONS_URL}</a>
+    </p>
+  `;
+}
+
 const fmtDay = (d, opts) => d.toLocaleDateString('en-GB', { timeZone: 'Africa/Lagos', ...opts });
 
 function hourReminderHtml(name) {
@@ -89,12 +112,7 @@ function hourReminderHtml(name) {
     <p style="font-size:15px;color:#3A3358;line-height:1.6;">
       Your join link is on your dashboard under <strong>Live Sessions</strong>. Log in now so you're ready when we start.
     </p>
-    <div style="text-align:center;margin:28px 0;">
-      <a href="https://socialdevtechnologies.com/dashboard/live-sessions"
-         style="display:inline-block;background:#7C3AED;color:#fff;padding:12px 28px;border-radius:10px;text-decoration:none;font-weight:700;">
-        Join the class →
-      </a>
-    </div>
+    ${ctaButton('Join the class →')}
   `;
 }
 
@@ -111,12 +129,7 @@ function reminderHtml(name, dayLines) {
       Your join links are on your dashboard under <strong>Live Sessions</strong>. Log in a few minutes early so you're in when we start.
       If you can't remember how to log in, use “Log in with an emailed code instead” on the login page.
     </p>
-    <div style="text-align:center;margin:28px 0;">
-      <a href="https://socialdevtechnologies.com/dashboard/live-sessions"
-         style="display:inline-block;background:#7C3AED;color:#fff;padding:12px 28px;border-radius:10px;text-decoration:none;font-weight:700;">
-        Open my live sessions →
-      </a>
-    </div>
+    ${ctaButton('Open my live sessions →')}
   `;
 }
 
