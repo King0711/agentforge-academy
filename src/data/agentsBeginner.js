@@ -1,5 +1,7 @@
 // Beginner Agents (1-12) — metadata only; full guide content lives in Supabase `course_content`
-// Ordered simplest -> most advanced (see plan: playful-baking-flask) rather than by id.
+// Array order is the order students see (sidebar numbering, "Session N of 12",
+// Previous/Next), not id order. Founder-set 2026-10-15: Daily News, Calendar,
+// Meeting Notes, Slack, Social Post, Document Summarizer, then the rest.
 //
 // week/isMainProject group these into 4 weeks of a live cohort, each week
 // sharing a mechanism (not just a topic) rather than a random split:
@@ -48,66 +50,36 @@ export const agentsBeginner = [
     ],
   },
   {
-    id: 7,
-    week: 4,
+    id: 11,
+    week: 1,
     isMainProject: false,
-    slug: "social-media-post-generator",
-    title: "Social Media Post Generator",
-    emoji: "📱",
+    slug: "calendar-task-prioritizer-agent",
+    title: "Calendar & Task Prioritizer Agent",
+    emoji: "🗓️",
     department: [
-      "Marketing",
+      "Operations",
     ],
     departmentIds: [
-      "marketing",
+      "operations",
     ],
     difficulty: "Builder 1",
-    description: "Input a topic, URL, or article → generate 5 platform-optimized posts for LinkedIn, Twitter/X, Instagram, Facebook, and Threads.",
+    description: "Every morning, reads your Google Calendar and Google Tasks, uses Gemini (free) to fit your tasks around your meetings, checks the AI's plan in code, and emails you a clean daily plan. Runs on Google's servers with nothing to install.",
     techStack: [
-      "Python",
-      "Claude API",
-      "Streamlit",
+      "Google Apps Script",
+      "Google Calendar",
+      "Google Tasks",
+      "Gemini API",
     ],
-    buildTime: "1.5 hrs",
-    xp: 200,
-    popularity: 92,
+    buildTime: "1 hr",
+    xp: 250,
+    popularity: 76,
     prerequisites: [
+      "A Google account",
     ],
     tags: [
-      "marketing",
-      "content",
-      "social-media",
-    ],
-  },
-  {
-    id: 12,
-    week: 2,
-    isMainProject: false,
-    slug: "basic-data-extractor-agent",
-    title: "Basic Data Extractor Agent",
-    emoji: "🧮",
-    department: [
-      "Data & Analytics",
-    ],
-    departmentIds: [
-      "data",
-    ],
-    difficulty: "Builder 1",
-    description: "Paste unstructured text (emails, PDFs, web pages) and extract structured data — names, dates, numbers, entities — into a clean CSV.",
-    techStack: [
-      "Python",
-      "Claude API",
-      "pandas",
-    ],
-    buildTime: "1.5 hrs",
-    xp: 220,
-    popularity: 82,
-    prerequisites: [
-      "Basic pandas familiarity",
-    ],
-    tags: [
-      "data-extraction",
-      "automation",
-      "csv",
+      "productivity",
+      "calendar",
+      "planning",
     ],
   },
   {
@@ -175,6 +147,102 @@ export const agentsBeginner = [
     ],
   },
   {
+    id: 7,
+    week: 4,
+    isMainProject: false,
+    slug: "social-media-post-generator",
+    title: "Social Media Post Generator",
+    emoji: "📱",
+    department: [
+      "Marketing",
+    ],
+    departmentIds: [
+      "marketing",
+    ],
+    difficulty: "Builder 1",
+    description: "Input a topic, URL, or article → generate 5 platform-optimized posts for LinkedIn, Twitter/X, Instagram, Facebook, and Threads.",
+    techStack: [
+      "Python",
+      "Claude API",
+      "Streamlit",
+    ],
+    buildTime: "1.5 hrs",
+    xp: 200,
+    popularity: 92,
+    prerequisites: [
+    ],
+    tags: [
+      "marketing",
+      "content",
+      "social-media",
+    ],
+  },
+  {
+    id: 8,
+    week: 2,
+    isMainProject: false,
+    slug: "document-summarizer-agent",
+    title: "Document Summarizer Agent",
+    emoji: "📄",
+    department: [
+      "Legal",
+      "Operations",
+    ],
+    departmentIds: [
+      "legal",
+      "operations",
+    ],
+    difficulty: "Builder 1",
+    description: "Drop any PDF, Word doc, or URL and get an intelligent summary with key points, action items, and a one-paragraph executive brief.",
+    techStack: [
+      "Python",
+      "Claude API",
+      "PyPDF2",
+    ],
+    buildTime: "2 hrs",
+    xp: 270,
+    popularity: 85,
+    prerequisites: [
+    ],
+    tags: [
+      "documents",
+      "summarization",
+      "productivity",
+    ],
+  },
+  {
+    id: 12,
+    week: 2,
+    isMainProject: false,
+    slug: "basic-data-extractor-agent",
+    title: "Basic Data Extractor Agent",
+    emoji: "🧮",
+    department: [
+      "Data & Analytics",
+    ],
+    departmentIds: [
+      "data",
+    ],
+    difficulty: "Builder 1",
+    description: "Paste unstructured text (emails, PDFs, web pages) and extract structured data — names, dates, numbers, entities — into a clean CSV.",
+    techStack: [
+      "Python",
+      "Claude API",
+      "pandas",
+    ],
+    buildTime: "1.5 hrs",
+    xp: 220,
+    popularity: 82,
+    prerequisites: [
+      "Basic pandas familiarity",
+    ],
+    tags: [
+      "data-extraction",
+      "automation",
+      "csv",
+    ],
+  },
+  {
     id: 6,
     week: 4,
     isMainProject: false,
@@ -206,39 +274,6 @@ export const agentsBeginner = [
       "chatbot",
       "support",
       "rag-lite",
-    ],
-  },
-  {
-    id: 11,
-    week: 1,
-    isMainProject: false,
-    slug: "calendar-task-prioritizer-agent",
-    title: "Calendar & Task Prioritizer Agent",
-    emoji: "🗓️",
-    department: [
-      "Operations",
-    ],
-    departmentIds: [
-      "operations",
-    ],
-    difficulty: "Builder 1",
-    description: "Every morning, reads your Google Calendar and Google Tasks, uses Gemini (free) to fit your tasks around your meetings, checks the AI's plan in code, and emails you a clean daily plan. Runs on Google's servers with nothing to install.",
-    techStack: [
-      "Google Apps Script",
-      "Google Calendar",
-      "Google Tasks",
-      "Gemini API",
-    ],
-    buildTime: "1 hr",
-    xp: 250,
-    popularity: 76,
-    prerequisites: [
-      "A Google account",
-    ],
-    tags: [
-      "productivity",
-      "calendar",
-      "planning",
     ],
   },
   {
@@ -274,39 +309,6 @@ export const agentsBeginner = [
     tags: [
       "automation",
       "email",
-      "productivity",
-    ],
-  },
-  {
-    id: 8,
-    week: 2,
-    isMainProject: false,
-    slug: "document-summarizer-agent",
-    title: "Document Summarizer Agent",
-    emoji: "📄",
-    department: [
-      "Legal",
-      "Operations",
-    ],
-    departmentIds: [
-      "legal",
-      "operations",
-    ],
-    difficulty: "Builder 1",
-    description: "Drop any PDF, Word doc, or URL and get an intelligent summary with key points, action items, and a one-paragraph executive brief.",
-    techStack: [
-      "Python",
-      "Claude API",
-      "PyPDF2",
-    ],
-    buildTime: "2 hrs",
-    xp: 270,
-    popularity: 85,
-    prerequisites: [
-    ],
-    tags: [
-      "documents",
-      "summarization",
       "productivity",
     ],
   },
