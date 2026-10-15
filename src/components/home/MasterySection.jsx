@@ -84,7 +84,6 @@ export default function MasterySection() {
             </Link>
             <p className="text-[15px] font-semibold text-body text-center sm:text-left">
               <span>₦{AI_AGENT_MASTERY_PRICE.toLocaleString()} one-time.</span>
-              <span> Next cohort starts on Friday.</span>
             </p>
           </div>
         </div>
