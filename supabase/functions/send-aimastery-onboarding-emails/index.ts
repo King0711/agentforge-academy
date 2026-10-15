@@ -34,8 +34,9 @@ const CRON_SECRET = Deno.env.get('CRON_SECRET') ?? '';
 const SITE = 'https://socialdevtechnologies.com';
 const EMAIL_TYPE = 'aimastery_onboarding';
 
-// Rolling weekly cohort, Fri/Sat/Sun at 7:00 PM WAT; first cohort Friday 2026-10-09.
-const FIRST_START_UTC = Date.UTC(2026, 9, 9, 18, 0, 0);
+// Rolling weekly cohort, Thu/Fri/Sat at 7:00 PM WAT; first cohort on this schedule
+// is Thursday 2026-10-22 (it was Fri/Sat/Mon until 2026-10-15).
+const FIRST_START_UTC = Date.UTC(2026, 9, 22, 18, 0, 0);
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
