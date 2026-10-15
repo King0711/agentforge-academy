@@ -1,8 +1,8 @@
-import { useEffect, useSyncExternalStore } from 'react';
+import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   CheckCircle2, ArrowRight, CalendarDays, Info, CircleHelp, Loader2, AlertCircle,
-  Bot, Mail, Calendar, Search, MessageSquare, ShieldCheck, X, Zap, Timer,
+  Bot, Mail, Calendar, Search, MessageSquare, ShieldCheck, X, Zap,
   Palette, Image as ImageIcon, Code2,
 } from 'lucide-react';
 import { usePro } from '../hooks/usePro';
@@ -15,7 +15,6 @@ import { DEMO_VIDEO, DEMO_LOOP } from '../data/demoMedia';
 import InstructorSection from '../components/InstructorSection';
 import AgentBuildTestimonials from '../components/AgentBuildTestimonials';
 import { usePageSeo } from '../hooks/usePageSeo';
-import { nextAiMasteryCohortStart } from '../data/aiMasteryCohort';
 import { SCHOLARSHIP_PRICE_NAIRA, isScholarshipOpen } from '../data/scholarship';
 import { AI_AGENT_MASTERY_PRICE } from '../data/pricing';
 
@@ -132,54 +131,9 @@ const FAQS = [
   { q: 'How long will I have access?', a: "The cohort runs over 3 live days — the third dedicated to monetizing your new skill — and you'll have access for 6 months to the classes, recordings, resources, and your project." },
 ];
 
-// Cohorts roll weekly (Fri/Sat/Mon 7 PM WAT, first one 9 Oct 2026) — see
-// src/data/aiMasteryCohort.js. The copy just says "Friday" rather than a date:
-// a date computed in the browser got baked into the prerendered snapshot (the
-// snapshot is taken from a live page) and went stale within a week. The
-// countdown below is the only exact-time element; it ticks on its own so the
-// rest of the page doesn't re-render every second, and is stripped from the
-// snapshot (data-client-only).
-function subscribeToTick(onChange) {
-  const id = setInterval(onChange, 1000);
-  return () => clearInterval(id);
-}
-const getNowSeconds = () => Math.floor(Date.now() / 1000);
-
-function useNextCohort() {
-  const nowSec = useSyncExternalStore(subscribeToTick, getNowSeconds, () => null);
-  if (nowSec === null) return null;
-  const start = nextAiMasteryCohortStart(nowSec * 1000);
-  return { start, secondsLeft: Math.max(0, Math.floor(start.getTime() / 1000) - nowSec) };
-}
-
-function CohortCountdown() {
-  const cohort = useNextCohort();
-  if (!cohort) return null;
-  const { secondsLeft } = cohort;
-  const days = Math.floor(secondsLeft / 86400);
-  const units = [
-    { value: days, label: days === 1 ? 'day' : 'days' },
-    { value: Math.floor(secondsLeft / 3600) % 24, label: 'hrs' },
-    { value: Math.floor(secondsLeft / 60) % 60, label: 'min' },
-    { value: secondsLeft % 60, label: 'sec' },
-  ];
-  return (
-    <div data-client-only className="mt-8 flex flex-col items-center gap-2.5">
-      <span className="inline-flex items-center gap-1.5 text-[12.5px] font-bold uppercase tracking-wide text-body">
-        <Timer className="w-3.5 h-3.5 text-link" /> Next cohort starts in
-      </span>
-      <div className="flex items-center gap-2 sm:gap-2.5">
-        {units.map((unit) => (
-          <div key={unit.label} className="bg-white dark:bg-[#131E2F] border-[1.5px] border-border-soft rounded-xl px-3 sm:px-3.5 py-2 min-w-[58px] sm:min-w-[64px] text-center">
-            <div className="font-display font-extrabold text-xl sm:text-2xl text-ink tabular-nums leading-none">{String(unit.value).padStart(2, '0')}</div>
-            <div className="text-[10.5px] font-bold uppercase tracking-wide text-gray-400 mt-1">{unit.label}</div>
-          </div>
-        ))}
-      </div>
-      <p className="text-[12px] text-body">Registration for each cohort closes when it starts — join after that and you're in the following week's.</p>
-    </div>
-  );
-}
+// Cohorts roll weekly (see src/data/aiMasteryCohort.js). The copy just says
+// "Friday" rather than a date: a date computed in the browser got baked into the
+// prerendered snapshot (taken from a live page) and went stale within a week.
 
 function SectionHeading({ eyebrow, children }) {
   return (
@@ -312,7 +266,6 @@ export default function AIAgentMastery() {
             </a>
           </div>
 
-          <CohortCountdown />
         </div>
       </div>
 
