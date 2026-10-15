@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  CheckCircle2, ArrowRight, CalendarDays, Info, CircleHelp, Loader2, AlertCircle,
+  CheckCircle2, ArrowRight, Info, CircleHelp, Loader2, AlertCircle,
   Bot, Mail, Calendar, Search, MessageSquare, ShieldCheck, X, Zap,
   Palette, Image as ImageIcon, Code2,
 } from 'lucide-react';
@@ -132,8 +132,8 @@ const FAQS = [
 ];
 
 // Cohorts roll weekly (see src/data/aiMasteryCohort.js). The copy just says
-// "Friday" rather than a date: a date computed in the browser got baked into the
-// prerendered snapshot (taken from a live page) and went stale within a week.
+// Class days and start dates are deliberately not shown on this page (founder,
+// 2026-10-15: no class the following day). Ask on WhatsApp for the next start.
 
 function SectionHeading({ eyebrow, children }) {
   return (
@@ -246,9 +246,8 @@ export default function AIAgentMastery() {
           <p
             className="text-[17px] leading-relaxed text-body mt-5 max-w-lg mx-auto"
           >
-            Stop copying tutorials that break. Join us <strong className="text-body-strong">on Friday at 7:00 PM WAT</strong> to
-            connect your own AI agents to Telegram and WhatsApp, build a multi-agent dashboard, and cut repetitive
-            manual work for good — even if you've never coded before.
+            Stop copying tutorials that break. Connect your own AI agents to Telegram and WhatsApp, build a
+            multi-agent dashboard, and cut repetitive manual work for good — even if you've never coded before.
           </p>
 
           <div
@@ -491,12 +490,9 @@ export default function AIAgentMastery() {
           {hasScholarship && (
             <p className="text-[12.5px] font-bold text-green mb-3">Scholarship price applied</p>
           )}
-          <span className="inline-flex items-center gap-1 bg-white dark:bg-[#131E2F] text-link font-bold text-[12px] px-2.5 py-1 rounded-full w-fit mb-4">
-            <CalendarDays className="w-3.5 h-3.5" /> Next cohort starts Friday, 7:00 PM WAT
-          </span>
           <ul className="flex flex-col gap-2.5 mb-6">
             {[
-              '3 live evenings (Fri, Sat, Mon at 7 PM WAT) — day 3 on monetizing your new skill',
+              '3 live evenings at 7 PM WAT — day 3 on monetizing your new skill',
               '6 months access to classes, replays, and resources',
               'A chief of staff plus a squad of specialist agents, built end to end',
               'Guardrails and safety checks built in from the start',

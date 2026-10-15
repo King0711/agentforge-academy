@@ -214,13 +214,14 @@ function BeforeYouStart() {
   );
 }
 
-// The Vibe Coding date an admin set, otherwise "Friday" (AI Agent Mastery
-// starts a new cohort every Friday; see src/data/aiMasteryCohort.js). The admin
-// `aimastery` row is skipped on purpose: it no longer drives the Mastery page
-// (CLAUDE.md) and is out of date. Client-only because the Vibe Coding date is.
+// The Vibe Coding date an admin set; nothing when there isn't one (it used to
+// fall back to the AI Agent Mastery weekday, removed 2026-10-15 with the other
+// public start days). The admin `aimastery` row is skipped on purpose: it no
+// longer drives the Mastery page (CLAUDE.md). Client-only because the date is.
 function NextCohortPill() {
   const { vibecoding } = useCohortSchedule();
-  const date = formatCohortDate(vibecoding) || 'Friday';
+  const date = formatCohortDate(vibecoding);
+  if (!date) return null;
   return (
     <p
       data-client-only

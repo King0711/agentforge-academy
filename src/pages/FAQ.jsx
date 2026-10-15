@@ -34,7 +34,7 @@ const FAQS = [
   },
   {
     q: 'When are the AI Agent Mastery classes?',
-    a: 'A new cohort starts every week: three live classes on Friday, Saturday, and Monday at 7:00 PM WAT, on Zoom. If you pay after a cohort has begun, you join the following week\'s. Recordings are included if you miss a class.',
+    a: 'Classes are three live evenings at 7:00 PM WAT, on Zoom. Message us on WhatsApp for the next start date. Recordings are included if you miss a class.',
   },
   {
     q: 'Do I need to pay for any tools for AI Agent Mastery?',
