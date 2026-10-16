@@ -46,14 +46,19 @@ const SCHOLARSHIP_PRICE_NAIRA = (() => {
   return Number.isFinite(n) && n > 0 ? n : 10000;
 })();
 
+// Price after an admin-generated discount code (2026-10-16,
+// supabase/discount-codes.sql). Same constant as in create-paystack-checkout.
+const DISCOUNT_CODE_PRICE_NAIRA = 10000;
+
 // Plans that have more than one valid price. resolvePlan() checks every price
 // in this list instead of the single PRICES[plan] value.
 const MULTI_TIER_PRICES = {
-  // Full price or the scholarship price (default ₦10,000). Eligibility is
-  // enforced at checkout creation (create-paystack-checkout: an approved
-  // scholarship application) — only that function can start a discounted
-  // aimastery charge, so the webhook just needs to recognise the amounts.
-  aimastery: [...new Set([19999, SCHOLARSHIP_PRICE_NAIRA])],
+  // Full price, the scholarship price (default ₦10,000) or the discount-code
+  // price. Eligibility is enforced at checkout creation
+  // (create-paystack-checkout: an approved scholarship application or a valid
+  // code) — only that function can start a discounted aimastery charge, so the
+  // webhook just needs to recognise the amounts.
+  aimastery: [...new Set([19999, SCHOLARSHIP_PRICE_NAIRA, DISCOUNT_CODE_PRICE_NAIRA])],
 };
 
 // Pro upgrade-by-difference (2026-10-04): a buyer who already owns ONE
@@ -544,6 +549,23 @@ serve(async (req) => {
       // supabase-js reports failures in the result rather than throwing. Worth a
       // log line: if it fails the application stays redeemable and needs a manual fix.
       if (redeemError) console.error('scholarship redeem failed:', txId, redeemError.code);
+    } catch (_err) {
+      // non-fatal — see comment above
+    }
+  }
+
+  // Discount-code redemption — same rules as the scholarship above: only after
+  // the verified payment is granted, best-effort. redeem_discount_code is
+  // idempotent per payment reference, so a retried delivery can't count twice.
+  const couponId = String(payload.data?.metadata?.coupon_id ?? '');
+  if (plan === 'aimastery' && UUID_RE.test(couponId)) {
+    try {
+      const { error: couponError } = await supabase.rpc('redeem_discount_code', {
+        p_code_id: couponId,
+        p_reference: txId,
+        p_user_id: userId,
+      });
+      if (couponError) console.error('discount code redeem failed:', txId, couponError.code);
     } catch (_err) {
       // non-fatal — see comment above
     }

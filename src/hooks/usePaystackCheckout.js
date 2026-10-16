@@ -108,6 +108,9 @@ export function usePaystackCheckout() {
         body: {
           plan: pending.plan,
           redirectOrigin: window.location.origin,
+          // Only the discount code travels from the original call: the server
+          // re-checks it and decides the price.
+          ...(pending.extra?.coupon ? { coupon: pending.extra.coupon } : {}),
           lead: { ...lead, referral_code: getStoredReferralCode() || undefined },
         },
       });

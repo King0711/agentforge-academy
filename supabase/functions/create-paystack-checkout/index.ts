@@ -85,6 +85,33 @@ async function findApprovedScholarshipId(sb, email) {
   return data?.id ?? null;
 }
 
+// Discount codes (2026-10-16, supabase/discount-codes.sql): an admin-generated
+// code takes AI Agent Mastery down to this price. paystack-webhook has the same
+// constant and accepts it as an aimastery amount — keep them together.
+const DISCOUNT_CODE_PRICE_NAIRA = 10000;
+
+// Looks a typed code up and says whether it can be used right now. The messages
+// are written for the buyer. Never throws: a failed lookup is reported as an
+// error rather than silently charging the wrong price.
+async function lookupDiscountCode(sb, rawCode, plan) {
+  const key = String(rawCode ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (key.length !== 10) return { error: "That code isn't valid. Check it and try again." };
+  const code = `${key.slice(0, 5)}-${key.slice(5)}`;
+  const { data, error } = await sb
+    .from('discount_codes')
+    .select('id, plan, max_uses, used_count, expires_at, disabled')
+    .eq('code', code)
+    .maybeSingle();
+  if (error) {
+    console.error('discount code lookup failed:', error.code);
+    return { error: 'We could not check that code right now. Please try again.' };
+  }
+  if (!data || data.disabled || data.plan !== plan) return { error: "That code isn't valid. Check it and try again." };
+  if (data.expires_at && Date.parse(data.expires_at) <= Date.now()) return { error: 'That code has expired.' };
+  if (data.used_count >= data.max_uses) return { error: 'That code has already been used.' };
+  return { coupon: { id: data.id, code } };
+}
+
 // This function is called directly from the browser (Pricing.jsx via
 // supabase.functions.invoke), so it needs CORS headers and to answer the
 // browser's preflight OPTIONS request — without these, the browser blocks
@@ -196,6 +223,19 @@ serve(async (req) => {
   }
 
   const { plan, redirectOrigin } = body;
+  const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+  // The price card's "Apply" button: says whether a typed code works, without
+  // starting a checkout. Answers 200 either way so a wrong code isn't logged as
+  // a failed request. Needs no sign-in (guests use codes too); codes are random
+  // 50-bit strings, so guessing one is not practical.
+  if (body.action === 'validate_coupon') {
+    if (plan !== 'aimastery') return jsonResponse({ valid: false, error: 'Discount codes only apply to AI Agent Mastery.' });
+    const found = await lookupDiscountCode(serviceClient, body.coupon, plan);
+    if (found.error) return jsonResponse({ valid: false, error: found.error });
+    return jsonResponse({ valid: true, code: found.coupon.code, price: Math.min(PRICES[plan], DISCOUNT_CODE_PRICE_NAIRA) });
+  }
+
   if (!user && !body.lead) return jsonResponse({ error: 'Unauthorized' }, 401);
   if (typeof plan !== 'string' || (plan !== 'proupgrade' && !Object.hasOwn(PRICES, plan))) {
     return jsonResponse({ error: 'Unknown plan' }, 400);
@@ -204,7 +244,15 @@ serve(async (req) => {
     return jsonResponse({ error: 'Please log in to upgrade — the upgrade price depends on what you already own.' }, 401);
   }
 
-  const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  // A discount code is checked before anything is stored or charged, so a bad one
+  // stops the checkout instead of silently charging the full price.
+  let coupon; // { id, code }
+  if (typeof body.coupon === 'string' && body.coupon.trim() !== '') {
+    if (plan !== 'aimastery') return jsonResponse({ error: 'Discount codes only apply to AI Agent Mastery.' }, 400);
+    const found = await lookupDiscountCode(serviceClient, body.coupon, plan);
+    if (found.error) return jsonResponse({ error: found.error }, 400);
+    coupon = found.coupon;
+  }
 
   // Guest: validate, rate-limit, and store the lead before anything is charged.
   let lead; // { id, email } for a guest checkout
@@ -257,8 +305,12 @@ serve(async (req) => {
   // approved and unredeemed and the offer unexpired; webhook redemption makes it
   // single-use. Math.min keeps a misconfigured price from ever exceeding the
   // normal one.
+  // A discount code takes precedence: it sets its own price and the person's
+  // scholarship stays unredeemed for later.
   let scholarshipId;
-  if (
+  if (coupon) {
+    amountNaira = Math.min(amountNaira, DISCOUNT_CODE_PRICE_NAIRA);
+  } else if (
     plan === 'aimastery' && !!user?.email_confirmed_at &&
     Date.now() < SCHOLARSHIP_EXPIRES_AT
   ) {
@@ -320,6 +372,8 @@ serve(async (req) => {
         ...(upgradeFrom ? { upgrade_from: upgradeFrom } : {}),
         // paystack-webhook marks this application redeemed once the payment is verified.
         ...(scholarshipId ? { scholarship_id: scholarshipId } : {}),
+        // paystack-webhook redeems this code once the payment is verified.
+        ...(coupon ? { coupon_id: coupon.id } : {}),
       },
       // A guest has no session to land in /dashboard with: send them to a page
       // that confirms the payment and gets them logged in with an emailed code.
