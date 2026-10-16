@@ -1,195 +1,445 @@
 insert into public.course_content_draft (course_id, what_you_build, what_you_learn, session, starter_code, test_it_out, troubleshooting, resources, tier, change_note)
 values (
   9,
-  $wyb$A Flask webhook that receives real Typeform form submissions, asks an AI model to score each lead 1-10 against your Ideal Customer Profile and explain why in one sentence, then creates a HubSpot contact carrying that score and a follow-up task due sooner for hotter leads. A rule-based shortcut skips the AI call entirely for leads that are obviously a bad fit, saving AI calls and avoiding an unpredictable AI judgment where a simple rule is more reliable.$wyb$,
+  $wyb$A lead qualifier that scores every enquiry for you, built entirely with free Google tools. Using a sample business, BrightHome Solar, a Google Form collects each enquiry into a Google Sheet. A short Google Apps Script then reads every new submission the moment it arrives: plain rules discard the impossible leads instantly (outside the service area, renters, empty forms), free Gemini AI scores the rest from 1 to 10, ordinary code turns the score into a hot, warm or cold tier, a follow-up deadline is logged, and a hot lead emails the salesperson straight away. Nothing to install, no server to run and no cost.$wyb$,
   $wyl$[
-  "Parse Typeform's real webhook payload, including its per-question-type answer shapes",
-  "Write a lead-scoring prompt grounded in an explicit Ideal Customer Profile",
-  "Parse a bracket-marker AI reply defensively, including a malformed one",
-  "Decide which decisions belong to the AI and which belong to plain Python",
-  "Build real HubSpot Contacts and Tasks API request payloads as pure, testable functions",
-  "Test a Flask webhook end-to-end with fake network responses, without live credentials",
-  "Turn a raw score into a follow-up SLA where hotter leads get followed up sooner"
+  "Design a lead form where every question helps decide whether a lead is worth a phone call",
+  "Link a Google Form to a Google Sheet that acts as your free CRM",
+  "Write a Google Apps Script that runs by itself on every form submission",
+  "Use plain rules for the obvious cases and AI only for judgment calls",
+  "Get structured JSON from Gemini and keep the tier decision in code, not in the AI",
+  "Make failures safe: a lead is never lost when the AI is down",
+  "Test with realistic leads and adapt the bot to any service business"
 ]$wyl$::jsonb,
   $sess${
-  "model": "Google Gemini (gemini-flash-latest) or Claude Haiku 4.5 - your choice, see sdt_ai.py setup",
-  "builds": [
-    {
-      "time": "20 min",
-      "steps": [
-        {
-          "prompt": "flask\nrequests\npython-dotenv\n",
-          "verify": "requirements.txt sits directly inside your project folder, not in a subfolder. The next step installs everything it lists.",
-          "instruction": "Make an empty folder for this project and open it in your code editor (in VS Code: File > Open Folder). Inside it, create `requirements.txt` with this content - it lists every library this project uses:"
-        },
-        {
-          "instruction": "Set up Python for this project (once, about 5 minutes). Check your version with `python3 --version` on Mac/Linux or `py --version` on Windows. If it is missing or older than 3.10, install the latest Python from python.org/downloads (on Windows, tick \"Add python.exe to PATH\" on the installer's first screen), then open a new terminal. Now open a terminal in your project folder (in VS Code: Terminal > New Terminal) and run the commands below for your system. They create a virtual environment - a private set of libraries for this project only - and install everything requirements.txt lists.",
-          "prompt": "# Mac / Linux\npython3 -m venv .venv\nsource .venv/bin/activate\npython -m pip install -r requirements.txt\n\n# Windows (PowerShell)\npy -m venv .venv\n.venv\\Scripts\\Activate.ps1\npython -m pip install -r requirements.txt\n\n# Windows says \"running scripts is disabled\"? Run this once, then the Activate line again:\n#   Set-ExecutionPolicy -Scope CurrentUser RemoteSigned\n# Ubuntu/Debian says venv or ensurepip is not available? Run: sudo apt install python3-venv",
-          "verify": "Your terminal prompt now starts with (.venv), and the install ended with \"Successfully installed\". Each time you open a new terminal for this project, run the activate line again first - while it is active, plain `python` works on every system, and that is the command every step below uses."
-        },
-        {
-          "prompt": "\"\"\"\nSocial Dev Technologies - your connection to the AI.\n\nYou have TWO ways to power this file. Pick ONE and set it in your .env:\n\n  AI_PROVIDER=gemini    -> your own FREE Google Gemini API key\n  AI_PROVIDER=claude    -> your own Claude/Anthropic API key\n\nEvery project in this course calls ask_ai(...) the exact same way no\nmatter which one you pick - this file is the only place that changes.\n\nSETUP - OPTION 1: Gemini (free, no billing needed):\n\n  1. Go to https://aistudio.google.com/apikey and sign in with any Google\n     account. Click \"Create API key\" - free, no card required.\n  2. In the same folder as this file, create a file named exactly: .env\n  3. Put these two lines inside it:\n\n         AI_PROVIDER=gemini\n         GEMINI_API_KEY=paste_your_own_key_here\n\nSETUP - OPTION 2: Claude (if you already have a paid Claude account):\n\n  1. Go to https://console.anthropic.com/settings/keys and create an API\n     key. This needs billing set up on your Anthropic account - it is a\n     separate thing from a claude.ai Pro subscription, and is billed by\n     Anthropic based on what you actually use.\n  2. In your .env file, put these two lines instead:\n\n         AI_PROVIDER=claude\n         ANTHROPIC_API_KEY=paste_your_own_key_here\n\nNever share either key or put it on GitHub - each one is billed to YOUR\naccount. That's it. Every project in this course reuses this same file.\n\"\"\"\n\nimport os\nimport time\n\nimport requests\nfrom dotenv import load_dotenv\n\n# Reads the .env file sitting next to your project and loads your keys.\nload_dotenv()\n\n# \"gemini-flash-latest\" is Google's name for whatever its newest Flash model\n# is, so this file keeps working when Google retires an older model - which\n# it does regularly. You can pin one specific model with GEMINI_MODEL=... in\n# your .env, but if you ever get a \"not available\" error, delete that line.\nGEMINI_MODEL = os.environ.get(\"GEMINI_MODEL\", \"gemini-flash-latest\")\nGEMINI_URL_TEMPLATE = \"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent\"\n\n# Gemini \"thinks\" before it answers, and that hidden thinking counts toward\n# the same token limit as the answer itself. With a small max_tokens (the\n# 50-300 used for short replies in this course) the thinking could use up\n# the whole limit and the answer would come back empty. So this file turns\n# thinking down to its minimum (these projects don't need it) and gives\n# Gemini this many extra tokens on top of your max_tokens for whatever\n# thinking is left.\nTHINKING_ALLOWANCE = 1024\n\nCLAUDE_MODEL = os.environ.get(\"CLAUDE_MODEL\", \"claude-haiku-4-5\")\nANTHROPIC_URL = \"https://api.anthropic.com/v1/messages\"\nANTHROPIC_VERSION = \"2023-06-01\"\n\n# Both AIs occasionally answer \"overloaded\" during busy periods (Gemini's\n# free tier especially). That's not your code being wrong - retrying a\n# couple of times almost always gets a real answer, so it's built in here\n# rather than left for every project to handle separately.\nMAX_ATTEMPTS = 3\nRETRY_DELAY_SECONDS = 3\n\n\nclass AIError(Exception):\n    \"\"\"Something went wrong talking to the AI. The message explains what.\"\"\"\n\n\ndef _get_provider():\n    \"\"\"\n    Reads AI_PROVIDER from .env. Falls back to guessing from whichever key\n    is actually present, so forgetting to set AI_PROVIDER explicitly\n    doesn't crash a setup that only has one key configured.\n    \"\"\"\n    provider = os.environ.get(\"AI_PROVIDER\", \"\").strip().lower()\n    if provider in (\"gemini\", \"claude\"):\n        return provider\n\n    if os.environ.get(\"GEMINI_API_KEY\"):\n        return \"gemini\"\n    if os.environ.get(\"ANTHROPIC_API_KEY\"):\n        return \"claude\"\n\n    raise AIError(\n        \"No AI provider configured.\\n\"\n        \"Add ONE of these pairs to your .env file:\\n\\n\"\n        \"    AI_PROVIDER=gemini\\n\"\n        \"    GEMINI_API_KEY=paste_your_free_key_here\\n\\n\"\n        \"  ...or...\\n\\n\"\n        \"    AI_PROVIDER=claude\\n\"\n        \"    ANTHROPIC_API_KEY=paste_your_own_key_here\\n\\n\"\n        \"Get a free Gemini key at https://aistudio.google.com/apikey\"\n    )\n\n\ndef _ask_gemini(prompt, system=None, max_tokens=1000):\n    api_key = os.environ.get(\"GEMINI_API_KEY\")\n    if not api_key:\n        raise AIError(\n            \"AI_PROVIDER is set to gemini but no GEMINI_API_KEY was found.\\n\"\n            \"Get a free key at https://aistudio.google.com/apikey and add \"\n            \"it to .env:\\n\"\n            \"    GEMINI_API_KEY=paste_your_own_key_here\"\n        )\n\n    generation_config = {\"maxOutputTokens\": max_tokens + THINKING_ALLOWANCE}\n    # thinkingBudget 0 = \"as little thinking as possible\". Pro models can't\n    # turn thinking down and reject this setting, so it's left off for them.\n    if \"-pro\" not in GEMINI_MODEL:\n        generation_config[\"thinkingConfig\"] = {\"thinkingBudget\": 0}\n\n    payload = {\n        \"contents\": [{\"role\": \"user\", \"parts\": [{\"text\": prompt}]}],\n        \"generationConfig\": generation_config,\n    }\n    if system:\n        payload[\"systemInstruction\"] = {\"parts\": [{\"text\": system}]}\n\n    url = GEMINI_URL_TEMPLATE.format(model=GEMINI_MODEL)\n    # The key goes in a header rather than the URL, so it never shows up in\n    # an error message or traceback you might paste somewhere for help.\n    headers = {\"x-goog-api-key\": api_key}\n\n    last_problem = \"no response\"\n    for attempt in range(MAX_ATTEMPTS):\n        try:\n            response = requests.post(url, headers=headers, json=payload, timeout=90)\n        except requests.RequestException:\n            raise AIError(\n                \"Could not reach Gemini. Check your internet connection and try again.\"\n            ) from None\n\n        if response.status_code in (500, 503):\n            last_problem = f\"Gemini is busy ({response.status_code} - high demand on the free tier)\"\n            if attempt < MAX_ATTEMPTS - 1:\n                time.sleep(RETRY_DELAY_SECONDS)\n            continue\n\n        if response.status_code == 429:\n            raise AIError(\n                \"Gemini says you've hit the free tier's rate limit. Wait a \"\n                \"minute and try again - the free tier only allows a \"\n                \"limited number of requests per minute.\"\n            )\n\n        if response.status_code == 404:\n            if os.environ.get(\"GEMINI_MODEL\"):\n                advice = (\n                    \"Your .env file sets GEMINI_MODEL - delete that line so this \"\n                    \"file uses its default model, then try again.\"\n                )\n            else:\n                advice = \"Check the course page for an updated copy of sdt_ai.py.\"\n            raise AIError(\n                f'Gemini says the model \"{GEMINI_MODEL}\" isn\\'t available to your '\n                f\"API key - Google retires older models.\\n{advice}\\n\"\n                f\"Details: {response.text[:300]}\"\n            )\n\n        if response.status_code == 400:\n            # If a future Gemini model ever refuses the thinking setting\n            # above, ask again without it instead of failing.\n            if \"thinkingConfig\" in generation_config and \"thinking\" in response.text.lower():\n                del generation_config[\"thinkingConfig\"]\n                last_problem = \"Gemini rejected the thinking setting\"\n                continue\n            raise AIError(\n                f\"Gemini rejected the request - double check your GEMINI_API_KEY \"\n                f\"is correct: {response.text[:300]}\"\n            )\n\n        if response.status_code != 200:\n            raise AIError(\n                f\"Gemini returned an error (status {response.status_code}): {response.text[:300]}\"\n            )\n\n        data = response.json()\n        candidates = data.get(\"candidates\") or []\n        if not candidates:\n            block_reason = (data.get(\"promptFeedback\") or {}).get(\"blockReason\")\n            if block_reason:\n                raise AIError(f\"Gemini refused the prompt ({block_reason}). Try rephrasing it.\")\n            raise AIError(f\"Unexpected reply from Gemini: {data}\")\n        candidate = candidates[0]\n        finish_reason = candidate.get(\"finishReason\")\n\n        # A response can come back with no text because Gemini's safety\n        # filters blocked it (finishReason == \"SAFETY\"), not because of a\n        # network problem - so this is not retried like the cases above.\n        if finish_reason == \"SAFETY\":\n            raise AIError(\"Gemini declined to answer (safety filter). Try rephrasing your prompt.\")\n\n        # An answer can arrive split across several parts, so join them all.\n        # Any part marked \"thought\" is Gemini's thinking, not its answer.\n        parts = (candidate.get(\"content\") or {}).get(\"parts\") or []\n        text = \"\".join(part.get(\"text\", \"\") for part in parts if not part.get(\"thought\"))\n        if not text:\n            if finish_reason == \"MAX_TOKENS\":\n                raise AIError(\n                    \"Gemini ran out of room before it wrote any answer - its thinking \"\n                    f\"used up all {generation_config['maxOutputTokens']} tokens it was \"\n                    \"allowed. Raise max_tokens in this ask_ai(...) call (try \"\n                    f\"max_tokens={max(max_tokens * 2, 4000)}) and run it again.\"\n                )\n            raise AIError(\n                f\"Gemini sent back an empty answer (finishReason: {finish_reason}). \"\n                \"Try again, or rephrase your prompt.\"\n            )\n\n        usage = data.get(\"usageMetadata\") or {}\n        return {\n            \"text\": text,\n            \"input_tokens\": usage.get(\"promptTokenCount\"),\n            \"output_tokens\": usage.get(\"candidatesTokenCount\"),\n        }\n\n    raise AIError(\n        f\"Gemini was unavailable after {MAX_ATTEMPTS} tries ({last_problem}). \"\n        \"This happens sometimes on the free tier during high demand - wait \"\n        \"a minute and try again.\"\n    )\n\n\ndef _ask_claude(prompt, system=None, max_tokens=1000):\n    api_key = os.environ.get(\"ANTHROPIC_API_KEY\")\n    if not api_key:\n        raise AIError(\n            \"AI_PROVIDER is set to claude but no ANTHROPIC_API_KEY was found.\\n\"\n            \"Create one at https://console.anthropic.com/settings/keys and \"\n            \"add it to .env:\\n\"\n            \"    ANTHROPIC_API_KEY=paste_your_own_key_here\"\n        )\n\n    payload = {\n        \"model\": CLAUDE_MODEL,\n        \"max_tokens\": max_tokens,\n        \"messages\": [{\"role\": \"user\", \"content\": prompt}],\n    }\n    if system:\n        payload[\"system\"] = system\n\n    last_problem = \"no response\"\n    for attempt in range(MAX_ATTEMPTS):\n        try:\n            response = requests.post(\n                ANTHROPIC_URL,\n                headers={\n                    \"x-api-key\": api_key,\n                    \"anthropic-version\": ANTHROPIC_VERSION,\n                    \"Content-Type\": \"application/json\",\n                },\n                json=payload,\n                timeout=90,\n            )\n        except requests.RequestException:\n            raise AIError(\n                \"Could not reach Claude. Check your internet connection and try again.\"\n            ) from None\n\n        # 529 is Anthropic's \"overloaded\" - like Gemini's 503, a retry\n        # usually works.\n        if response.status_code in (500, 503, 529):\n            last_problem = f\"Claude is busy ({response.status_code} - overloaded)\"\n            if attempt < MAX_ATTEMPTS - 1:\n                time.sleep(RETRY_DELAY_SECONDS)\n            continue\n\n        try:\n            data = response.json()\n        except ValueError:\n            raise AIError(f\"Unexpected reply from Claude (status {response.status_code}).\") from None\n\n        if response.status_code == 401:\n            raise AIError(\n                \"Claude rejected your ANTHROPIC_API_KEY - double check it was copied correctly.\"\n            )\n\n        if response.status_code == 429:\n            raise AIError(\"Claude says you've hit your rate or usage limit. Wait a moment and try again.\")\n\n        if response.status_code == 404:\n            if os.environ.get(\"CLAUDE_MODEL\"):\n                advice = (\n                    \"Your .env file sets CLAUDE_MODEL - delete that line so this \"\n                    \"file uses its default model, then try again.\"\n                )\n            else:\n                advice = \"Check the course page for an updated copy of sdt_ai.py.\"\n            raise AIError(\n                f'Claude says the model \"{CLAUDE_MODEL}\" isn\\'t available to your '\n                f\"API key.\\n{advice}\"\n            )\n\n        if \"error\" in data or response.status_code != 200:\n            error = data.get(\"error\") or {}\n            message = error.get(\"message\") if isinstance(error, dict) else str(error)\n            raise AIError(\n                f\"Claude returned an error (status {response.status_code}): \"\n                f\"{message or str(data)[:300]}\"\n            )\n\n        text = \"\".join(\n            block.get(\"text\", \"\") for block in data.get(\"content\", []) if block.get(\"type\") == \"text\"\n        )\n        if not text:\n            raise AIError(\n                f\"Claude sent back an empty answer (stop_reason: {data.get('stop_reason')}). \"\n                \"Try again, or rephrase your prompt.\"\n            )\n\n        usage = data.get(\"usage\") or {}\n        return {\n            \"text\": text,\n            \"input_tokens\": usage.get(\"input_tokens\"),\n            \"output_tokens\": usage.get(\"output_tokens\"),\n        }\n\n    raise AIError(\n        f\"Claude was unavailable after {MAX_ATTEMPTS} tries ({last_problem}). \"\n        \"Wait a minute and try again.\"\n    )\n\n\ndef ask_ai_detailed(prompt, system=None, max_tokens=1000, project=None):\n    \"\"\"\n    Same as ask_ai, but returns the whole reply as a dict.\n\n        result = ask_ai_detailed(\"Summarise this\", max_tokens=200)\n        print(result[\"text\"])\n    \"\"\"\n    provider = _get_provider()\n    if provider == \"gemini\":\n        return _ask_gemini(prompt, system=system, max_tokens=max_tokens)\n    return _ask_claude(prompt, system=system, max_tokens=max_tokens)\n\n\ndef ask_ai(prompt, system=None, max_tokens=1000, project=None):\n    \"\"\"\n    Send a question to the AI and get the answer back as text.\n\n        answer = ask_ai(\"Write a haiku about Lagos traffic\")\n        print(answer)\n\n    prompt      - what you want the AI to do. This is the important part.\n    system      - optional. Sets the AI's role, e.g. \"You are a careful editor.\"\n    max_tokens  - roughly how long the answer may be. 1000 is plenty for most.\n    project     - unused, kept so call sites read the same across every\n                  project regardless of which AI is behind this file.\n\n    Works identically whichever provider your .env is set to - every\n    project in this course calls this one function and never needs to\n    know which AI is actually answering.\n\n    Returns the AI's answer as a plain string.\n    Raises AIError with a readable message if something is wrong.\n    \"\"\"\n    return ask_ai_detailed(prompt, system=system, max_tokens=max_tokens, project=project)[\"text\"]\n\n\nif __name__ == \"__main__\":\n    # Running this file directly checks that your setup works.\n    print(\"Testing your AI connection...\\n\")\n    try:\n        provider = _get_provider()\n        model = GEMINI_MODEL if provider == \"gemini\" else CLAUDE_MODEL\n        result = ask_ai_detailed(\"Say hello in exactly five words.\", max_tokens=50)\n        print(f\"Provider: {provider} ({model})\")\n        print(\"The AI said:\", result[\"text\"])\n        print(\"\\nYour setup works. You are ready to build.\")\n    except AIError as problem:\n        print(\"Setup problem:\\n\")\n        print(problem)\n",
-          "verify": "Nothing to check yet — you'll test this file once your .env is filled in, in the next step.",
-          "instruction": "Create `sdt_ai.py` with this code — copy it exactly, you'll never edit it. This is the ONLY file that talks to the AI in this whole project:"
-        },
-        {
-          "prompt": "# OPTION 1: your own free Gemini key (recommended - no billing needed)\n# Get one free at https://aistudio.google.com/apikey - no credit card needed\nAI_PROVIDER=gemini\nGEMINI_API_KEY=paste_your_own_key_here\n\n# OPTION 2: your own Claude/Anthropic key (comment OPTION 1 out above,\n# uncomment these two lines instead - needs billing set up on your own\n# Anthropic account)\n# Get one at https://console.anthropic.com/settings/keys\n# AI_PROVIDER=claude\n# ANTHROPIC_API_KEY=paste_your_own_key_here\n\n# HubSpot - a Service Key from Settings -> Integrations -> Service Keys\n# (Build 4 walks you through creating it - leave the placeholder until then)\nHUBSPOT_API_KEY=paste_your_hubspot_service_key_here\n",
-          "verify": "Run `python sdt_ai.py` - it should print which provider you're using, then `The AI said: ...`, and end with `Your setup works. You are ready to build.` If you see `No AI provider configured` instead, check that .env sits next to sdt_ai.py and that AI_PROVIDER plus its matching key are both uncommented.",
-          "instruction": "Create `.env` in the same folder with this content. Pick ONE AI option (Gemini or Claude) below. Extra project-specific variables are included at the bottom - fill those in too."
-        }
-      ],
-      "title": "Connect your AI (Gemini or Claude) and HubSpot",
-      "number": 1,
-      "description": "Before parsing Typeform webhooks, wire up the one file every build in this project calls to reach the AI, plus the HubSpot key later builds need to push qualified leads."
-    },
-    {
-      "time": "20 min",
-      "steps": [
-        {
-          "prompt": "\"\"\"\nStep 1 of the Lead Capture & Qualifier Bot.\n\nThis file has one job: take the raw JSON Typeform sends to your webhook\nand turn it into a plain Python dict with the answers you actually care\nabout. Typeform's real payload is deeply nested (a form definition, an\nanswers list, a different shape per question type) - this hides all of\nthat so the rest of the project can just do lead[\"email\"], lead[\"company\"],\nand so on.\n\"\"\"\n\n# The six questions this project's Typeform form is expected to have,\n# and the exact title text used for each. Typeform gives every field a\n# random ID that's different on every form, so title text - not ID - is\n# what we use to line an answer up with a field. If you rename a\n# question in Typeform, update the matching value here too.\nFIELD_TITLES = {\n    \"full_name\": \"Full name\",\n    \"email\": \"Work email\",\n    \"company\": \"Company name\",\n    \"company_size\": \"Company size\",\n    \"budget\": \"Budget range\",\n    \"challenge\": \"What's your biggest challenge right now?\",\n}\n\n\ndef _value_from_answer(answer):\n    \"\"\"\n    Typeform sends a different JSON shape per question type - a short\n    text answer looks nothing like a multiple-choice answer. This is\n    the full list of shapes this form's six questions can use; see the\n    Typeform webhook docs linked in this course's Resources for the\n    handful of other types (files, dates, ratings) this form doesn't.\n    \"\"\"\n    answer_type = answer.get(\"type\")\n    if answer_type == \"text\":\n        return answer.get(\"text\", \"\")\n    if answer_type == \"email\":\n        return answer.get(\"email\", \"\")\n    if answer_type == \"number\":\n        return answer.get(\"number\")\n    if answer_type == \"choice\":\n        # Single-select multiple choice: {\"choice\": {\"label\": \"...\"}}\n        return answer.get(\"choice\", {}).get(\"label\", \"\")\n    if answer_type == \"choices\":\n        # Multi-select: {\"choices\": {\"labels\": [\"...\", \"...\"]}}\n        return \", \".join(answer.get(\"choices\", {}).get(\"labels\", []))\n    if answer_type == \"boolean\":\n        return answer.get(\"boolean\")\n    # A field type this project doesn't use (e.g. a file upload). Returning\n    # None instead of raising means one unexpected question type can't take\n    # down the whole webhook - see this course's Troubleshooting section.\n    return None\n\n\ndef parse_typeform_payload(payload):\n    \"\"\"\n    Turns a raw Typeform webhook body into a simple lead dict.\n\n        lead = parse_typeform_payload(request.get_json())\n        lead[\"email\"]    # \"jane@acme.com\"\n        lead[\"company\"]  # \"Acme Inc\"\n\n    A question Typeform doesn't return an answer for (skipped because it\n    wasn't required, or bypassed by Logic Jump) comes back as \"\" here\n    rather than raising - Typeform only includes answered questions in\n    the payload, so a missing one is normal, not an error.\n    \"\"\"\n    form_response = payload.get(\"form_response\", {})\n\n    # Every webhook delivery includes the form's own field definitions,\n    # not just the answers - which is what lets us build a\n    # {field_id: title} lookup here instead of hardcoding your form's\n    # (randomly generated, different-per-form) field IDs anywhere.\n    fields = form_response.get(\"definition\", {}).get(\"fields\", [])\n    title_by_id = {field[\"id\"]: field[\"title\"] for field in fields}\n\n    answers_by_title = {}\n    for answer in form_response.get(\"answers\", []):\n        field_id = answer.get(\"field\", {}).get(\"id\")\n        title = title_by_id.get(field_id)\n        if title is None:\n            continue\n        answers_by_title[title] = _value_from_answer(answer)\n\n    return {\n        key: answers_by_title.get(title, \"\")\n        for key, title in FIELD_TITLES.items()\n    }\n\n\nif __name__ == \"__main__\":\n    # Run this file on its own to check the parsing works: python webhook.py\n    #\n    # This is a trimmed but structurally real Typeform webhook payload -\n    # the same shape Typeform actually sends, just missing extra fields\n    # (like \"hidden\" or \"landed_at\") this project doesn't read.\n    # parse_typeform_payload() ignores anything it doesn't recognise, so\n    # trimming those out here doesn't change what's being tested.\n    FAKE_PAYLOAD = {\n        \"event_id\": \"LtWXD3crgy\",\n        \"event_type\": \"form_response\",\n        \"form_response\": {\n            \"form_id\": \"abc123\",\n            \"token\": \"a3a12ec67\",\n            \"submitted_at\": \"2026-08-20T10:15:00Z\",\n            \"definition\": {\n                \"id\": \"abc123\",\n                \"title\": \"Book a demo\",\n                \"fields\": [\n                    {\"id\": \"f_name\", \"title\": \"Full name\", \"type\": \"short_text\"},\n                    {\"id\": \"f_email\", \"title\": \"Work email\", \"type\": \"email\"},\n                    {\"id\": \"f_company\", \"title\": \"Company name\", \"type\": \"short_text\"},\n                    {\"id\": \"f_size\", \"title\": \"Company size\", \"type\": \"multiple_choice\"},\n                    {\"id\": \"f_budget\", \"title\": \"Budget range\", \"type\": \"multiple_choice\"},\n                    {\"id\": \"f_challenge\", \"title\": \"What's your biggest challenge right now?\", \"type\": \"long_text\"},\n                ],\n            },\n            \"answers\": [\n                {\"type\": \"text\", \"text\": \"Jane Okafor\", \"field\": {\"id\": \"f_name\", \"type\": \"short_text\"}},\n                {\"type\": \"email\", \"email\": \"jane@acme.com\", \"field\": {\"id\": \"f_email\", \"type\": \"email\"}},\n                {\"type\": \"text\", \"text\": \"Acme Inc\", \"field\": {\"id\": \"f_company\", \"type\": \"short_text\"}},\n                {\"type\": \"choice\", \"choice\": {\"label\": \"51-200\"}, \"field\": {\"id\": \"f_size\", \"type\": \"multiple_choice\"}},\n                {\"type\": \"choice\", \"choice\": {\"label\": \"$5k-$10k/month\"}, \"field\": {\"id\": \"f_budget\", \"type\": \"multiple_choice\"}},\n                {\"type\": \"text\", \"text\": \"Our reporting is all manual spreadsheets.\", \"field\": {\"id\": \"f_challenge\", \"type\": \"long_text\"}},\n            ],\n        },\n    }\n\n    lead = parse_typeform_payload(FAKE_PAYLOAD)\n    print(\"Parsed lead:\", lead)\n\n    assert lead[\"email\"] == \"jane@acme.com\"\n    assert lead[\"company\"] == \"Acme Inc\"\n    assert lead[\"company_size\"] == \"51-200\"\n    assert lead[\"challenge\"] == \"Our reporting is all manual spreadsheets.\"\n    print(\"\\nParsing works.\")\n",
-          "verify": "Run `python webhook.py` — you should see `Parsed lead: {...}` with all six fields filled in, followed by `Parsing works.`",
-          "instruction": "Create `webhook.py` with this code:"
-        }
-      ],
-      "title": "Parse a real Typeform webhook payload",
-      "number": 2,
-      "goFurther": "Typeform payloads also include a `hidden` object for tracking parameters (like a UTM source) passed in the form's URL. Add a `source` key to the lead dict that reads `form_response.get(\"hidden\", {}).get(\"utm_source\", \"unknown\")`.",
-      "description": "Typeform's webhook payload is deeply nested and shaped differently for every question type. Get the parsing right first, in isolation, before any AI or HubSpot code depends on it."
-    },
-    {
-      "time": "25 min",
-      "steps": [
-        {
-          "prompt": "\"\"\"\nStep 2 of the Lead Capture & Qualifier Bot.\n\nThis file has one job: given a lead dict, ask the AI how good a fit it\nis and get back a score and a one-line reason. Everything about WHO\ncounts as a good lead - your Ideal Customer Profile (ICP) - lives here,\nin one prompt. Change the ICP text below and every future lead is\nscored against your new criteria - no other file needs to change.\n\"\"\"\n\nimport re\n\nfrom sdt_ai import ask_ai, AIError\n\n# Your Ideal Customer Profile. This is deliberately just English, not\n# code - tune it the way you'd brief a new sales rep. The default below\n# matches a common B2B SaaS ICP; replace it with your own before this\n# goes live for a real business.\nICP = \"\"\"\nIdeal customer profile:\n- Company size: 51-200 employees is the sweet spot. Under 10 is usually\n  too small to have budget authority; over 200 usually means a longer,\n  committee-based sales cycle.\n- Budget: $5,000/month or more is a strong signal of real intent.\n- Pain points we solve well: manual reporting, slow customer onboarding,\n  and disconnected tools that don't talk to each other.\n\"\"\".strip()\n\n\ndef build_prompt(lead):\n    \"\"\"\n    Writes the instructions we send to the AI. Kept in its own function\n    so you can print it and read exactly what the AI sees - the fastest\n    way to fix a score that doesn't match your own judgment.\n    \"\"\"\n    return f\"\"\"Score this sales lead against the Ideal Customer Profile below.\n\n{ICP}\n\nLEAD:\nCompany: {lead.get('company', 'unknown')}\nCompany size: {lead.get('company_size', 'unknown')}\nBudget: {lead.get('budget', 'unknown')}\nStated challenge: {lead.get('challenge', 'unknown')}\n\nGive a score from 1 to 10, where 10 is a perfect fit for the ICP above\nand 1 is a very poor fit. Then give ONE sentence explaining the score.\n\nFormat your answer EXACTLY like this:\n\n[SCORE]\na single number from 1 to 10, nothing else on that line\n[REASON]\none sentence explaining the score\n[END]\n\nDo not add any explanation, introduction or closing remark outside\nthose markers.\"\"\"\n\n\ndef parse_score_reply(reply):\n    \"\"\"\n    Pulls the score and reason out of the AI's [SCORE]/[REASON]/[END]\n    reply.\n\n    We use bracket markers instead of asking for JSON for the same\n    reason the Social Post Generator does: JSON breaks the moment the\n    AI adds a stray comma or wraps the answer in ``` fences, and that\n    is a miserable first bug to debug when you're starting out. Markers\n    degrade more gracefully - anything we don't recognise is ignored\n    rather than crashing the parse.\n\n    Raises ValueError with a specific, readable message if the [SCORE]\n    section is missing or contains no number at all - see the\n    self-test below for exactly which malformed replies this catches.\n    \"\"\"\n    sections = {}\n    current = None\n    lines = []\n\n    for line in reply.splitlines():\n        stripped = line.strip()\n        marker = stripped.strip(\"[]\").upper()\n        is_marker = stripped.startswith(\"[\") and stripped.endswith(\"]\")\n\n        if is_marker and marker == \"END\":\n            break\n        if is_marker and marker in (\"SCORE\", \"REASON\"):\n            if current:\n                sections[current] = \"\\n\".join(lines).strip()\n            current = marker\n            lines = []\n        elif current:\n            lines.append(line)\n\n    if current:\n        sections[current] = \"\\n\".join(lines).strip()\n\n    score_text = sections.get(\"SCORE\", \"\")\n\n    # The AI was told to reply with \"a single number\" but models don't\n    # always follow formatting instructions to the letter - a common\n    # drift is writing \"8/10\" or \"Score: 8\" instead of a bare \"8\".\n    # Searching for the FIRST run of digits copes with both of those\n    # with no extra prompting, while still failing loudly (rather than\n    # silently defaulting to some made-up number) if there is genuinely\n    # no digit anywhere in the reply.\n    match = re.search(r\"\\d+\", score_text)\n    if not match:\n        raise ValueError(\n            \"Could not find a numeric score in the AI's reply.\\n\"\n            f\"The [SCORE] section contained: {score_text!r}\\n\"\n            \"Run `python scorer.py` to see the exact parsing rules against \"\n            \"known-good and known-bad replies, or print(reply) inside \"\n            \"score_lead() to see the raw AI output that caused this.\"\n        )\n\n    score = int(match.group())\n    # Clamp rather than reject: a 1-10 prompt occasionally gets an 11 or\n    # a 0 back. Clamping keeps the pipeline running with a sane value\n    # instead of failing a whole webhook delivery over one stray point.\n    score = max(1, min(10, score))\n\n    reason = sections.get(\"REASON\", \"\").strip() or \"No reason given.\"\n\n    return {\"score\": score, \"reason\": reason}\n\n\ndef score_to_tier(score):\n    \"\"\"\n    1-10 -> hot/warm/cold. A plain if/else, not a second AI call - the\n    AI's job here is judgment (how good a fit is this lead), not\n    arithmetic (which bucket does this number fall into). Doing the\n    bucketing in Python makes it 100% consistent between leads and\n    needs no extra AI call.\n    \"\"\"\n    if score >= 8:\n        return \"hot\"\n    if score >= 5:\n        return \"warm\"\n    return \"cold\"\n\n\ndef score_lead(lead):\n    \"\"\"\n    The main function. Give it a lead dict, get back its score, tier\n    and reason.\n\n        result = score_lead(lead)\n        result[\"score\"]   # 8\n        result[\"tier\"]    # \"hot\"\n        result[\"reason\"]  # \"Mid-size company matching two of three ICP signals.\"\n    \"\"\"\n    prompt = build_prompt(lead)\n\n    # The whole reply is a number and one sentence, so max_tokens=150 is\n    # generous, not tight - this is the cheapest AI call in the course.\n    # Compare to the Social Post Generator's max_tokens=1200 for five\n    # full posts: shorter expected output should always mean a lower cap.\n    reply = ask_ai(prompt, max_tokens=150, project=\"lead-capture-qualifier-bot\")\n\n    result = parse_score_reply(reply)\n    result[\"tier\"] = score_to_tier(result[\"score\"])\n    return result\n\n\nif __name__ == \"__main__\":\n    # Run this file on its own to check the parser: python scorer.py\n    #\n    # This does NOT call the AI - it feeds parse_score_reply() fake\n    # replies, including a malformed one, so you can check the parsing\n    # logic for free before ever calling the real AI.\n\n    good_reply = \"[SCORE]\\n8\\n[REASON]\\nMid-size company with clear budget and a matching pain point.\\n[END]\"\n    result = parse_score_reply(good_reply)\n    print(\"Well-formatted reply ->\", result)\n    assert result[\"score\"] == 8\n    assert \"budget\" in result[\"reason\"]\n\n    # A common way real models drift from instructions: writing \"8/10\"\n    # instead of a bare \"8\". The regex search for the first run of\n    # digits copes with this without any special-casing.\n    messy_reply = \"[SCORE]\\n8/10\\n[REASON]\\nGood fit overall.\\n[END]\"\n    result = parse_score_reply(messy_reply)\n    print(\"Messy '8/10' reply ->\", result)\n    assert result[\"score\"] == 8\n\n    # A reply with no digit anywhere should fail loudly, not silently\n    # return some made-up default.\n    try:\n        parse_score_reply(\"[SCORE]\\nfairly good\\n[REASON]\\nSeems fine.\\n[END]\")\n        raise AssertionError(\"Expected a ValueError for a non-numeric score\")\n    except ValueError as problem:\n        print(\"\\nCorrectly rejected a non-numeric score:\")\n        print(problem)\n\n    print(\"\\nAll parser checks passed.\")\n",
-          "verify": "Run `python scorer.py` — you should see the well-formatted reply scored correctly, the messy `8/10` reply ALSO scored correctly, then a message confirming a non-numeric reply is correctly rejected. This test does not call the AI, so it costs nothing.",
-          "instruction": "Create `scorer.py` with this code:"
-        }
-      ],
-      "title": "Score leads with AI",
-      "number": 3,
-      "goFurther": "Break it on purpose: call `score_lead()` with a lead where `company_size`, `budget` and `challenge` are all empty strings. This IS a real AI call (it uses your own API key), so only do it once. What score comes back? The ICP prompt never tells the AI what to do with missing information, so nothing here stops it from guessing a confident-sounding number for a lead you know nothing about — the parser only checks that the reply LOOKS like a valid score (a number 1-10), not that the score is trustworthy. Real protection would have to live in the prompt (tell the AI explicitly how to handle blank fields) or in Python (refuse to score a lead that's missing required fields at all) — not in the parser.",
-      "description": "This is the one AI call in the whole project — everything before it prepares the input, everything after it (the HubSpot payloads) just uses the output. Get this one right and the rest is plumbing."
-    },
-    {
-      "time": "25 min",
-      "steps": [
-        {
-          "verify": "Paste the key into your `.env` as `HUBSPOT_API_KEY` right away, replacing the placeholder - it is what hubspot_client.py sends as its Bearer token.",
-          "instruction": "In HubSpot, go to Settings → Integrations → Service Keys, create a key with the scopes `crm.objects.contacts.read`, `crm.objects.contacts.write` and `crm.objects.tasks.write`, then copy the key. (Service Keys replace private apps, which HubSpot stops letting you create from September 2026; you need Super Admin or Developer tools access to make one.)"
-        },
-        {
-          "verify": "All three should now appear in the Contact properties list.",
-          "instruction": "In HubSpot, go to Settings → Properties → Contact properties, and create three custom properties: `lead_score` (Number), `lead_tier` (Single-line text) and `ai_notes` (Multi-line text)."
-        },
-        {
-          "prompt": "\"\"\"\nStep 3 of the Lead Capture & Qualifier Bot.\n\nThis file builds the HubSpot API requests that create a contact and a\nfollow-up task. Building the request (a plain Python dict) is kept\ncompletely separate from sending it (one requests.post call) - that\nsplit is what lets you test and trust the payload shape without ever\nneeding a real HubSpot account, and it is why send_to_hubspot() is the\none function you swap out in tests (see main.py's self-test).\n\"\"\"\n\nimport os\n\nfrom datetime import datetime, timedelta, timezone\n\nimport requests\nfrom dotenv import load_dotenv\n\n# Loaded again here (sdt_ai.py also loads it) so this file's own\n# self-test and any standalone use of it works no matter which file\n# happens to be imported first - load_dotenv() is safe to call more\n# than once.\nload_dotenv()\n\nHUBSPOT_BASE = \"https://api.hubapi.com\"\n\n# Hot leads get a follow-up task due in 2 hours; everything else gets\n# 24. This mirrors a real sales team's SLA: a lead that looks like a\n# strong fit goes cold fast if nobody calls back the same day.\nFOLLOW_UP_HOURS = {\"hot\": 2, \"warm\": 24, \"cold\": 24}\n\n\ndef build_contact_payload(lead, score_result):\n    \"\"\"\n    Builds the request body for POST /crm/v3/objects/contacts.\n\n    This is a pure function - no network call, nothing to configure -\n    so you can test it with any lead dict and check the exact shape of\n    what would be sent, without a HubSpot account or API key at all.\n\n    Assumes three custom contact properties already exist in your\n    HubSpot account: lead_score (Number), lead_tier (Single-line text)\n    and ai_notes (Multi-line text). Create them under Settings >\n    Properties before your first real submission (see Build 4).\n    \"\"\"\n    full_name = lead.get(\"full_name\", \"\").strip()\n    first_name, _, last_name = full_name.partition(\" \")\n\n    return {\n        \"properties\": {\n            \"email\": lead.get(\"email\", \"\"),\n            \"firstname\": first_name,\n            \"lastname\": last_name,\n            \"company\": lead.get(\"company\", \"\"),\n            \"lead_score\": str(score_result[\"score\"]),\n            \"lead_tier\": score_result[\"tier\"],\n            \"ai_notes\": score_result[\"reason\"],\n        }\n    }\n\n\ndef build_task_payload(contact_id, lead, score_result):\n    \"\"\"\n    Builds the request body for POST /crm/v3/objects/tasks, with the\n    association to the contact included in the same request - HubSpot\n    lets you create and associate a task in one call instead of two.\n\n    associationTypeId 204 is HubSpot's built-in \"task to contact\" link\n    type - a fixed number HubSpot itself defines, not something you\n    choose, so it's hardcoded here rather than made configurable.\n    \"\"\"\n    tier = score_result[\"tier\"]\n    due_at = datetime.now(timezone.utc) + timedelta(hours=FOLLOW_UP_HOURS[tier])\n\n    return {\n        \"properties\": {\n            \"hs_task_subject\": (\n                f\"Follow up: {lead.get('company', 'unknown company')} \"\n                f\"({tier.upper()} - {score_result['score']}/10)\"\n            ),\n            \"hs_task_body\": score_result[\"reason\"],\n            # HubSpot expects an ISO 8601 timestamp with millisecond\n            # precision, e.g. \"2026-08-20T12:30:00.000Z\".\n            \"hs_timestamp\": due_at.strftime(\"%Y-%m-%dT%H:%M:%S.%f\")[:-3] + \"Z\",\n            \"hs_task_status\": \"NOT_STARTED\",\n            \"hs_task_priority\": \"HIGH\" if tier == \"hot\" else \"MEDIUM\",\n        },\n        \"associations\": [\n            {\n                \"to\": {\"id\": contact_id},\n                \"types\": [\n                    {\"associationCategory\": \"HUBSPOT_DEFINED\", \"associationTypeId\": 204}\n                ],\n            }\n        ],\n    }\n\n\ndef send_to_hubspot(endpoint, payload, api_key):\n    \"\"\"\n    The one function that actually talks to HubSpot. Every other\n    function in this file is pure (just builds a dict) precisely so\n    this is the only thing that needs replacing with a stub in tests -\n    see main.py's self-test, which swaps this out for a fake that\n    returns a made-up ID instead of making a real request.\n    \"\"\"\n    response = requests.post(\n        f\"{HUBSPOT_BASE}{endpoint}\",\n        headers={\n            \"Authorization\": f\"Bearer {api_key}\",\n            \"Content-Type\": \"application/json\",\n        },\n        json=payload,\n        timeout=15,\n    )\n    response.raise_for_status()\n    return response.json()\n\n\ndef create_contact(lead, score_result):\n    \"\"\"Creates the HubSpot contact and returns its new contact ID.\"\"\"\n    api_key = os.environ.get(\"HUBSPOT_API_KEY\")\n    payload = build_contact_payload(lead, score_result)\n    result = send_to_hubspot(\"/crm/v3/objects/contacts\", payload, api_key)\n    return result[\"id\"]\n\n\ndef create_followup_task(contact_id, lead, score_result):\n    \"\"\"Creates the follow-up task, already associated with the contact.\"\"\"\n    api_key = os.environ.get(\"HUBSPOT_API_KEY\")\n    payload = build_task_payload(contact_id, lead, score_result)\n    return send_to_hubspot(\"/crm/v3/objects/tasks\", payload, api_key)\n\n\nif __name__ == \"__main__\":\n    # Run this file on its own to check the payloads: python hubspot_client.py\n    #\n    # This never calls send_to_hubspot() or touches the network - it only\n    # checks that build_contact_payload() and build_task_payload() produce\n    # the shape HubSpot's Contacts and Tasks APIs actually expect, which\n    # you can verify against the docs linked in this course's Resources\n    # without needing a HubSpot account yet.\n    fake_lead = {\n        \"full_name\": \"Jane Okafor\",\n        \"email\": \"jane@acme.com\",\n        \"company\": \"Acme Inc\",\n        \"company_size\": \"51-200\",\n        \"budget\": \"$5k-$10k/month\",\n        \"challenge\": \"Our reporting is all manual spreadsheets.\",\n    }\n    fake_score = {\"score\": 9, \"tier\": \"hot\", \"reason\": \"Strong fit on size and budget.\"}\n\n    contact_payload = build_contact_payload(fake_lead, fake_score)\n    print(\"Contact payload:\", contact_payload)\n    assert contact_payload[\"properties\"][\"email\"] == \"jane@acme.com\"\n    assert contact_payload[\"properties\"][\"firstname\"] == \"Jane\"\n    assert contact_payload[\"properties\"][\"lastname\"] == \"Okafor\"\n    assert contact_payload[\"properties\"][\"lead_score\"] == \"9\"\n\n    task_payload = build_task_payload(\"12345\", fake_lead, fake_score)\n    print(\"\\nTask payload:\", task_payload)\n    assert \"Acme Inc\" in task_payload[\"properties\"][\"hs_task_subject\"]\n    assert \"HOT\" in task_payload[\"properties\"][\"hs_task_subject\"]\n    assert task_payload[\"associations\"][0][\"to\"][\"id\"] == \"12345\"\n    assert task_payload[\"associations\"][0][\"types\"][0][\"associationTypeId\"] == 204\n\n    print(\"\\nBoth payloads match the shape HubSpot's API expects.\")\n",
-          "verify": "Run `python hubspot_client.py` — you should see the contact payload with `'firstname': 'Jane'`, `'lastname': 'Okafor'` and `'lead_score': '9'`, then the task payload with `HOT` and `Acme Inc` in its subject line. No real HubSpot request is made.",
-          "instruction": "Create `hubspot_client.py` with this code:"
-        }
-      ],
-      "title": "Push scored leads into HubSpot",
-      "number": 4,
-      "goFurther": "Add a `find_contact_by_email(email)` function that POSTs to `/crm/v3/objects/contacts/search` first, so a lead who submits the form twice updates their existing contact instead of creating a duplicate.",
-      "description": "Set up the HubSpot side by hand first — the Service Key and the custom properties — then build (and test) the exact request payloads Python needs to send."
-    },
-    {
-      "time": "20 min",
-      "steps": [
-        {
-          "prompt": "\"\"\"\nStep 4 of the Lead Capture & Qualifier Bot - the Flask app that ties\nwebhook parsing, AI scoring and HubSpot together.\n\nTest the wiring:    python main.py\nRun the real server: flask --app main run --port 5050\n\nThis file deliberately contains almost no logic of its own - parsing\nlives in webhook.py, scoring in scorer.py, HubSpot payloads in\nhubspot_client.py. main.py's only job is calling them in the right\norder and turning the result into an HTTP response. If a step's own\nbehaviour ever needs fixing, you'll know exactly which file to open.\n\"\"\"\n\nfrom flask import Flask, request, jsonify\n\nimport hubspot_client\nimport scorer\nfrom sdt_ai import AIError\nfrom webhook import parse_typeform_payload\n\napp = Flask(__name__)\n\n\n@app.route(\"/webhook/typeform\", methods=[\"POST\"])\ndef typeform_webhook():\n    payload = request.get_json(force=True, silent=True) or {}\n    lead = parse_typeform_payload(payload)\n\n    # Typeform only omits an answer if a question was skipped or bypassed\n    # by Logic Jump - but a lead with no email is useless to a sales\n    # team, so it's worth catching explicitly here rather than letting\n    # HubSpot reject it later with a less obvious error.\n    if not lead.get(\"email\"):\n        return jsonify({\"status\": \"ignored\", \"reason\": \"no email in submission\"}), 200\n\n    try:\n        result = scorer.score_lead(lead)\n    except AIError as problem:\n        # Returning 500 here would make Typeform retry the delivery a\n        # few minutes later, which would score (and could HubSpot-create)\n        # the same lead twice. Returning 200 with an error status stops\n        # the retry - you catch the failure by checking your own logs,\n        # not by Typeform hammering the same URL.\n        return jsonify({\"status\": \"error\", \"stage\": \"scoring\", \"error\": str(problem)}), 200\n    except ValueError as problem:\n        return jsonify({\"status\": \"error\", \"stage\": \"scoring\", \"error\": str(problem)}), 200\n\n    try:\n        contact_id = hubspot_client.create_contact(lead, result)\n        hubspot_client.create_followup_task(contact_id, lead, result)\n    except Exception as problem:\n        # requests' raise_for_status() raises an error with HubSpot's own\n        # message attached - showing str(problem) surfaces the real cause\n        # (a missing scope, an unknown property) instead of hiding it\n        # behind a bare \"500 Internal Server Error\".\n        return jsonify({\"status\": \"error\", \"stage\": \"hubspot\", \"error\": str(problem)}), 200\n\n    return jsonify({\n        \"status\": \"ok\",\n        \"email\": lead[\"email\"],\n        \"score\": result[\"score\"],\n        \"tier\": result[\"tier\"],\n        \"contact_id\": contact_id,\n    }), 200\n\n\nif __name__ == \"__main__\":\n    # Run this file on its own to check the pipeline is wired correctly:\n    # python main.py\n    #\n    # This proves webhook.py -> scorer.py -> hubspot_client.py are all\n    # connected correctly, WITHOUT a real AI call or touching a\n    # real HubSpot account - it fakes both network calls, clearly\n    # commented below as fakes for this test only. To run the real\n    # server against real Typeform submissions, use the Flask CLI\n    # instead: flask --app main run --port 5050\n\n    FAKE_TYPEFORM_PAYLOAD = {\n        \"event_id\": \"LtWXD3crgy\",\n        \"event_type\": \"form_response\",\n        \"form_response\": {\n            \"form_id\": \"abc123\",\n            \"definition\": {\n                \"fields\": [\n                    {\"id\": \"f_name\", \"title\": \"Full name\", \"type\": \"short_text\"},\n                    {\"id\": \"f_email\", \"title\": \"Work email\", \"type\": \"email\"},\n                    {\"id\": \"f_company\", \"title\": \"Company name\", \"type\": \"short_text\"},\n                    {\"id\": \"f_size\", \"title\": \"Company size\", \"type\": \"multiple_choice\"},\n                    {\"id\": \"f_budget\", \"title\": \"Budget range\", \"type\": \"multiple_choice\"},\n                    {\"id\": \"f_challenge\", \"title\": \"What's your biggest challenge right now?\", \"type\": \"long_text\"},\n                ],\n            },\n            \"answers\": [\n                {\"type\": \"text\", \"text\": \"Jane Okafor\", \"field\": {\"id\": \"f_name\"}},\n                {\"type\": \"email\", \"email\": \"jane@acme.com\", \"field\": {\"id\": \"f_email\"}},\n                {\"type\": \"text\", \"text\": \"Acme Inc\", \"field\": {\"id\": \"f_company\"}},\n                {\"type\": \"choice\", \"choice\": {\"label\": \"51-200\"}, \"field\": {\"id\": \"f_size\"}},\n                {\"type\": \"choice\", \"choice\": {\"label\": \"$5k-$10k/month\"}, \"field\": {\"id\": \"f_budget\"}},\n                {\"type\": \"text\", \"text\": \"Our reporting is all manual spreadsheets.\", \"field\": {\"id\": \"f_challenge\"}},\n            ],\n        },\n    }\n\n    # FAKE for this test only: a canned AI reply, so this test costs\n    # nothing and works even with no .env file at all. score_lead()'s own\n    # parsing and tier logic - the part actually worth testing here -\n    # still runs for real against this fake text.\n    def fake_ask_ai(prompt, **kwargs):\n        return \"[SCORE]\\n9\\n[REASON]\\nStrong fit on size and budget.\\n[END]\"\n\n    # FAKE for this test only: no real HubSpot account is needed to prove\n    # main.py calls create_contact() then create_followup_task() with the\n    # right arguments, in the right order.\n    def fake_send_to_hubspot(endpoint, payload, api_key):\n        if endpoint == \"/crm/v3/objects/contacts\":\n            return {\"id\": \"fake-contact-42\"}\n        return {\"id\": \"fake-task-99\"}\n\n    scorer.ask_ai = fake_ask_ai\n    hubspot_client.send_to_hubspot = fake_send_to_hubspot\n\n    with app.test_client() as client:\n        response = client.post(\"/webhook/typeform\", json=FAKE_TYPEFORM_PAYLOAD)\n        data = response.get_json()\n\n    print(\"Response:\", data)\n    assert response.status_code == 200, data\n    assert data[\"status\"] == \"ok\", data\n    assert data[\"score\"] == 9\n    assert data[\"tier\"] == \"hot\"\n    assert data[\"contact_id\"] == \"fake-contact-42\"\n    print(\"\\nPipeline wiring test passed: webhook -> score -> HubSpot all connected correctly.\")\n",
-          "verify": "Run `python main.py` — you should see `Response: {...}` followed by `Pipeline wiring test passed: webhook -> score -> HubSpot all connected correctly.` This uses a fake AI reply and a fake HubSpot response, so it costs nothing and needs no HubSpot account yet.",
-          "instruction": "Create `main.py` with this code:"
-        },
-        {
-          "verify": "Submit a real response to your Typeform form. Within a few seconds you should see a new contact in HubSpot with `lead_score`, `lead_tier` and `ai_notes` filled in, plus an associated follow-up task.",
-          "instruction": "Once the self-test passes, start the real server with `flask --app main run --port 5050` (5050, not 5000: on a Mac, AirPlay Receiver already uses port 5000), then use a tunnel like ngrok (`ngrok http 5050`) (ngrok needs a free account: sign up, then run `ngrok config add-authtoken <your-token>` once) to get a public URL and point your Typeform form's webhook (Connect → Webhooks) at `<your-ngrok-url>/webhook/typeform`."
-        }
-      ],
-      "title": "Wire it all together",
-      "number": 5,
-      "goFurther": "The 24-hour follow-up window for warm and cold leads is a placeholder — a real sales team might want warm leads followed up same-day too. Adjust `FOLLOW_UP_HOURS` in `hubspot_client.py` and re-run `python main.py` to confirm the self-test still passes with your new numbers.",
-      "description": "One Flask route, three imports. This file's whole job is calling webhook.py, scorer.py and hubspot_client.py in the right order and turning failures into a response Typeform can live with."
-    },
-    {
-      "time": "20 min",
-      "steps": [
-        {
-          "prompt": "def is_free_email_domain(email):\n    # TODO: pull out the part after \"@\", lowercase it, and check it\n    # against FREE_EMAIL_DOMAINS. Handle a missing \"@\" without crashing.\n    pass\n\n\ndef score_lead(lead):\n    # TODO: call is_free_email_domain(lead.get(\"email\", \"\")) here, before\n    # build_prompt() is ever called - return a fixed cold result\n    # immediately if it's True, instead of calling the AI at all.\n    ...\n",
-          "verify": "Run `python -c \"from scorer import score_lead; print(score_lead({'full_name': 'Test', 'email': 'test@gmail.com', 'company': '', 'company_size': '', 'budget': '', 'challenge': ''}))\"` — it must print exactly `{'score': 1, 'tier': 'cold', 'reason': 'Personal email domain — not a business lead.'}`, and it must do so instantly with no `.env` file or AI key required at all — proof the AI was never called.",
-          "instruction": "In `scorer.py`, add a `FREE_EMAIL_DOMAINS` list containing `gmail.com`, `yahoo.com`, `outlook.com` and `hotmail.com`, and a function `is_free_email_domain(email)` that returns True if the email's domain (the part after `@`, lowercased) is in that list. Then, at the very top of `score_lead()`, before `build_prompt()` is called, check the lead's email with it — if it's a free domain, return `{\"score\": 1, \"tier\": \"cold\", \"reason\": \"Personal email domain — not a business lead.\"}` immediately, without calling `ask_ai()` at all."
-        }
-      ],
-      "title": "Challenge: Skip the AI call for leads you already know are bad",
-      "number": 6,
-      "phaseLabel": "🎯 Challenge",
-      "description": "Not every decision needs an AI call. A free personal email address (gmail.com, yahoo.com, outlook.com) on a B2B form is almost always a bad fit — you don't need the AI's judgment to know that, and skipping the call saves an AI call and removes a whole category of AI unpredictability from your qualified leads. This is the real test of whether you understand what the AI is for here, not just whether the pipeline runs."
-    }
-  ],
-  "outcomes": [
-    "Parse Typeform's real webhook payload into a simple lead dict",
-    "Have the AI score each lead against your Ideal Customer Profile and explain why",
-    "Turn a score into a hot/warm/cold tier without spending an extra AI call",
-    "Build the exact HubSpot contact and follow-up task payloads the Contacts and Tasks APIs expect",
-    "Test the entire pipeline end-to-end without a live Typeform form or a HubSpot account"
-  ],
-  "portfolio": "You just built a lead qualification pipeline that turns a raw form submission into a scored, prioritized HubSpot contact with its own follow-up task — automatically, in seconds. Take a screenshot of a scored contact in HubSpot next to its follow-up task, and add \"Lead Capture & Qualifier Bot\" to your build portfolio with a one-line description.",
-  "totalTime": "130 min",
+  "model": "Gemini (free API key) in Google Apps Script",
+  "totalTime": "90 min",
   "buildCount": 6,
   "whatYouNeed": [
-    "A free Gemini API key (aistudio.google.com/apikey) OR your own Claude/Anthropic API key (console.anthropic.com/settings/keys)",
-    "Python 3.10+ installed",
-    "A free Typeform account",
-    "A HubSpot account (the free CRM tier works)",
-    "ngrok (free account + authtoken) for local webhook testing"
+    "A Google account (for Forms, Sheets and Apps Script)",
+    "A free Gemini API key from aistudio.google.com/apikey (no card needed)",
+    "A computer with a browser. Nothing to install and no server to run",
+    "Your own email address to receive the hot-lead alerts while you test"
   ],
-  "portfolioPrompt": "I just built a lead qualification pipeline: a Flask webhook receives Typeform submissions, an AI model scores each lead 1-10 against an Ideal Customer Profile and gives a one-line reason, and the result is pushed into HubSpot as a contact with a tiered (hot/warm/cold) follow-up task — with a rule-based shortcut that skips the AI call entirely for obviously-bad leads.\n\nHelp me write:\n1. A 2-3 sentence project description for my portfolio site\n2. A short LinkedIn post announcing it\n3. Three resume-style bullet points describing what I built and the skills it shows"
+  "outcomes": [
+    "Build a lead form where every question helps qualify the lead",
+    "Score every new submission automatically with rules first and Gemini second",
+    "Tier leads hot, warm or cold in code so the same score always gives the same tier",
+    "Get an email the moment a hot lead arrives, with a follow-up deadline for every lead",
+    "Adapt the bot to any service business by changing the form, the ICP and the rules"
+  ],
+  "builds": [
+    {
+      "number": 1,
+      "title": "The business and your free AI key",
+      "time": "15 min",
+      "description": "Meet the sample business, see what the bot replaces from the course tools, and get a free Gemini key.",
+      "steps": [
+        {
+          "instruction": "Read the problem. BrightHome Solar installs solar panels and backup batteries for homes and small businesses in one city. Its website form brings in about 40 enquiries a week. About 10 are serious buyers who want to install within weeks, about 15 are just curious or researching, about 8 are renters who cannot approve an installation, and about 7 live outside the service area. One salesperson calls in order of arrival, so the best buyers wait two days behind the wrong people and a competitor calls first.",
+          "callout": {
+            "variant": "tip",
+            "text": "**The bot does the first read.** Every submission is scored in seconds, sorted into hot, warm or cold, logged with a follow-up deadline, and a hot lead emails the salesperson immediately."
+          }
+        },
+        {
+          "instruction": "See what changed from the original course version. Everything below is free and nothing needs installing.",
+          "table": {
+            "header": [
+              "Course version",
+              "This version",
+              "Why it is easier"
+            ],
+            "rows": [
+              [
+                "Typeform",
+                "Google Form",
+                "Free, no webhook parsing"
+              ],
+              [
+                "HubSpot CRM",
+                "Google Sheet",
+                "Your CRM, visible instantly"
+              ],
+              [
+                "Python + Flask + ngrok",
+                "Google Apps Script",
+                "Runs on Google's servers; nothing to install or host"
+              ],
+              [
+                "Follow-up task",
+                "\"Follow-up Due\" column + email alert",
+                "Same result, zero setup"
+              ]
+            ]
+          }
+        },
+        {
+          "instruction": "Check you have a Google account. That is all you need besides a free Gemini key."
+        },
+        {
+          "instruction": "Go to aistudio.google.com/apikey, sign in, click Create API key and copy it. Paste it into a private note for Build 3.",
+          "callout": {
+            "variant": "warning",
+            "text": "Keep the key private. Never paste it into code or share it. If the page will not load or says unavailable, use a personal Gmail account, not a work or school one."
+          },
+          "verify": "Your Gemini key is copied into a private note."
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "title": "Build the form",
+      "time": "10 min",
+      "description": "Every question exists because it helps decide whether a lead is worth a phone call. If a question does not help you decide, do not ask it: long forms lose people.",
+      "steps": [
+        {
+          "instruction": "Go to forms.google.com and create a blank form titled \"Get a Free Solar Quote\"."
+        },
+        {
+          "instruction": "Add these nine questions. Copy the titles exactly, because the code matches on them.",
+          "table": {
+            "header": [
+              "Question title",
+              "Type",
+              "Options"
+            ],
+            "rows": [
+              [
+                "Full name",
+                "Short answer",
+                ""
+              ],
+              [
+                "Phone number",
+                "Short answer",
+                ""
+              ],
+              [
+                "Email address",
+                "Short answer",
+                ""
+              ],
+              [
+                "Is your property in or near Greenfield?",
+                "Multiple choice",
+                "Yes / No"
+              ],
+              [
+                "Property type",
+                "Multiple choice",
+                "Home / Small business / Large commercial or industrial"
+              ],
+              [
+                "Do you own the property?",
+                "Multiple choice",
+                "Yes, I own it / No, I rent / I manage it for the owner"
+              ],
+              [
+                "Monthly energy spend",
+                "Multiple choice",
+                "Under $50 / $50-$150 / $150-$400 / Over $400"
+              ],
+              [
+                "When do you want to install?",
+                "Multiple choice",
+                "Within 1 month / 1-3 months / 3-6 months / Just researching"
+              ],
+              [
+                "What do you want solar to help with?",
+                "Paragraph",
+                ""
+              ]
+            ]
+          }
+        },
+        {
+          "instruction": "Mark Full name, Phone number and Email address as Required."
+        },
+        {
+          "instruction": "Open the Responses tab, click the green Link to Sheets icon and choose Create a new spreadsheet."
+        },
+        {
+          "instruction": "Submit one test response with the Preview (eye) icon so the sheet gets its header row.",
+          "callout": {
+            "variant": "warning",
+            "text": "If you rename a question later, update FIELDS in the code too. Trailing spaces and curly versus straight apostrophes are the usual culprits."
+          },
+          "verify": "Row 1 of the sheet shows the question titles and row 2 shows your test answers."
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "title": "Add the brain",
+      "time": "30 min",
+      "description": "The bot is one Google Apps Script attached to your sheet. Only the SETTINGS block at the top and the RULES section need editing when you adapt it to another business.",
+      "steps": [
+        {
+          "instruction": "In your response sheet open Extensions, then Apps Script. Delete the default code and rename the project \"Solar Lead Qualifier\"."
+        },
+        {
+          "instruction": "Store your key safely. Click the gear icon (Project Settings), scroll to Script properties and click Add script property. Name it GEMINI_API_KEY, paste your key as the value and save.",
+          "callout": {
+            "variant": "warning",
+            "text": "The name must match exactly. The key lives here and never inside the code."
+          }
+        },
+        {
+          "instruction": "Paste all of this into Code.gs, replacing what is there, then click Save.",
+          "prompt": "// ============ SETTINGS (edit for YOUR business) ============\nconst MODEL = \"gemini-flash-latest\";\n\n// Question titles, EXACTLY as in your form\nconst FIELDS = {\n  full_name: \"Full name\",\n  phone: \"Phone number\",\n  email: \"Email address\",\n  in_area: \"Is your property in or near Greenfield?\",\n  property_type: \"Property type\",\n  ownership: \"Do you own the property?\",\n  spend: \"Monthly energy spend\",\n  timeline: \"When do you want to install?\",\n  goal: \"What do you want solar to help with?\",\n};\n\n// Your Ideal Customer Profile in plain English: the AI's whole brief.\nconst ICP = `\nBrightHome Solar installs solar panels and backup batteries for homes\nand small businesses in Greenfield.\n\nBest customers (score 8-10):\n- Own their property (or manage it for the owner).\n- Home or small business.\n- Spend $150+ per month on energy.\n- Want to install within 3 months.\n- Goal mentions outages, high bills, backup power, or keeping a\n  business running during outages.\n\nMedium (score 5-7):\n- Large commercial or industrial sites (we only handle small systems,\n  so these need a specialist hand-off).\n- Spend $50-$150 per month, or timeline is 3-6 months.\n\nWeak (score 1-4):\n- Just researching, spend under $50, or a vague goal with no urgency.\n`.trim();\n\nconst FOLLOW_UP_HOURS = { hot: 2, warm: 24, cold: 72, error: 24 };\nconst OUT = { score: \"Lead Score\", tier: \"Tier\", reason: \"Reason\", due: \"Follow-up Due\", status: \"Status\" };\n\n// ============ ENTRY POINT (runs on every form submission) ============\nfunction onFormSubmit(e) {\n  const sheet = e.range.getSheet();\n  const row = e.range.getRow();\n  const lead = readLead(e.namedValues);\n  let result;\n  try {\n    result = scoreLead(lead);\n  } catch (err) {\n    // Never lose a lead because the AI failed\n    result = { score: \"\", tier: \"error\", reason: \"Scoring failed: \" + err.message };\n  }\n  writeResult(sheet, row, result);\n  if (result.tier === \"hot\") sendHotAlert(lead, result);\n}\n\nfunction readLead(nv) {\n  const lead = {};\n  for (const key in FIELDS) {\n    const v = nv[FIELDS[key]];\n    lead[key] = v && v[0] ? String(v[0]).trim() : \"\";\n  }\n  return lead;\n}\n\n// ============ SCORING ============\nfunction scoreLead(lead) {\n  // ---- RULES: free, instant, consistent. No AI needed. ----\n  if (!lead.email && !lead.phone) return { score: 1, tier: \"cold\", reason: \"No way to contact this person.\" };\n  if (lead.in_area.toLowerCase().startsWith(\"no\")) return { score: 1, tier: \"cold\", reason: \"Outside our service area.\" };\n  if (lead.ownership.toLowerCase().startsWith(\"no, i rent\")) return { score: 2, tier: \"cold\", reason: \"Renter: cannot approve an installation.\" };\n  if (!lead.spend && !lead.timeline && !lead.goal) return { score: 2, tier: \"cold\", reason: \"Not enough information to qualify.\" };\n\n  // ---- JUDGMENT: the AI scores everything that remains ----\n  const ai = askGemini(buildPrompt(lead));\n  const score = Math.max(1, Math.min(10, Math.round(Number(ai.score))));\n  if (isNaN(score)) throw new Error(\"AI returned a non-numeric score\");\n  return { score: score, tier: scoreToTier(score), reason: ai.reason || \"No reason given.\" };\n}\n\n// AI judges fit; plain code does the bucketing\nfunction scoreToTier(s) { return s >= 8 ? \"hot\" : s >= 5 ? \"warm\" : \"cold\"; }\n\nfunction buildPrompt(lead) {\n  return `Score this sales lead against the Ideal Customer Profile below.\n\n${ICP}\n\nLEAD:\nProperty type: ${lead.property_type || \"not provided\"}\nOwnership: ${lead.ownership || \"not provided\"}\nMonthly energy spend: ${lead.spend || \"not provided\"}\nInstall timeline: ${lead.timeline || \"not provided\"}\nWhat they want solar to help with: ${lead.goal || \"not provided\"}\n\nGive a score from 1 to 10 (10 = perfect fit) and ONE sentence explaining it.\nIf a field is \"not provided\", assume nothing good about it; score only on the evidence given.`;\n}\n\n// ============ GEMINI ============\nfunction askGemini(prompt) {\n  const key = PropertiesService.getScriptProperties().getProperty(\"GEMINI_API_KEY\");\n  if (!key) throw new Error(\"GEMINI_API_KEY is missing in Script properties\");\n  const url = \"https://generativelanguage.googleapis.com/v1beta/models/\" + MODEL + \":generateContent\";\n  const body = {\n    contents: [{ role: \"user\", parts: [{ text: prompt }] }],\n    generationConfig: {\n      temperature: 0,\n      maxOutputTokens: 1024,\n      responseMimeType: \"application/json\",\n      responseSchema: {\n        type: \"OBJECT\",\n        properties: { score: { type: \"INTEGER\" }, reason: { type: \"STRING\" } },\n        required: [\"score\", \"reason\"],\n      },\n      thinkingConfig: { thinkingBudget: 0 },\n    },\n  };\n  let last = \"no response\";\n  for (let i = 1; i <= 3; i++) {\n    const res = UrlFetchApp.fetch(url, {\n      method: \"post\",\n      contentType: \"application/json\",\n      headers: { \"x-goog-api-key\": key },\n      payload: JSON.stringify(body),\n      muteHttpExceptions: true,\n    });\n    const code = res.getResponseCode();\n    if (code === 200) {\n      const data = JSON.parse(res.getContentText());\n      const c = data.candidates && data.candidates[0];\n      const parts = (c && c.content && c.content.parts) || [];\n      const text = parts.map(function (p) { return p.text || \"\"; }).join(\"\");\n      if (!text) throw new Error(\"Gemini returned an empty answer\");\n      return JSON.parse(text);\n    }\n    last = \"Gemini error \" + code + \": \" + res.getContentText().slice(0, 200);\n    if (code === 429 || code === 500 || code === 503) Utilities.sleep(3000 * i); else break;\n  }\n  throw new Error(last);\n}\n\n// ============ SHEET + ALERT ============\nfunction writeResult(sheet, row, r) {\n  const due = new Date(Date.now() + FOLLOW_UP_HOURS[r.tier] * 3600 * 1000);\n  setCell(sheet, row, OUT.score, r.score);\n  setCell(sheet, row, OUT.tier, r.tier);\n  setCell(sheet, row, OUT.reason, r.reason);\n  setCell(sheet, row, OUT.due, due);\n  setCell(sheet, row, OUT.status, \"To follow up\");\n}\n\n// Finds a column by header name (creates it if missing), then writes\nfunction setCell(sheet, row, header, value) {\n  const lastCol = sheet.getLastColumn();\n  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];\n  let col = headers.indexOf(header) + 1;\n  if (col === 0) { col = lastCol + 1; sheet.getRange(1, col).setValue(header); }\n  sheet.getRange(row, col).setValue(value);\n}\n\nfunction sendHotAlert(lead, r) {\n  MailApp.sendEmail(\n    Session.getEffectiveUser().getEmail(),\n    \"HOT solar lead: \" + lead.full_name + \" (\" + r.score + \"/10)\",\n    \"CALL NOW: \" + lead.phone + \"\\n\\n\" +\n    \"Name: \" + lead.full_name + \"\\nEmail: \" + lead.email + \"\\n\" +\n    \"Property: \" + lead.property_type + \" (\" + lead.ownership + \")\\n\" +\n    \"Monthly spend: \" + lead.spend + \"\\nTimeline: \" + lead.timeline + \"\\n\" +\n    \"Goal: \" + lead.goal + \"\\n\\nWhy \" + r.score + \": \" + r.reason + \"\\n\\n\" +\n    \"Follow up within \" + FOLLOW_UP_HOURS.hot + \" hours.\"\n  );\n}\n\n// ============ SETUP + TESTS (run by hand) ============\nfunction createTrigger() { // run ONCE\n  ScriptApp.getProjectTriggers().forEach(function (t) { ScriptApp.deleteTrigger(t); });\n  ScriptApp.newTrigger(\"onFormSubmit\").forSpreadsheet(SpreadsheetApp.getActive()).onFormSubmit().create();\n  Logger.log(\"Trigger created.\");\n}\n\nfunction testOutOfArea() { // rule only, no AI call\n  Logger.log(JSON.stringify(scoreLead({\n    full_name: \"Test\", phone: \"000\", email: \"t@example.com\", in_area: \"No\",\n    property_type: \"Home\", ownership: \"Yes, I own it\", spend: \"Over $400\",\n    timeline: \"Within 1 month\", goal: \"Backup power\" })));\n}\n\nfunction testGreatLead() { // real AI call\n  Logger.log(JSON.stringify(scoreLead({\n    full_name: \"Ada Obi\", phone: \"0800000000\", email: \"ada@example.com\", in_area: \"Yes\",\n    property_type: \"Small business\", ownership: \"Yes, I own it\", spend: \"$150-$400\",\n    timeline: \"Within 1 month\",\n    goal: \"My bakery loses power daily and we burn through fuel running a generator.\" })));\n}\n\nfunction testWeakLead() { // real AI call\n  Logger.log(JSON.stringify(scoreLead({\n    full_name: \"Sam Lee\", phone: \"0800000001\", email: \"sam@example.com\", in_area: \"Yes\",\n    property_type: \"Home\", ownership: \"Yes, I own it\", spend: \"Under $50\",\n    timeline: \"Just researching\", goal: \"Curious how it works.\" })));\n}\n",
+          "promptKind": "code",
+          "verify": "The code is saved and the function dropdown next to Run lists onFormSubmit, createTrigger and the three test functions."
+        },
+        {
+          "instruction": "Test the free rule path first. Pick testOutOfArea in the function dropdown next to Run and click Run. The first time, Google asks for permission: Review permissions, choose your account, then \"Google hasn't verified this app\", Advanced, Go to Solar Lead Qualifier (unsafe), Allow. This is normal for your own scripts.",
+          "verify": "The Execution log shows score 1, tier cold, \"Outside our service area.\" and no AI call was made."
+        },
+        {
+          "instruction": "Run testGreatLead. This is a real AI call.",
+          "verify": "The log shows a score of 8 or higher (hot)."
+        },
+        {
+          "instruction": "Run testWeakLead. This is a real AI call.",
+          "verify": "The log shows a score of 4 or lower (cold)."
+        },
+        {
+          "instruction": "Turn the bot on. Run createTrigger once.",
+          "verify": "Under the clock icon (Triggers) in the left bar you can see onFormSubmit."
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "title": "Test it end to end with realistic leads",
+      "time": "10 min",
+      "description": "Submit the form once per lead below, using your own email so the alert reaches you.",
+      "steps": [
+        {
+          "instruction": "Open your form and submit these five leads, one submission each.",
+          "table": {
+            "header": [
+              "Lead",
+              "Answers",
+              "Expected"
+            ],
+            "rows": [
+              [
+                "Bakery owner",
+                "In area, small business, owns, $150-$400, within 1 month, \"daily outages, generator costs\"",
+                "**Hot** + email"
+              ],
+              [
+                "Factory manager",
+                "In area, large commercial, manages for owner, over $400, 1-3 months",
+                "Warm (needs specialist)"
+              ],
+              [
+                "Curious student",
+                "In area, home, owns, under $50, just researching",
+                "Cold"
+              ],
+              [
+                "Renter",
+                "In area, rents",
+                "Cold, instantly, no AI"
+              ],
+              [
+                "Out of town",
+                "Outside the area",
+                "Cold, instantly, no AI"
+              ]
+            ]
+          },
+          "verify": "Five rows appear with Lead Score, Tier, Reason, Follow-up Due and Status filled in, and the bakery owner's hot-lead email reaches your inbox."
+        },
+        {
+          "instruction": "Make the sheet usable. Select the Tier column, then Format, Conditional formatting. Add three rules with \"Text is exactly\": hot in red, warm in orange and cold in grey."
+        },
+        {
+          "instruction": "Then choose Data, Create a filter and sort by Follow-up Due.",
+          "callout": {
+            "variant": "tip",
+            "text": "The salesperson now sees reds at the top and calls the bakery owner within the hour."
+          },
+          "verify": "Hot leads are red and sit at the top of the sheet."
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "title": "Understand how it works",
+      "time": "5 min",
+      "description": "Understanding this part is what turns \"I copied it\" into \"I built it\".",
+      "steps": [
+        {
+          "instruction": "Form submits, then Google fires the trigger and onFormSubmit runs. That function reads the new row, scores the lead, writes the result back to the same row and sends the alert if the lead is hot."
+        },
+        {
+          "instruction": "Rules first, AI second. Out-of-area leads, renters and empty forms are decided by plain code: free, instant and consistent. The AI only handles judgment calls, such as how urgent a lead sounds."
+        },
+        {
+          "instruction": "Structured output. Gemini returns JSON in a fixed shape (a score and a reason), so there is no fragile text parsing. The code still clamps the score to the range 1 to 10."
+        },
+        {
+          "instruction": "The tier is code, not AI. The AI judges fit; scoreToTier does the arithmetic, so the same score always gives the same tier (8 to 10 hot, 5 to 7 warm, 1 to 4 cold)."
+        },
+        {
+          "instruction": "Failures never lose a lead. If the AI is down, the row is still saved with the tier error and the reason, so nothing disappears.",
+          "verify": "You can explain why a rule beats the AI for a renter, and why the tier is decided by code."
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "title": "Make it your business",
+      "time": "20 min",
+      "description": "You change three things: the form questions, the ICP text and the hard rules. The ICP (Ideal Customer Profile) is the AI's whole brief.",
+      "steps": [
+        {
+          "instruction": "Ask: what answer makes a lead impossible or worthless no matter what else they say? That becomes a hard rule.",
+          "callout": {
+            "variant": "tip",
+            "text": "A free email address would be a red flag for B2B software but is completely normal for BrightHome's household customers. Rules depend on your business."
+          }
+        },
+        {
+          "instruction": "See how the same bot fits other businesses.",
+          "table": {
+            "header": [
+              "Business",
+              "Strong signals",
+              "Hard rules (skip the AI)"
+            ],
+            "rows": [
+              [
+                "Real estate agent",
+                "Pre-approved, moving within 3 months",
+                "Budget far below your market, outside your area"
+              ],
+              [
+                "Web design agency",
+                "Budget of $1k+, launch date",
+                "\"Under $100\", no business"
+              ],
+              [
+                "Gym or studio",
+                "Lives close, wants to start this month",
+                "Too far to attend"
+              ],
+              [
+                "Law firm",
+                "Case type you handle, time-sensitive",
+                "Wrong practice area or jurisdiction"
+              ]
+            ]
+          }
+        },
+        {
+          "instruction": "List the 5 to 8 facts that decide whether a lead is worth a call."
+        },
+        {
+          "instruction": "Turn them into form questions. Multiple choice is cleanest."
+        },
+        {
+          "instruction": "Update FIELDS so each title exactly matches your sheet's headers."
+        },
+        {
+          "instruction": "Rewrite ICP with best, medium and weak customers. Examples beat adjectives."
+        },
+        {
+          "instruction": "Rewrite the hard rules in scoreLead, then update buildPrompt to include your new fields."
+        },
+        {
+          "instruction": "Re-run the tests and compare the scores with 3 to 5 real past leads.",
+          "verify": "The bot scores your own sample leads the way you would."
+        }
+      ],
+      "goFurther": "Level up: auto-reply to every lead with a faster promise for hot ones, catch duplicates by email or phone number, send a morning digest of leads due today with a time-driven trigger, or push scored leads into HubSpot's free tier with UrlFetchApp."
+    }
+  ],
+  "portfolio": "You built a Lead Qualifier Bot for BrightHome Solar: a Google Form feeds an Apps Script that discards impossible leads with rules, scores the rest with Gemini, tiers them hot, warm or cold in code, and emails the salesperson instantly. It is free, serverless and adaptable to any service business. Add a screenshot of your colour-coded sheet.",
+  "portfolioPrompt": "I just built a Lead Qualifier Bot for a sample solar business. A Google Form feeds a Google Sheet; a Google Apps Script discards impossible leads with plain rules (outside the service area, renters, empty forms), scores the rest from 1 to 10 with Gemini using structured JSON, turns the score into a hot, warm or cold tier in code, logs a follow-up deadline, and emails the salesperson straight away for hot leads. A failure never loses a lead.\n\nHelp me write:\n1. A 2-3 sentence project description for my portfolio site\n2. A short LinkedIn post announcing it\n3. Three resume-style bullet points describing what I built and the skills it shows"
 }$sess$::jsonb,
-  null,
-  null,
+  null, null,
   $tsh$[
   {
-    "fix": "Webhooks need a publicly reachable URL — localhost alone will never work. Run `ngrok http 5050` while testing locally and point Typeform's webhook at the ngrok URL, then switch to your real deployed URL once it's live.",
-    "issue": "The Typeform webhook never fires"
+    "issue": "First stop for any problem",
+    "fix": "Open the Executions tab in the left bar of Apps Script. It shows every run and its exact error."
   },
   {
-    "fix": "This is the AI-reliability failure this project is built to catch loudly instead of silently: the model replied without a [SCORE] section, or with no digit in it at all. Print the raw `reply` inside `score_lead()` to see exactly what came back — scorer.py's self-test already covers the most common drift (\"8/10\" instead of \"8\"), so a fresh failure usually means a new phrasing worth handling too.",
-    "issue": "scorer.py raises \"Could not find a numeric score in the AI's reply\""
+    "issue": "Nothing happens on submission",
+    "fix": "The trigger is not installed. Run createTrigger and check the Triggers page (clock icon)."
   },
   {
-    "fix": "Your Service Key is wrong or missing a scope. In HubSpot, open Settings → Integrations → Service Keys, edit the key, make sure `crm.objects.contacts.write` and `crm.objects.tasks.write` are both enabled, and copy the key into .env again.",
-    "issue": "401 Unauthorized from the HubSpot API"
+    "issue": "Cannot read properties of undefined",
+    "fix": "You ran onFormSubmit by hand. It only works from a real form submission; use the test functions instead."
   },
   {
-    "fix": "Those are custom contact properties this project assumes already exist. Create them under Settings → Properties → Contact properties before your first real submission (Build 4, step 2).",
-    "issue": "HubSpot returns an error mentioning lead_score, lead_tier or ai_notes"
+    "issue": "Fields are blank, or everyone is \"Outside our service area\"",
+    "fix": "A title in FIELDS does not exactly match the sheet header. Compare them character by character."
   },
   {
-    "fix": "`create_contact()` in this starter always creates a new contact. Add a `find_contact_by_email()` search (see Build 4's \"Go further\") and update the existing contact instead of creating a new one when a match is found.",
-    "issue": "Duplicate contacts created for the same lead"
+    "issue": "GEMINI_API_KEY is missing",
+    "fix": "There is a typo in the name, or it was not saved under Script properties."
+  },
+  {
+    "issue": "Gemini error 404",
+    "fix": "The model was retired. Change MODEL to a current Flash model name."
+  },
+  {
+    "issue": "Gemini error 400 about thinking",
+    "fix": "Delete the thinkingConfig line."
+  },
+  {
+    "issue": "Gemini error 429",
+    "fix": "Free-tier rate limit. The code retries; wait a minute if many forms arrive at once."
+  },
+  {
+    "issue": "Rows show tier error",
+    "fix": "Read the Reason column for the real message, then re-score the lead by hand."
+  },
+  {
+    "issue": "No hot-lead email",
+    "fix": "Check your spam folder. A personal Gmail account also has a daily email cap (around 100)."
+  },
+  {
+    "issue": "Scores do not match your judgment",
+    "fix": "Sharpen the ICP with concrete examples and compare against 3 to 5 real past leads."
+  },
+  {
+    "issue": "Edits have no effect",
+    "fix": "Press Save before testing."
   }
 ]$tsh$::jsonb,
   $res$[
   {
-    "url": "https://www.typeform.com/developers/webhooks/example-payload/",
-    "title": "Typeform Webhooks — example payload"
+    "title": "Google Forms",
+    "url": "https://forms.google.com"
   },
   {
-    "url": "https://www.typeform.com/developers/webhooks/",
-    "title": "Typeform Webhooks overview"
+    "title": "Google Apps Script",
+    "url": "https://script.google.com"
   },
   {
-    "url": "https://developers.hubspot.com/docs/reference/api/crm/objects/contacts",
-    "title": "HubSpot Contacts API"
+    "title": "Google AI Studio: create a Gemini API key",
+    "url": "https://aistudio.google.com/apikey"
   },
   {
-    "url": "https://developers.hubspot.com/docs/api-reference/crm-tasks-v3/basic/post-crm-v3-objects-tasks",
-    "title": "HubSpot Tasks API — Create"
+    "title": "Apps Script triggers guide",
+    "url": "https://developers.google.com/apps-script/guides/triggers"
   }
 ]$res$::jsonb,
   'builder1',
-  '2026-09-26 publish: shared sdt_ai.py updated (gemini-flash-latest with thinking turned down, readable errors for retired models and empty answers, Gemini key sent in a header), Python/venv setup steps, current HubSpot/Airtable/DataForSEO/ngrok/Railway/Buffer steps, code fixes. No credits: students use their own Gemini or Claude key.'
+  $note$Replace the Python/Flask/HubSpot guide with the free 'Build a Free Lead Qualifier Bot: BrightHome Solar' guide (Google Form + Google Sheet + Apps Script + Gemini). Content from lead-qualifier-bot-guide.html; code unchanged from the source (syntax-checked with node).$note$
 )
 on conflict (course_id) do update set
-  what_you_build = excluded.what_you_build, what_you_learn = excluded.what_you_learn, session = excluded.session,
-  starter_code = excluded.starter_code, test_it_out = excluded.test_it_out, troubleshooting = excluded.troubleshooting,
-  resources = excluded.resources, tier = excluded.tier, change_note = excluded.change_note, updated_at = now();
+  what_you_build = excluded.what_you_build,
+  what_you_learn = excluded.what_you_learn,
+  session = excluded.session,
+  starter_code = excluded.starter_code,
+  test_it_out = excluded.test_it_out,
+  troubleshooting = excluded.troubleshooting,
+  resources = excluded.resources,
+  tier = excluded.tier,
+  change_note = excluded.change_note, updated_at = now();
