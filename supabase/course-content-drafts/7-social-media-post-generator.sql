@@ -1,159 +1,402 @@
 insert into public.course_content_draft (course_id, what_you_build, what_you_learn, session, starter_code, test_it_out, troubleshooting, resources, tier, change_note)
 values (
   7,
-  $wyb$A Streamlit tool that turns any article link (or pasted text) into five ready-to-post social updates -- one each for LinkedIn, Twitter, Instagram, Facebook and Threads -- written in a single AI call and tuned to each platform's own rules (length, tone, hashtags). Built from real, tested Python: a defensive scraper that only pulls the actual article text out of a page, a bracket-marker prompt format that survives a stray AI slip instead of crashing, and a clickable Streamlit screen with a copy button on every post. The AI is called through sdt_ai.py -- your own free Gemini key, or your own Claude/Anthropic key, your choice.$wyb$,
+  $wyb$A free Social Media Post Agent for a small business. You type the news once in plain words, pick a tone and a goal, click one button and get five ready-to-post versions: LinkedIn, X, Instagram, Facebook and Threads. The sample business is Bloom & Butter, a handmade skincare brand. The agent works in four moves: it drafts all five posts in a structured format, plain Python checks every post (length, hashtag count, the brand hashtag, banned words), it asks the AI to rewrite only the failing posts with the exact problems listed (at most two rounds), and it shows each post with a character counter and a copy button. That draft, check, fix loop is the core pattern behind most business agents. It is a small Streamlit web app using Python and a free Gemini API key, and a single brand.json file lets the same agent serve any business.$wyb$,
   $wyl$[
-  "Scrape a web page defensively with BeautifulSoup, stripping out navigation/ads/footers to leave just the article text",
-  "Design a single prompt that returns five different, platform-tuned outputs in one AI call instead of five",
-  "Parse a multi-section AI reply using bracket markers instead of JSON, so a stray code fence or extra line doesn't crash the whole batch",
-  "Cap how much text you send to the AI as a cost decision, not just a technical one",
-  "Build a simple, real Streamlit interface around AI-generated content",
-  "Extend an existing prompt-and-parse pattern to a new case you define yourself"
+  "Set up a Python project with a virtual environment and keep a secret key out of your code",
+  "Describe a business in one brand.json file so the same agent can serve any client",
+  "Get structured output from Gemini with a pydantic schema instead of splitting text",
+  "Write a plain-Python checker for length, hashtags, the brand hashtag and banned words",
+  "Build the draft, check, fix loop that repairs only the posts that failed",
+  "Build a Streamlit screen with character counters and copy buttons",
+  "Add a platform or swap the business by changing one list or one file"
 ]$wyl$::jsonb,
   $sess${
-  "model": "Google Gemini (gemini-flash-latest) or Claude Haiku 4.5 - your choice, see sdt_ai.py setup",
-  "builds": [
-    {
-      "time": "30 min",
-      "steps": [
-        {
-          "instruction": "Make an empty folder for this project and open it in your code editor (in VS Code: File > Open Folder). Inside it, create `requirements.txt` with this content - it lists every library this project uses:",
-          "prompt": "requests\npython-dotenv\nbeautifulsoup4\nstreamlit\n",
-          "verify": "requirements.txt sits directly inside your project folder, not in a subfolder. The next step installs everything it lists."
-        },
-        {
-          "instruction": "Set up Python for this project (once, about 5 minutes). Check your version with `python3 --version` on Mac/Linux or `py --version` on Windows. If it is missing or older than 3.10, install the latest Python from python.org/downloads (on Windows, tick \"Add python.exe to PATH\" on the installer's first screen), then open a new terminal. Now open a terminal in your project folder (in VS Code: Terminal > New Terminal) and run the commands below for your system. They create a virtual environment - a private set of libraries for this project only - and install everything requirements.txt lists.",
-          "prompt": "# Mac / Linux\npython3 -m venv .venv\nsource .venv/bin/activate\npython -m pip install -r requirements.txt\n\n# Windows (PowerShell)\npy -m venv .venv\n.venv\\Scripts\\Activate.ps1\npython -m pip install -r requirements.txt\n\n# Windows says \"running scripts is disabled\"? Run this once, then the Activate line again:\n#   Set-ExecutionPolicy -Scope CurrentUser RemoteSigned\n# Ubuntu/Debian says venv or ensurepip is not available? Run: sudo apt install python3-venv",
-          "verify": "Your terminal prompt now starts with (.venv), and the install ended with \"Successfully installed\". Each time you open a new terminal for this project, run the activate line again first - while it is active, plain `python` works on every system, and that is the command every step below uses."
-        },
-        {
-          "prompt": "\"\"\"\nSocial Dev Technologies - your connection to the AI.\n\nYou have TWO ways to power this file. Pick ONE and set it in your .env:\n\n  AI_PROVIDER=gemini    -> your own FREE Google Gemini API key\n  AI_PROVIDER=claude    -> your own Claude/Anthropic API key\n\nEvery project in this course calls ask_ai(...) the exact same way no\nmatter which one you pick - this file is the only place that changes.\n\nSETUP - OPTION 1: Gemini (free, no billing needed):\n\n  1. Go to https://aistudio.google.com/apikey and sign in with any Google\n     account. Click \"Create API key\" - free, no card required.\n  2. In the same folder as this file, create a file named exactly: .env\n  3. Put these two lines inside it:\n\n         AI_PROVIDER=gemini\n         GEMINI_API_KEY=paste_your_own_key_here\n\nSETUP - OPTION 2: Claude (if you already have a paid Claude account):\n\n  1. Go to https://console.anthropic.com/settings/keys and create an API\n     key. This needs billing set up on your Anthropic account - it is a\n     separate thing from a claude.ai Pro subscription, and is billed by\n     Anthropic based on what you actually use.\n  2. In your .env file, put these two lines instead:\n\n         AI_PROVIDER=claude\n         ANTHROPIC_API_KEY=paste_your_own_key_here\n\nNever share either key or put it on GitHub - each one is billed to YOUR\naccount. That's it. Every project in this course reuses this same file.\n\"\"\"\n\nimport os\nimport time\n\nimport requests\nfrom dotenv import load_dotenv\n\n# Reads the .env file sitting next to your project and loads your keys.\nload_dotenv()\n\n# \"gemini-flash-latest\" is Google's name for whatever its newest Flash model\n# is, so this file keeps working when Google retires an older model - which\n# it does regularly. You can pin one specific model with GEMINI_MODEL=... in\n# your .env, but if you ever get a \"not available\" error, delete that line.\nGEMINI_MODEL = os.environ.get(\"GEMINI_MODEL\", \"gemini-flash-latest\")\nGEMINI_URL_TEMPLATE = \"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent\"\n\n# Gemini \"thinks\" before it answers, and that hidden thinking counts toward\n# the same token limit as the answer itself. With a small max_tokens (the\n# 50-300 used for short replies in this course) the thinking could use up\n# the whole limit and the answer would come back empty. So this file turns\n# thinking down to its minimum (these projects don't need it) and gives\n# Gemini this many extra tokens on top of your max_tokens for whatever\n# thinking is left.\nTHINKING_ALLOWANCE = 1024\n\nCLAUDE_MODEL = os.environ.get(\"CLAUDE_MODEL\", \"claude-haiku-4-5\")\nANTHROPIC_URL = \"https://api.anthropic.com/v1/messages\"\nANTHROPIC_VERSION = \"2023-06-01\"\n\n# Both AIs occasionally answer \"overloaded\" during busy periods (Gemini's\n# free tier especially). That's not your code being wrong - retrying a\n# couple of times almost always gets a real answer, so it's built in here\n# rather than left for every project to handle separately.\nMAX_ATTEMPTS = 3\nRETRY_DELAY_SECONDS = 3\n\n\nclass AIError(Exception):\n    \"\"\"Something went wrong talking to the AI. The message explains what.\"\"\"\n\n\ndef _get_provider():\n    \"\"\"\n    Reads AI_PROVIDER from .env. Falls back to guessing from whichever key\n    is actually present, so forgetting to set AI_PROVIDER explicitly\n    doesn't crash a setup that only has one key configured.\n    \"\"\"\n    provider = os.environ.get(\"AI_PROVIDER\", \"\").strip().lower()\n    if provider in (\"gemini\", \"claude\"):\n        return provider\n\n    if os.environ.get(\"GEMINI_API_KEY\"):\n        return \"gemini\"\n    if os.environ.get(\"ANTHROPIC_API_KEY\"):\n        return \"claude\"\n\n    raise AIError(\n        \"No AI provider configured.\\n\"\n        \"Add ONE of these pairs to your .env file:\\n\\n\"\n        \"    AI_PROVIDER=gemini\\n\"\n        \"    GEMINI_API_KEY=paste_your_free_key_here\\n\\n\"\n        \"  ...or...\\n\\n\"\n        \"    AI_PROVIDER=claude\\n\"\n        \"    ANTHROPIC_API_KEY=paste_your_own_key_here\\n\\n\"\n        \"Get a free Gemini key at https://aistudio.google.com/apikey\"\n    )\n\n\ndef _ask_gemini(prompt, system=None, max_tokens=1000):\n    api_key = os.environ.get(\"GEMINI_API_KEY\")\n    if not api_key:\n        raise AIError(\n            \"AI_PROVIDER is set to gemini but no GEMINI_API_KEY was found.\\n\"\n            \"Get a free key at https://aistudio.google.com/apikey and add \"\n            \"it to .env:\\n\"\n            \"    GEMINI_API_KEY=paste_your_own_key_here\"\n        )\n\n    generation_config = {\"maxOutputTokens\": max_tokens + THINKING_ALLOWANCE}\n    # thinkingBudget 0 = \"as little thinking as possible\". Pro models can't\n    # turn thinking down and reject this setting, so it's left off for them.\n    if \"-pro\" not in GEMINI_MODEL:\n        generation_config[\"thinkingConfig\"] = {\"thinkingBudget\": 0}\n\n    payload = {\n        \"contents\": [{\"role\": \"user\", \"parts\": [{\"text\": prompt}]}],\n        \"generationConfig\": generation_config,\n    }\n    if system:\n        payload[\"systemInstruction\"] = {\"parts\": [{\"text\": system}]}\n\n    url = GEMINI_URL_TEMPLATE.format(model=GEMINI_MODEL)\n    # The key goes in a header rather than the URL, so it never shows up in\n    # an error message or traceback you might paste somewhere for help.\n    headers = {\"x-goog-api-key\": api_key}\n\n    last_problem = \"no response\"\n    for attempt in range(MAX_ATTEMPTS):\n        try:\n            response = requests.post(url, headers=headers, json=payload, timeout=90)\n        except requests.RequestException:\n            raise AIError(\n                \"Could not reach Gemini. Check your internet connection and try again.\"\n            ) from None\n\n        if response.status_code in (500, 503):\n            last_problem = f\"Gemini is busy ({response.status_code} - high demand on the free tier)\"\n            if attempt < MAX_ATTEMPTS - 1:\n                time.sleep(RETRY_DELAY_SECONDS)\n            continue\n\n        if response.status_code == 429:\n            raise AIError(\n                \"Gemini says you've hit the free tier's rate limit. Wait a \"\n                \"minute and try again - the free tier only allows a \"\n                \"limited number of requests per minute.\"\n            )\n\n        if response.status_code == 404:\n            if os.environ.get(\"GEMINI_MODEL\"):\n                advice = (\n                    \"Your .env file sets GEMINI_MODEL - delete that line so this \"\n                    \"file uses its default model, then try again.\"\n                )\n            else:\n                advice = \"Check the course page for an updated copy of sdt_ai.py.\"\n            raise AIError(\n                f'Gemini says the model \"{GEMINI_MODEL}\" isn\\'t available to your '\n                f\"API key - Google retires older models.\\n{advice}\\n\"\n                f\"Details: {response.text[:300]}\"\n            )\n\n        if response.status_code == 400:\n            # If a future Gemini model ever refuses the thinking setting\n            # above, ask again without it instead of failing.\n            if \"thinkingConfig\" in generation_config and \"thinking\" in response.text.lower():\n                del generation_config[\"thinkingConfig\"]\n                last_problem = \"Gemini rejected the thinking setting\"\n                continue\n            raise AIError(\n                f\"Gemini rejected the request - double check your GEMINI_API_KEY \"\n                f\"is correct: {response.text[:300]}\"\n            )\n\n        if response.status_code != 200:\n            raise AIError(\n                f\"Gemini returned an error (status {response.status_code}): {response.text[:300]}\"\n            )\n\n        data = response.json()\n        candidates = data.get(\"candidates\") or []\n        if not candidates:\n            block_reason = (data.get(\"promptFeedback\") or {}).get(\"blockReason\")\n            if block_reason:\n                raise AIError(f\"Gemini refused the prompt ({block_reason}). Try rephrasing it.\")\n            raise AIError(f\"Unexpected reply from Gemini: {data}\")\n        candidate = candidates[0]\n        finish_reason = candidate.get(\"finishReason\")\n\n        # A response can come back with no text because Gemini's safety\n        # filters blocked it (finishReason == \"SAFETY\"), not because of a\n        # network problem - so this is not retried like the cases above.\n        if finish_reason == \"SAFETY\":\n            raise AIError(\"Gemini declined to answer (safety filter). Try rephrasing your prompt.\")\n\n        # An answer can arrive split across several parts, so join them all.\n        # Any part marked \"thought\" is Gemini's thinking, not its answer.\n        parts = (candidate.get(\"content\") or {}).get(\"parts\") or []\n        text = \"\".join(part.get(\"text\", \"\") for part in parts if not part.get(\"thought\"))\n        if not text:\n            if finish_reason == \"MAX_TOKENS\":\n                raise AIError(\n                    \"Gemini ran out of room before it wrote any answer - its thinking \"\n                    f\"used up all {generation_config['maxOutputTokens']} tokens it was \"\n                    \"allowed. Raise max_tokens in this ask_ai(...) call (try \"\n                    f\"max_tokens={max(max_tokens * 2, 4000)}) and run it again.\"\n                )\n            raise AIError(\n                f\"Gemini sent back an empty answer (finishReason: {finish_reason}). \"\n                \"Try again, or rephrase your prompt.\"\n            )\n\n        usage = data.get(\"usageMetadata\") or {}\n        return {\n            \"text\": text,\n            \"input_tokens\": usage.get(\"promptTokenCount\"),\n            \"output_tokens\": usage.get(\"candidatesTokenCount\"),\n        }\n\n    raise AIError(\n        f\"Gemini was unavailable after {MAX_ATTEMPTS} tries ({last_problem}). \"\n        \"This happens sometimes on the free tier during high demand - wait \"\n        \"a minute and try again.\"\n    )\n\n\ndef _ask_claude(prompt, system=None, max_tokens=1000):\n    api_key = os.environ.get(\"ANTHROPIC_API_KEY\")\n    if not api_key:\n        raise AIError(\n            \"AI_PROVIDER is set to claude but no ANTHROPIC_API_KEY was found.\\n\"\n            \"Create one at https://console.anthropic.com/settings/keys and \"\n            \"add it to .env:\\n\"\n            \"    ANTHROPIC_API_KEY=paste_your_own_key_here\"\n        )\n\n    payload = {\n        \"model\": CLAUDE_MODEL,\n        \"max_tokens\": max_tokens,\n        \"messages\": [{\"role\": \"user\", \"content\": prompt}],\n    }\n    if system:\n        payload[\"system\"] = system\n\n    last_problem = \"no response\"\n    for attempt in range(MAX_ATTEMPTS):\n        try:\n            response = requests.post(\n                ANTHROPIC_URL,\n                headers={\n                    \"x-api-key\": api_key,\n                    \"anthropic-version\": ANTHROPIC_VERSION,\n                    \"Content-Type\": \"application/json\",\n                },\n                json=payload,\n                timeout=90,\n            )\n        except requests.RequestException:\n            raise AIError(\n                \"Could not reach Claude. Check your internet connection and try again.\"\n            ) from None\n\n        # 529 is Anthropic's \"overloaded\" - like Gemini's 503, a retry\n        # usually works.\n        if response.status_code in (500, 503, 529):\n            last_problem = f\"Claude is busy ({response.status_code} - overloaded)\"\n            if attempt < MAX_ATTEMPTS - 1:\n                time.sleep(RETRY_DELAY_SECONDS)\n            continue\n\n        try:\n            data = response.json()\n        except ValueError:\n            raise AIError(f\"Unexpected reply from Claude (status {response.status_code}).\") from None\n\n        if response.status_code == 401:\n            raise AIError(\n                \"Claude rejected your ANTHROPIC_API_KEY - double check it was copied correctly.\"\n            )\n\n        if response.status_code == 429:\n            raise AIError(\"Claude says you've hit your rate or usage limit. Wait a moment and try again.\")\n\n        if response.status_code == 404:\n            if os.environ.get(\"CLAUDE_MODEL\"):\n                advice = (\n                    \"Your .env file sets CLAUDE_MODEL - delete that line so this \"\n                    \"file uses its default model, then try again.\"\n                )\n            else:\n                advice = \"Check the course page for an updated copy of sdt_ai.py.\"\n            raise AIError(\n                f'Claude says the model \"{CLAUDE_MODEL}\" isn\\'t available to your '\n                f\"API key.\\n{advice}\"\n            )\n\n        if \"error\" in data or response.status_code != 200:\n            error = data.get(\"error\") or {}\n            message = error.get(\"message\") if isinstance(error, dict) else str(error)\n            raise AIError(\n                f\"Claude returned an error (status {response.status_code}): \"\n                f\"{message or str(data)[:300]}\"\n            )\n\n        text = \"\".join(\n            block.get(\"text\", \"\") for block in data.get(\"content\", []) if block.get(\"type\") == \"text\"\n        )\n        if not text:\n            raise AIError(\n                f\"Claude sent back an empty answer (stop_reason: {data.get('stop_reason')}). \"\n                \"Try again, or rephrase your prompt.\"\n            )\n\n        usage = data.get(\"usage\") or {}\n        return {\n            \"text\": text,\n            \"input_tokens\": usage.get(\"input_tokens\"),\n            \"output_tokens\": usage.get(\"output_tokens\"),\n        }\n\n    raise AIError(\n        f\"Claude was unavailable after {MAX_ATTEMPTS} tries ({last_problem}). \"\n        \"Wait a minute and try again.\"\n    )\n\n\ndef ask_ai_detailed(prompt, system=None, max_tokens=1000, project=None):\n    \"\"\"\n    Same as ask_ai, but returns the whole reply as a dict.\n\n        result = ask_ai_detailed(\"Summarise this\", max_tokens=200)\n        print(result[\"text\"])\n    \"\"\"\n    provider = _get_provider()\n    if provider == \"gemini\":\n        return _ask_gemini(prompt, system=system, max_tokens=max_tokens)\n    return _ask_claude(prompt, system=system, max_tokens=max_tokens)\n\n\ndef ask_ai(prompt, system=None, max_tokens=1000, project=None):\n    \"\"\"\n    Send a question to the AI and get the answer back as text.\n\n        answer = ask_ai(\"Write a haiku about Lagos traffic\")\n        print(answer)\n\n    prompt      - what you want the AI to do. This is the important part.\n    system      - optional. Sets the AI's role, e.g. \"You are a careful editor.\"\n    max_tokens  - roughly how long the answer may be. 1000 is plenty for most.\n    project     - unused, kept so call sites read the same across every\n                  project regardless of which AI is behind this file.\n\n    Works identically whichever provider your .env is set to - every\n    project in this course calls this one function and never needs to\n    know which AI is actually answering.\n\n    Returns the AI's answer as a plain string.\n    Raises AIError with a readable message if something is wrong.\n    \"\"\"\n    return ask_ai_detailed(prompt, system=system, max_tokens=max_tokens, project=project)[\"text\"]\n\n\nif __name__ == \"__main__\":\n    # Running this file directly checks that your setup works.\n    print(\"Testing your AI connection...\\n\")\n    try:\n        provider = _get_provider()\n        model = GEMINI_MODEL if provider == \"gemini\" else CLAUDE_MODEL\n        result = ask_ai_detailed(\"Say hello in exactly five words.\", max_tokens=50)\n        print(f\"Provider: {provider} ({model})\")\n        print(\"The AI said:\", result[\"text\"])\n        print(\"\\nYour setup works. You are ready to build.\")\n    except AIError as problem:\n        print(\"Setup problem:\\n\")\n        print(problem)\n",
-          "verify": "Don't run it yet - it needs the .env file from the next step first.",
-          "instruction": "Create `sdt_ai.py` in your project folder with this code. You'll reuse this exact file, unmodified, in every future project in this course:"
-        },
-        {
-          "prompt": "# OPTION 1: your own free Gemini key (recommended - no billing needed)\n# Get one free at https://aistudio.google.com/apikey - no credit card needed\nAI_PROVIDER=gemini\nGEMINI_API_KEY=paste_your_own_key_here\n\n# OPTION 2: your own Claude/Anthropic key (comment OPTION 1 out above,\n# uncomment these two lines instead - needs billing set up on your own\n# Anthropic account)\n# Get one at https://console.anthropic.com/settings/keys\n# AI_PROVIDER=claude\n# ANTHROPIC_API_KEY=paste_your_own_key_here\n",
-          "verify": "Run `python sdt_ai.py` - it should print which provider you're using, then `The AI said: ...`, and end with `Your setup works. You are ready to build.` If you see `No AI provider configured` instead, check that .env sits next to sdt_ai.py and that AI_PROVIDER plus its matching key are both uncommented.",
-          "instruction": "Create `.env` in the same folder with ONE of the two setups below — pick whichever you're using, then replace the placeholder with your real key:"
-        },
-        {
-          "prompt": "\"\"\"\nStep 2 of the Social Media Post Generator.\n\nThis file turns article text into five social media posts - one for each\nplatform, each written the way that platform expects.\n\"\"\"\n\nfrom sdt_ai import ask_ai\n\n# The five platforms, and the rule the AI must follow for each one.\n# Change these rules and the posts change. This is the file you will\n# edit most when you make this tool your own.\nPLATFORM_RULES = {\n    \"LINKEDIN\": \"Professional. 3 short paragraphs. End with a question. 3 hashtags.\",\n    \"TWITTER\": \"Under 280 characters total. Punchy. 2 hashtags maximum.\",\n    \"INSTAGRAM\": \"Warm and personal. Emojis are welcome. 5 hashtags at the very end.\",\n    \"FACEBOOK\": \"Conversational, like talking to a friend. 2 or 3 sentences. No hashtags.\",\n    \"THREADS\": \"Casual and short. Under 400 characters. 1 hashtag.\",\n}\n\n\ndef build_prompt(article_text, tone):\n    \"\"\"\n    Writes the instructions we send to the AI.\n\n    Keeping this in its own function means you can print it and read\n    exactly what the AI is being asked, which is the fastest way to\n    fix posts you don't like.\n    \"\"\"\n    rules = \"\\n\".join(f\"[{name}] {rule}\" for name, rule in PLATFORM_RULES.items())\n\n    return f\"\"\"Write five social media posts about the article below.\n\nTone for all five posts: {tone}\n\nWrite one post for each platform, following its rule exactly:\n{rules}\n\nFormat your answer EXACTLY like this, with the platform name in square\nbrackets on its own line, then the post underneath it:\n\n[LINKEDIN]\nthe LinkedIn post here\n\n[TWITTER]\nthe Twitter post here\n\n...and so on for INSTAGRAM, FACEBOOK and THREADS.\n\nAfter the last post, write [END] on its own line.\n\nDo not add any explanation, introduction or closing remark.\n\nARTICLE:\n{article_text}\"\"\"\n\n\ndef split_posts(reply):\n    \"\"\"\n    Turns the AI's one long answer into a dictionary, one entry per platform.\n\n        {\"LINKEDIN\": \"...\", \"TWITTER\": \"...\", ...}\n\n    We ask the AI for [PLATFORM] markers rather than JSON on purpose.\n    JSON breaks if the AI adds a stray comma or wraps its answer in\n    code fences, and debugging that is miserable when you are starting\n    out. Markers are forgiving: anything we don't recognise is simply\n    ignored instead of crashing the whole program.\n    \"\"\"\n    posts = {}\n    current_platform = None\n    current_lines = []\n\n    for line in reply.splitlines():\n        stripped = line.strip()\n        marker = stripped.strip(\"[]\").upper()\n        is_marker = stripped.startswith(\"[\") and stripped.endswith(\"]\")\n\n        # [END] tells us the posts are finished. Without it, a friendly\n        # sign-off like \"Let me know if you'd like changes!\" gets glued to\n        # the bottom of the last post - and you paste it into Threads\n        # without noticing. This is why we ask the AI for [END].\n        if is_marker and marker == \"END\":\n            break\n\n        if is_marker and marker in PLATFORM_RULES:\n            # Save whatever we collected for the previous platform.\n            if current_platform:\n                posts[current_platform] = \"\\n\".join(current_lines).strip()\n            current_platform = marker\n            current_lines = []\n        elif current_platform:\n            # The AI sometimes wraps its whole answer in ``` code fences.\n            # Those aren't part of your post, so drop them.\n            if stripped.startswith(\"```\"):\n                continue\n            current_lines.append(line)\n\n    # Don't forget the last one - there's no marker after it to trigger the save.\n    if current_platform:\n        posts[current_platform] = \"\\n\".join(current_lines).strip()\n\n    return posts\n\n\ndef generate_posts(article_text, tone=\"Educational\"):\n    \"\"\"\n    The main function. Give it article text, get back five posts.\n\n        posts = generate_posts(text, tone=\"Friendly\")\n        print(posts[\"LINKEDIN\"])\n    \"\"\"\n    prompt = build_prompt(article_text, tone)\n\n    # max_tokens caps how long the AI's answer may be, which caps what\n    # this costs you. 1200 comfortably fits five posts.\n    reply = ask_ai(\n        prompt,\n        max_tokens=1200,\n        project=\"social-media-post-generator\",\n    )\n\n    posts = split_posts(reply)\n\n    if not posts:\n        raise ValueError(\n            \"The AI replied, but not in the format we asked for.\\n\"\n            \"Run it again - this usually fixes itself.\\n\"\n            \"If it keeps happening, print(reply) to see what came back.\"\n        )\n\n    return posts\n\n\nif __name__ == \"__main__\":\n    # Run this file on its own to check the splitting works:\n    #     python generator.py\n    fake_reply = \"\"\"[LINKEDIN]\nAI is changing how small businesses operate.\n\nWhat would you automate first?\n\n[TWITTER]\nAI isn't coming for your job. It's coming for your admin. #AI\n\n[INSTAGRAM]\nSmall business owners are quietly winning with AI right now.\n#ai #smallbusiness #automation #tech #growth\n\n[FACEBOOK]\nEver wonder how some shops reply instantly at midnight? It's AI.\n\n[THREADS]\nThe gap isn't talent anymore. It's tooling. #AI\"\"\"\n\n    result = split_posts(fake_reply)\n    print(f\"Found {len(result)} posts:\\n\")\n    for platform, text in result.items():\n        print(f\"--- {platform} ---\")\n        print(text)\n        print()\n",
-          "verify": "Run `python generator.py` - it feeds a hardcoded fake AI reply into split_posts() (no AI call, no cost) and prints `Found 5 posts:` followed by each platform's post. No AI call happens here - this only proves the marker-parsing logic works before you ever spend a real request on it.",
-          "instruction": "Create `generator.py` with this code:"
-        }
-      ],
-      "title": "Connect to the AI and design the five-post prompt",
-      "number": 1,
-      "goFurther": "Change one of the PLATFORM_RULES (e.g. make TWITTER allow 3 hashtags instead of 2, or make INSTAGRAM banned from emojis) and re-run generator.py's self-test to see how the fake reply doesn't reflect your new rule - that's expected, since the rule only affects what the real AI writes, not the hardcoded test data.",
-      "description": "Wire up the shared AI connector, then write the one prompt every post in this tool comes from - one AI call that returns five different platform-specific posts at once."
-    },
-    {
-      "time": "20 min",
-      "steps": [
-        {
-          "prompt": "\"\"\"\nStep 1 of the Social Media Post Generator.\n\nThis file has one job: given a web address, get the actual words out of\nthat page. Web pages are full of menus, adverts and footers - we only\nwant the article itself.\n\"\"\"\n\nimport requests\nfrom bs4 import BeautifulSoup\n\n# Websites often block programs that don't look like a real browser.\n# Telling them we're a normal browser avoids most of that.\nBROWSER_HEADER = {\"User-Agent\": \"Mozilla/5.0\"}\n\n# Stop after this many characters.\n#\n# This is a MONEY decision, not a technical one. Everything you send to\n# the AI costs you - free-tier quota on Gemini, or real tokens on your\n# own Claude account. 6000 characters is roughly 2-3 pages - plenty for\n# the AI to understand what an article is about. Sending the whole thing\n# would cost several times more and produce almost the same posts.\nMAX_CHARACTERS = 6000\n\n# Parts of a page that are never the article.\nNOT_THE_ARTICLE = [\"script\", \"style\", \"nav\", \"footer\", \"header\", \"aside\", \"form\"]\n\n\ndef get_article_text(url):\n    \"\"\"\n    Downloads a web page and returns just its readable text.\n\n        text = get_article_text(\"https://example.com/some-post\")\n\n    Raises a clear error if the page can't be fetched or has no text.\n    \"\"\"\n    try:\n        page = requests.get(url, headers=BROWSER_HEADER, timeout=15)\n        page.raise_for_status()\n    except requests.RequestException:\n        raise ValueError(\n            f\"Could not open that link.\\n\"\n            f\"Check the address is correct and that the page opens in your browser.\"\n        )\n\n    # BeautifulSoup turns messy HTML into something we can search through.\n    soup = BeautifulSoup(page.text, \"html.parser\")\n\n    # Throw away the parts that are never article text.\n    for junk in soup(NOT_THE_ARTICLE):\n        junk.decompose()\n\n    # Real article text lives in <p> (paragraph) tags almost every time.\n    #\n    # The \" \" matters. A paragraph containing a link looks like\n    # <p>a field of <a>computer science</a>that studies...</p> and without\n    # a separator you get \"ofcomputer sciencethat\" - words glued together.\n    # The AI still copes, but it writes noticeably worse posts from mush.\n    paragraphs = [p.get_text(\" \", strip=True) for p in soup.find_all(\"p\")]\n    text = \"\\n\".join(p for p in paragraphs if p)\n\n    if len(text) < 200:\n        raise ValueError(\n            \"That page didn't have much readable text in it.\\n\"\n            \"Some sites load their words with JavaScript, which this can't see.\\n\"\n            \"Try a normal blog post or news article, or paste the text in directly.\"\n        )\n\n    return text[:MAX_CHARACTERS]\n\n\nif __name__ == \"__main__\":\n    # Run this file on its own to check it works:  python article.py\n    sample = \"https://en.wikipedia.org/wiki/Artificial_intelligence\"\n    print(f\"Fetching: {sample}\\n\")\n    words = get_article_text(sample)\n    print(f\"Got {len(words)} characters. First 300:\\n\")\n    print(words[:300])\n",
-          "verify": "Run `python article.py` - it fetches the Wikipedia \"Artificial intelligence\" page for real (this one does use the network, but makes no AI call, so it costs nothing) and prints `Got N characters. First 300:` followed by real article text. If it raises a ValueError instead, check your internet connection first.",
-          "instruction": "Create `article.py` with this code (requests and beautifulsoup4 are already installed from your requirements.txt):"
-        }
-      ],
-      "title": "Pull real article text out of a web page",
-      "number": 2,
-      "goFurther": "Try get_article_text() against a page you know is mostly JavaScript-rendered (many single-page app sites) and confirm you get the clear \"didn't have much readable text\" error instead of a wall of blank output - that's the defensive design working as intended, not a bug to fix.",
-      "description": "Give the tool a real news article or blog post to work from, not just typed-in text. Scraping is defensive by design: a blocked page or a JavaScript-only site must fail with a clear message, never a crash."
-    },
-    {
-      "time": "25 min",
-      "steps": [
-        {
-          "prompt": "\"\"\"\nStep 3 of the Social Media Post Generator - the screen you actually use.\n\nRun it with:      streamlit run app.py\nStop it with:     Ctrl+C in the terminal\n\nStreamlit turns plain Python into a web page. Every time you click\nsomething, Streamlit runs this whole file again from the top. That is\nnormal - don't be alarmed by it.\n\"\"\"\n\nimport streamlit as st\n\nfrom article import get_article_text\nfrom generator import PLATFORM_RULES, generate_posts\nfrom sdt_ai import AIError\n\nst.set_page_config(page_title=\"Social Media Post Generator\", page_icon=\"📱\")\n\nst.title(\"📱 Social Media Post Generator\")\nst.caption(\"Paste an article link or some text, and get five ready-to-post versions.\")\n\nsource = st.text_area(\n    \"Article link or text\",\n    height=140,\n    placeholder=\"https://example.com/a-blog-post\\n\\n...or just paste the article text here.\",\n)\n\ntone = st.selectbox(\n    \"Tone\",\n    [\"Educational\", \"Friendly\", \"Confident\", \"Formal\", \"Inspiring\"],\n)\n\nif st.button(\"Generate posts\", type=\"primary\"):\n    if not source.strip():\n        st.warning(\"Paste a link or some text first.\")\n        st.stop()\n\n    # A link starts with http. Anything else we treat as the article itself.\n    try:\n        if source.strip().startswith(\"http\"):\n            with st.spinner(\"Reading the article...\"):\n                article_text = get_article_text(source.strip())\n            st.success(f\"Read {len(article_text)} characters from that page.\")\n        else:\n            article_text = source.strip()\n    except ValueError as problem:\n        st.error(str(problem))\n        st.stop()\n\n    try:\n        with st.spinner(\"Writing your posts...\"):\n            posts = generate_posts(article_text, tone)\n    except AIError as problem:\n        # These messages are written to be read - show them as they are.\n        st.error(str(problem))\n        st.stop()\n    except ValueError as problem:\n        st.error(str(problem))\n        st.stop()\n\n    st.divider()\n\n    # Show the platforms in a fixed order so the page doesn't jump around\n    # between runs.\n    for platform in PLATFORM_RULES:\n        if platform not in posts:\n            continue\n        st.subheader(platform.title())\n        # st.code gives you a copy button in the corner for free.\n        st.code(posts[platform], language=None, wrap_lines=True)\n\n    missing = [p for p in PLATFORM_RULES if p not in posts]\n    if missing:\n        st.info(\n            \"The AI skipped: \" + \", \".join(p.title() for p in missing) +\n            \". Click Generate again to get the full set.\"\n        )\n",
-          "verify": "Run `streamlit run app.py` - a browser tab opens. Paste a real article URL, pick a tone, click Generate posts, and within a few seconds you should see five headed sections (LinkedIn, Twitter, Instagram, Facebook, Threads) each with a copy-button code block underneath.",
-          "instruction": "Create `app.py` with this code (streamlit is already installed from your requirements.txt):"
-        }
-      ],
-      "title": "Build the screen and generate your first real posts",
-      "number": 3,
-      "goFurther": "Paste raw text instead of a URL (skip the http check entirely) and confirm the tool still produces five posts - this proves article.py is only used for the scraping path, and the AI call itself doesn't care where the text came from.",
-      "description": "Wire article.py and generator.py into a Streamlit page so pasting a link or some text and clicking a button is the whole experience."
-    },
-    {
-      "time": "20 min",
-      "steps": [
-        {
-          "prompt": "PLATFORM_RULES = {\n    \"LINKEDIN\": \"Professional. 3 short paragraphs. End with a question. 3 hashtags.\",\n    \"TWITTER\": \"Under 280 characters total. Punchy. 2 hashtags maximum.\",\n    \"INSTAGRAM\": \"Warm and personal. Emojis are welcome. 5 hashtags at the very end.\",\n    \"FACEBOOK\": \"Conversational, like talking to a friend. 2 or 3 sentences. No hashtags.\",\n    \"THREADS\": \"Casual and short. Under 400 characters. 1 hashtag.\",\n    # Add your own platform here. Example:\n    # \"YOUTUBE\": \"A YouTube Community post. 1-2 sentences, ends with a poll-style question.\",\n    \"YOUR_PLATFORM\": \"TODO: write your own one-line rule for this platform.\",\n}",
-          "verify": "Run `streamlit run app.py` again and generate posts for a real article. Your new platform's section must appear alongside the original five, following its own rule - not a generic post that ignores what you asked for. If it's missing entirely, check that its name in PLATFORM_RULES exactly matches the bracket marker the AI would need to use (both get upper-cased automatically, but typos still break the match).",
-          "instruction": "Add a new entry to PLATFORM_RULES in generator.py for a platform of your choice (YouTube Community, TikTok caption, a newsletter blurb - your pick), with its own one-line rule in the same style as the existing five:"
-        },
-        {
-          "prompt": "    fake_reply = \"\"\"[LINKEDIN]\nAI is changing how small businesses operate.\n\nWhat would you automate first?\n\n[TWITTER]\nAI isn't coming for your job. It's coming for your admin. #AI\n\n[INSTAGRAM]\nSmall business owners are quietly winning with AI right now.\n#ai #smallbusiness #automation #tech #growth\n\n[FACEBOOK]\nEver wonder how some shops reply instantly at midnight? It's AI.\n\n[THREADS]\nThe gap isn't talent anymore. It's tooling. #AI\n\n[YOUR_PLATFORM]\nTODO: a fake post in your new platform's style, matching its rule.\"\"\"",
-          "verify": "Run `python generator.py` - it must now print `Found 6 posts:` instead of 5, with your platform included. A count still stuck at 5 means the marker name in your fake reply doesn't exactly match the key you added to PLATFORM_RULES.",
-          "instruction": "Add your new platform to generator.py's self-test fake reply, so the parsing logic is proven for it too, not just checked by eye in the browser:"
-        }
-      ],
-      "title": "Challenge: add a sixth platform",
-      "number": 4,
-      "phaseLabel": "🎯 Challenge",
-      "description": "The real test of whether you understand this tool isn't whether it runs - it's whether you can extend its prompt-and-parse pattern to a platform nobody wrote for you."
-    }
+  "model": "Gemini (free API key) with Python and Streamlit",
+  "totalTime": "90 min",
+  "buildCount": 10,
+  "whatYouNeed": [
+    "A computer and internet",
+    "A free Google account for the Gemini API key (no card required)",
+    "Python 3.10 or newer (python.org/downloads; on Windows tick \"Add python.exe to PATH\")",
+    "VS Code (code.visualstudio.com), free",
+    "Optional, for Build 9: a free GitHub account and a free Streamlit Community Cloud account"
   ],
   "outcomes": [
-    "Scrape a web page defensively and pull out just the readable article text, dropping menus/ads/footers",
-    "Design one prompt that writes five platform-specific posts in a single AI call, instead of five separate calls",
-    "Parse a multi-section AI reply using bracket markers instead of JSON, so a stray section never crashes the whole batch",
-    "Build a simple Streamlit screen so the tool is clickable, not just runnable from a terminal",
-    "Ship a real go-further feature: add a sixth platform on your own"
+    "Turn one plain-words update into five ready-to-post versions with a single click",
+    "Have plain Python check length, hashtags, the brand hashtag and banned words",
+    "Let the agent repair only the posts that fail, with at most two rounds",
+    "Swap in a different business by editing one brand.json file",
+    "Add a new platform by adding one entry to a list"
   ],
-  "portfolio": "You just built a tool that turns one article into five platform-tuned social posts from a single AI call, with defensive web scraping and a real Streamlit interface. Take a screenshot of the generated posts next to the article you fed it, and add \"Social Media Post Generator\" to your build portfolio.",
-  "totalTime": "95 min",
-  "buildCount": 4,
-  "whatYouNeed": [
-    "A free Gemini API key (aistudio.google.com/apikey) OR your own Claude/Anthropic API key (console.anthropic.com/settings/keys)",
-    "Python 3.10+ installed",
-    "A blog post or article URL to test with (or just some pasted text)"
+  "builds": [
+    {
+      "number": 1,
+      "title": "Understand the business problem",
+      "time": "10 min",
+      "description": "Meet the sample business, what you will build, and the two ways to build it.",
+      "steps": [
+        {
+          "instruction": "Read the problem. Bloom & Butter is a small handmade skincare brand. The owner, Amara, makes body butters, soaps and lip balms. Every time she launches a product she spends about an hour rewriting the same news for five platforms. The posts end up inconsistent: sometimes she forgets how to order, sometimes the tweet is too long, and sometimes she writes \"cures dry skin\", which a skincare brand should never claim."
+        },
+        {
+          "instruction": "Learn the brand details the agent must respect.",
+          "table": {
+            "header": [
+              "Business detail",
+              "Bloom & Butter"
+            ],
+            "rows": [
+              [
+                "What they sell",
+                "Handmade body butters, soaps and lip balms"
+              ],
+              [
+                "Customers",
+                "Women 22 to 40 who want gentle, natural skincare"
+              ],
+              [
+                "Brand voice",
+                "Warm, calm, honest, a little playful, never pushy"
+              ],
+              [
+                "How people order",
+                "WhatsApp message, or the link in the bio"
+              ],
+              [
+                "Brand hashtag",
+                "#BloomAndButter"
+              ],
+              [
+                "Words never allowed",
+                "cure, miracle, guaranteed, 100% safe"
+              ],
+              [
+                "Goal of every post",
+                "Get people to order the new product"
+              ]
+            ]
+          }
+        },
+        {
+          "instruction": "Know what success looks like. You will test these at the end: time per launch drops from about 60 minutes to about 5 minutes, every post fits its platform's length limit, every post that should carry the brand hashtag does, and there are no banned words and no invented prices or facts."
+        },
+        {
+          "instruction": "Know what you are building. A small web app where Amara types the news in plain words, picks a tone and a goal, clicks one button and gets five ready-to-post versions. It works in four moves: Draft (one AI call writes all five posts in a structured format), Check (plain Python tests each post), Fix (if any post fails, the AI rewrites only the failing posts, at most two rounds) and Show (each post appears with a character counter and a copy button).",
+          "callout": {
+            "variant": "tip",
+            "text": "**Why this counts as a real agent:** it does not just generate text. It checks its own work against rules and repairs it. That draft, check, fix loop is the core pattern behind most business agents."
+          }
+        },
+        {
+          "instruction": "Choose how to build it. Option A is no code: create a Gemini Gem or Claude Project holding the brand details, then paste each announcement. It takes 10 minutes but has no checking step, so you must proof-read length and rules yourself. Option B is this guide: one Python app and a free Gemini key, about 90 minutes, and a real tool you can show clients, change and later sell as a service. This guide builds Option B.",
+          "verify": "You can explain the draft, check, fix, show loop in your own words."
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "title": "Project folder and virtual environment",
+      "time": "10 min",
+      "description": "You need a computer, internet, a free Google account (for the Gemini key, no card required), Python 3.10 or newer (python.org/downloads, and on Windows tick \"Add python.exe to PATH\") and VS Code (code.visualstudio.com).",
+      "steps": [
+        {
+          "instruction": "Create a folder called post-agent. In VS Code choose File, then Open Folder, and open it."
+        },
+        {
+          "instruction": "Open a terminal: Terminal, then New Terminal."
+        },
+        {
+          "instruction": "Create and switch on a private Python environment. Use the lines for your computer.",
+          "prompt": "# Mac / Linux\npython3 -m venv .venv\nsource .venv/bin/activate\n\n# Windows (PowerShell)\npy -m venv .venv\n.venv\\Scripts\\Activate.ps1",
+          "promptKind": "code",
+          "callout": {
+            "variant": "warning",
+            "text": "If Windows says scripts are disabled, run Set-ExecutionPolicy -Scope CurrentUser RemoteSigned and activate again."
+          },
+          "verify": "The terminal line starts with (.venv). Run the activate line again every time you open a new terminal for this project."
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "title": "Get your free Gemini key",
+      "time": "3 min",
+      "description": "The key lets your app use Google's AI.",
+      "steps": [
+        {
+          "instruction": "Go to aistudio.google.com/apikey and sign in."
+        },
+        {
+          "instruction": "Click Create API key and copy it.",
+          "callout": {
+            "variant": "warning",
+            "text": "Treat it like a password. Never paste it in chats, screenshots or public code."
+          },
+          "verify": "Your key is copied into a private note."
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "title": "Create four small files",
+      "time": "7 min",
+      "description": "Save each file inside post-agent with exactly these names.",
+      "steps": [
+        {
+          "instruction": "Create requirements.txt with these four lines.",
+          "prompt": "streamlit\ngoogle-genai\npython-dotenv\npydantic",
+          "promptKind": "code"
+        },
+        {
+          "instruction": "Create .env (note the dot at the start; no quotes and no spaces around =) and paste your own key in place of the placeholder.",
+          "prompt": "GEMINI_API_KEY=paste_your_key_here",
+          "promptKind": "code"
+        },
+        {
+          "instruction": "Create .gitignore. It keeps your key out of GitHub if you upload later.",
+          "prompt": ".env\n.venv\n__pycache__",
+          "promptKind": "code"
+        },
+        {
+          "instruction": "Create brand.json. The business lives here, so the same agent can serve any client by swapping this one file.",
+          "prompt": "{\n  \"name\": \"Bloom & Butter\",\n  \"what\": \"a small handmade skincare brand selling body butters, soaps and lip balms\",\n  \"audience\": \"women aged 22 to 40 who want gentle, natural skincare\",\n  \"voice\": \"warm, calm, honest, a little playful, never pushy\",\n  \"how_to_order\": \"send us a WhatsApp message or use the link in our bio\",\n  \"hashtag\": \"#BloomAndButter\",\n  \"never_say\": [\"cure\", \"miracle\", \"guaranteed\", \"100% safe\"]\n}",
+          "promptKind": "code"
+        },
+        {
+          "instruction": "Install the libraries.",
+          "prompt": "python -m pip install -r requirements.txt",
+          "promptKind": "code",
+          "callout": {
+            "variant": "warning",
+            "text": "On Windows, turn on File name extensions in File Explorer so .env is not saved as .env.txt."
+          },
+          "verify": "The output ends with \"Successfully installed ...\"."
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "title": "Test the key before building anything",
+      "time": "5 min",
+      "description": "If this works, any later problem is in the app code, not your key.",
+      "steps": [
+        {
+          "instruction": "Create test_key.py with this code.",
+          "prompt": "import os\nfrom dotenv import load_dotenv\nfrom google import genai\n\nload_dotenv()\nclient = genai.Client(api_key=os.environ[\"GEMINI_API_KEY\"])\nreply = client.models.generate_content(\n    model=\"gemini-flash-latest\",\n    contents=\"Say hello in exactly five words.\",\n)\nprint(reply.text)",
+          "promptKind": "code"
+        },
+        {
+          "instruction": "Run it in the terminal.",
+          "prompt": "python test_key.py",
+          "promptKind": "code",
+          "verify": "A short greeting prints. If it fails, check Troubleshooting below."
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "title": "Write the agent, app.py",
+      "time": "25 min",
+      "description": "This is the whole agent in one file. Read the comments as you go.",
+      "steps": [
+        {
+          "instruction": "Create app.py and paste in the full code.",
+          "prompt": "\"\"\"Social Media Post Agent: one update in, five checked posts out.\nRun with:  streamlit run app.py\n\"\"\"\nimport json\nimport os\nimport re\n\nimport streamlit as st\nfrom dotenv import load_dotenv\nfrom google import genai\nfrom google.genai import types\nfrom pydantic import BaseModel\n\nload_dotenv()\n\nMODEL = \"gemini-flash-latest\"  # if Google renames models, change only this line\n\n\ndef get_key():\n    key = os.getenv(\"GEMINI_API_KEY\")  # from your .env file\n    if key:\n        return key\n    try:\n        return st.secrets[\"GEMINI_API_KEY\"]  # used when deployed online\n    except Exception:\n        return \"\"\n\n\nAPI_KEY = get_key()\n\n# ---- 1. The business (lives in brand.json) ----\nwith open(\"brand.json\", encoding=\"utf-8\") as f:\n    BRAND = json.load(f)\n\n# ---- 2. The platform rules. One list drives the prompt, the checker and the screen ----\nPLATFORMS = {\n    \"LINKEDIN\": {\n        \"rule\": \"Professional but warm. 3 short paragraphs. Say how to order. End with a question. Up to 3 hashtags, including the brand hashtag.\",\n        \"max_chars\": 1300, \"max_hashtags\": 3,\n    },\n    \"X\": {\n        \"rule\": \"Punchy, one idea. Say how to order. Up to 2 hashtags, including the brand hashtag.\",\n        \"max_chars\": 280, \"max_hashtags\": 2,\n    },\n    \"INSTAGRAM\": {\n        \"rule\": \"Warm and personal, a few emojis, short lines. Say how to order. Put 5 hashtags at the very end, including the brand hashtag.\",\n        \"max_chars\": 2000, \"max_hashtags\": 5,\n    },\n    \"FACEBOOK\": {\n        \"rule\": \"Chatty, like talking to a neighbour. 2 or 3 sentences. Say how to order. No hashtags.\",\n        \"max_chars\": 600, \"max_hashtags\": 0,\n    },\n    \"THREADS\": {\n        \"rule\": \"Casual and short. Exactly 1 hashtag: the brand hashtag.\",\n        \"max_chars\": 400, \"max_hashtags\": 1,\n    },\n}\n\nSAMPLE_NOTE = \"\"\"New product: Shea & Oat Whipped Body Butter, launching this Friday.\nMade with raw shea butter, oats and a little coconut oil. Light vanilla scent, no heavy perfume.\nComes in a 200ml jar and feels light, not greasy. Great for dry hands, elbows and legs.\nLaunch offer: 15% off for the first 20 orders.\"\"\"\n\nSYSTEM = f\"\"\"You are the social media manager for {BRAND['name']}, {BRAND['what']}.\nCustomers: {BRAND['audience']}.\nBrand voice: {BRAND['voice']}.\nHow customers order: {BRAND['how_to_order']}.\nBrand hashtag: {BRAND['hashtag']}.\nWrite as \"we\". Use only facts from the owner's update.\nNever invent prices, discounts, dates, ingredients or health claims.\nNever use these words: {', '.join(BRAND['never_say'])}.\"\"\"\n\n\n# ---- 3. The shape of the AI's answer (Gemini must follow this) ----\nclass Post(BaseModel):\n    platform: str\n    text: str\n\n\nclass PostSet(BaseModel):\n    posts: list[Post]\n\n\ndef call_ai(prompt):\n    client = genai.Client(api_key=API_KEY)\n    response = client.models.generate_content(\n        model=MODEL,\n        contents=prompt,\n        config=types.GenerateContentConfig(\n            system_instruction=SYSTEM,\n            response_mime_type=\"application/json\",\n            response_schema=PostSet,\n            temperature=0.7,\n        ),\n    )\n    if response.parsed is None:\n        raise RuntimeError(\"The AI sent back something unreadable. Click Generate again.\")\n    return {p.platform.strip().upper(): p.text.strip() for p in response.parsed.posts}\n\n\ndef rules_text(names):\n    return \"\\n\".join(f\"- {n}: {PLATFORMS[n]['rule']} (max {PLATFORMS[n]['max_chars']} characters)\" for n in names)\n\n\ndef draft_prompt(note, tone, goal):\n    return f\"\"\"Write one post for each platform about the update below.\nGoal of every post: {goal}\nTone: {tone}\nPlatforms and rules:\n{rules_text(PLATFORMS)}\nReturn a post for each of: {', '.join(PLATFORMS)}.\n\nOWNER'S UPDATE:\n{note}\"\"\"\n\n\n# ---- 4. The checker: plain Python, free and exact ----\ndef check_post(platform, text):\n    spec, problems = PLATFORMS[platform], []\n    if len(text) > spec[\"max_chars\"]:\n        problems.append(f\"too long: {len(text)} characters, the limit is {spec['max_chars']}\")\n    hashtags = re.findall(r\"#\\w+\", text)\n    if len(hashtags) > spec[\"max_hashtags\"]:\n        problems.append(f\"{len(hashtags)} hashtags, the maximum is {spec['max_hashtags']}\")\n    if spec[\"max_hashtags\"] > 0 and BRAND[\"hashtag\"].lower() not in text.lower():\n        problems.append(f\"missing the brand hashtag {BRAND['hashtag']}\")\n    for word in BRAND[\"never_say\"]:\n        if word.lower() in text.lower():\n            problems.append(f'uses the banned word \"{word}\"')\n    return problems\n\n\ndef find_failures(posts):\n    failed = {}\n    for name in PLATFORMS:\n        text = posts.get(name, \"\")\n        problems = check_post(name, text) if text else [\"post is missing\"]\n        if problems:\n            failed[name] = (text, problems)\n    return failed\n\n\n# ---- 5. The fixer: rewrite only what failed ----\ndef fix_prompt(failed, note):\n    blocks = \"\\n\\n\".join(\n        f\"{name}\\nCurrent post: {text or '(none)'}\\nProblems: {'; '.join(problems)}\"\n        for name, (text, problems) in failed.items()\n    )\n    return f\"\"\"Rewrite ONLY the posts below so every problem is fixed.\nKeep the brand voice and the facts from the owner's update.\nRules:\n{rules_text(failed)}\n\n{blocks}\n\nOWNER'S UPDATE:\n{note}\"\"\"\n\n\n# ---- 6. The agent loop: draft, check, fix ----\ndef run_agent(note, tone, goal, status):\n    status.write(\"Drafting five posts...\")\n    posts = call_ai(draft_prompt(note, tone, goal))\n    for round_number in (1, 2):  # at most two repair rounds\n        failed = find_failures(posts)\n        if not failed:\n            break\n        status.write(f\"Fixing {', '.join(failed)} (round {round_number})...\")\n        posts.update(call_ai(fix_prompt(failed, note)))\n    return posts\n\n\n# ---- 7. The screen ----\nst.set_page_config(page_title=f\"{BRAND['name']} Post Agent\", page_icon=\"📱\")\nst.title(f\"📱 {BRAND['name']} Post Agent\")\nst.caption(\"Describe your news once. Get five checked, ready-to-post versions.\")\n\nuse_sample = st.checkbox(\"Load the sample product update\")\nnote = st.text_area(\"What's the news?\", value=SAMPLE_NOTE if use_sample else \"\", height=180)\ncol1, col2 = st.columns(2)\ntone = col1.selectbox(\"Tone\", [\"Friendly\", \"Educational\", \"Confident\", \"Inspiring\", \"Formal\"])\ngoal = col2.selectbox(\"Goal\", [\"Get people to order\", \"Build awareness\", \"Announce an offer\", \"Start a conversation\"])\n\nif st.button(\"Generate posts\", type=\"primary\"):\n    if not note.strip():\n        st.warning(\"Type or paste your news first.\")\n        st.stop()\n    if not API_KEY:\n        st.error(\"No GEMINI_API_KEY found. Check that .env is next to app.py.\")\n        st.stop()\n    try:\n        with st.status(\"Working...\", expanded=True) as status:\n            st.session_state.posts = run_agent(note.strip(), tone, goal, status)\n            status.update(label=\"Done\", state=\"complete\")\n    except Exception as e:\n        msg = str(e)\n        if \"429\" in msg or \"RESOURCE_EXHAUSTED\" in msg:\n            st.error(\"Free-tier limit reached. Wait a minute (or until tomorrow) and try again.\")\n        elif \"404\" in msg or \"NOT_FOUND\" in msg:\n            st.error(\"Model name not available. Update MODEL at the top of app.py.\")\n        elif \"400\" in msg or \"403\" in msg or \"API key\" in msg:\n            st.error(\"Gemini rejected the key. Copy it again from aistudio.google.com/apikey.\")\n        else:\n            st.error(f\"Something went wrong: {msg[:300]}\")\n        st.stop()\n\nposts = st.session_state.get(\"posts\")\nif posts:\n    st.divider()\n    for name in PLATFORMS:\n        if name in posts:\n            text = posts[name]\n            st.subheader(name.title())\n            st.code(text, language=None, wrap_lines=True)  # built-in copy button\n            st.caption(f\"{len(text)} / {PLATFORMS[name]['max_chars']} characters\")\n            for problem in check_post(name, text):\n                st.warning(f\"Still needs attention: {problem}\")",
+          "promptKind": "code",
+          "callout": {
+            "variant": "tip",
+            "text": "**One list drives everything.** PLATFORMS feeds the prompt, the checker and the screen, so one edit changes all three. The AI is asked for data in a fixed shape (a list of platform and text pairs), so there is no fragile cutting of a long reply. Counting characters and hashtags is exact in Python, so the AI is used only for the writing."
+          },
+          "verify": "app.py is saved and shows no red marks in VS Code."
+        }
+      ]
+    },
+    {
+      "number": 7,
+      "title": "Run it and test properly",
+      "time": "15 min",
+      "description": "Start the app and run three tests.",
+      "steps": [
+        {
+          "instruction": "Start the app. A browser tab opens, usually at http://localhost:8501. To stop the app, click in the terminal and press Ctrl + C.",
+          "prompt": "streamlit run app.py",
+          "promptKind": "code"
+        },
+        {
+          "instruction": "Happy path. Tick the sample box and click Generate. Expect five posts, each with a counter under its limit, the brand hashtag where hashtags are allowed, and the 15% launch offer mentioned accurately."
+        },
+        {
+          "instruction": "Thin input. Type only: New lavender soap bar. Three for the price of two. The posts should stay short and must not invent ingredients, prices or dates."
+        },
+        {
+          "instruction": "The trap. Type: New balm that cures dry lips and is a miracle for winter. The banned words should be caught and rewritten. Watch the status box say \"Fixing...\". That is the agent checking its own work.",
+          "callout": {
+            "variant": "tip",
+            "text": "If the status box never says \"Fixing\" on any test, the AI got everything right first time. That is fine. The checker is a safety net, not something that must trigger."
+          },
+          "verify": "All three tests give sensible posts and the banned words are caught."
+        }
+      ]
+    },
+    {
+      "number": 8,
+      "title": "Make it yours",
+      "time": "10 min",
+      "description": "Change only brand.json and the sample note to serve a different business.",
+      "steps": [
+        {
+          "instruction": "To serve a different business, change only brand.json and the sample note. Examples: a restaurant, a salon, a school, a real estate agent. Change never_say to that industry's risky words, for example \"guaranteed returns\" for a property business."
+        },
+        {
+          "instruction": "To add a sixth platform, add one entry to PLATFORMS. The prompt, the checker and the screen all pick it up automatically. Use one capitalised word with no spaces for the name.",
+          "prompt": "\"TIKTOK\": {\"rule\": \"A caption under 150 characters with 3 hashtags including the brand hashtag.\", \"max_chars\": 150, \"max_hashtags\": 3},",
+          "promptKind": "code",
+          "verify": "Your agent works for a second business and shows a sixth platform."
+        }
+      ]
+    },
+    {
+      "number": 9,
+      "title": "Optional: put it online for free",
+      "time": "15 min",
+      "description": "Share the agent with a client through Streamlit Community Cloud.",
+      "steps": [
+        {
+          "instruction": "Create a free GitHub account and a private repository. Upload app.py, brand.json and requirements.txt. Do not upload .env."
+        },
+        {
+          "instruction": "Go to share.streamlit.io, sign in with GitHub, choose the repo and app.py, and deploy."
+        },
+        {
+          "instruction": "In the app's Settings, then Secrets, add: GEMINI_API_KEY = \"your_key\"."
+        },
+        {
+          "instruction": "Set the app to private or invite-only.",
+          "callout": {
+            "variant": "warning",
+            "text": "A public link lets strangers use up your free quota."
+          },
+          "verify": "Your app opens from its link and generates posts."
+        }
+      ]
+    },
+    {
+      "number": 10,
+      "title": "Free-tier reality check and finish line",
+      "time": "10 min",
+      "description": "Know the limits of free tools before you rely on them, then measure the result.",
+      "steps": [
+        {
+          "instruction": "Free limits change and are per project. Google no longer publishes one simple table, and reports for October 2026 disagree (from about 20 requests per day on some Flash models to about 1,500). Open aistudio.google.com/rate-limit to see your real limits. One click of Generate uses one to three calls."
+        },
+        {
+          "instruction": "Model names change. gemini-flash-latest is an alias that follows Google's newest Flash model, which is why the code uses it. If you ever get a 404, update MODEL at the top of app.py."
+        },
+        {
+          "instruction": "Privacy. On the free tier, Google's terms allow it to use what you send to improve its products. Social posts are public anyway, but never paste customer names, phone numbers or private business data into the update box."
+        },
+        {
+          "instruction": "Client work. Before charging clients for a tool built on the free tier, read Google's current terms on commercial use, and consider linking billing (usage is cheap) once you have real volume."
+        },
+        {
+          "instruction": "Measure the business result. Time yourself writing five posts by hand for one announcement, then time the agent. Write both numbers down. This before and after is your proof when you show the tool to a real business.",
+          "verify": "test_key.py printed a greeting, the sample produced five posts within their limits, the trap test caught the banned words, you swapped brand.json for a second business, and you added a sixth platform."
+        }
+      ],
+      "goFurther": "Upgrades for the next session: read an article from a link (add requests and beautifulsoup4), a \"regenerate just this post\" button per platform, save every generated set to a file as a posting history, generate an image prompt for each post, or schedule posts through a free tool such as Buffer's free plan or n8n. Tips: change one thing at a time and re-run; read errors from the bottom up; paste the last 10 lines of any error into Claude or Google when stuck; never share .env."
+    }
   ],
-  "portfolioPrompt": "I just built a Social Media Post Generator: it scrapes the readable text out of any article URL, then asks an AI to write five platform-specific posts (LinkedIn, Twitter, Instagram, Facebook, Threads) in one call using a bracket-marker format that degrades gracefully instead of breaking like JSON does, all wired into a real Streamlit app.\n\nHelp me write:\n1. A 2-3 sentence project description for my portfolio site\n2. A short LinkedIn post announcing it\n3. Three resume-style bullet points describing what I built and the skills it shows"
+  "portfolio": "You built a Social Media Post Agent that turns one update into five platform-ready posts and checks its own work: length, hashtags, the brand hashtag and banned words, with an automatic fix loop. Share a screenshot of the five posts with their counters, and the before and after times you measured.",
+  "portfolioPrompt": "I just built a Social Media Post Agent in Python with Streamlit and a free Gemini key. For a sample skincare brand it turns one product update into five posts (LinkedIn, X, Instagram, Facebook, Threads) using structured output, checks every post in plain Python for length, hashtag count, the brand hashtag and banned words, and asks the AI to rewrite only the failing posts. The brand lives in one brand.json file so it can serve any business.\n\nHelp me write:\n1. A 2-3 sentence project description for my portfolio site\n2. A short LinkedIn post announcing it\n3. Three resume-style bullet points describing what I built and the skills it shows"
 }$sess$::jsonb,
-  null,
-  null,
+  null, null,
   $tsh$[
   {
-    "fix": "Some sites render their article text with JavaScript after the page loads, which a plain requests.get() never sees - it only gets the initial HTML. Try a different, more traditional blog or news site, or just paste the article text directly into the text box instead of a URL.",
-    "issue": "get_article_text() raises \"That page didn't have much readable text in it\" on a page that clearly has an article"
+    "issue": "python or pip is not recognised",
+    "fix": "Reopen the terminal. On Windows use py, or reinstall Python with \"Add to PATH\" ticked."
   },
   {
-    "fix": "This is exactly what the missing-platform check in app.py is designed to catch and tell you about, rather than silently showing four posts and leaving you to notice one is missing. Click Generate posts again - a full page of five posts on the second attempt is normal and does not mean anything was wrong with your setup.",
-    "issue": "The AI skips one or more platforms entirely (the app shows an info box saying which ones)"
+    "issue": "No (.venv) at the start of the line",
+    "fix": "Run the activate command again. Do this in every new terminal."
   },
   {
-    "fix": "split_posts() already strips lines starting with ``` for exactly this reason - the AI occasionally wraps its whole answer in a markdown code block. If you still see one, check you copied generator.py's split_posts() function exactly; that stripping logic is easy to lose while editing.",
-    "issue": "A generated post has a stray ``` code fence at the top or bottom"
+    "issue": "ModuleNotFoundError (streamlit, google, dotenv)",
+    "fix": "You are outside the virtual environment. Activate it, then run python -m pip install -r requirements.txt."
   },
   {
-    "fix": "Add either AI_PROVIDER=gemini plus GEMINI_API_KEY=... (free, from aistudio.google.com/apikey), or AI_PROVIDER=claude plus ANTHROPIC_API_KEY=... (from console.anthropic.com/settings/keys) to your .env file, in the same folder as sdt_ai.py.",
-    "issue": "AIError: No AI provider configured when you run sdt_ai.py or click Generate posts"
+    "issue": "\"No GEMINI_API_KEY found\"",
+    "fix": ".env must be next to app.py and named exactly .env, not .env.txt. Turn on \"File name extensions\" in Windows Explorer."
   },
   {
-    "fix": "Check the terminal you ran it from for a real Python error - Streamlit prints exceptions there, not always clearly in the browser tab itself. A missing library is the most common cause: activate your .venv and run `python -m pip install -r requirements.txt` again.",
-    "issue": "streamlit run app.py opens a blank or broken page"
+    "issue": "400 or 403 error",
+    "fix": "The key is wrong or has spaces or quotes around it. Copy it again from aistudio.google.com/apikey."
+  },
+  {
+    "issue": "429 error",
+    "fix": "Free-tier limit reached. Wait a minute, or until tomorrow if it is a daily limit. Check aistudio.google.com/rate-limit."
+  },
+  {
+    "issue": "404 \"model not found\"",
+    "fix": "Google retired or renamed the model. Check the current Flash model name in AI Studio and update MODEL."
+  },
+  {
+    "issue": "503 or \"busy\"",
+    "fix": "Google is overloaded. Wait a minute and click Generate again."
+  },
+  {
+    "issue": "FileNotFoundError: brand.json",
+    "fix": "Run streamlit run app.py from inside the post-agent folder, and check the file name."
+  },
+  {
+    "issue": "JSONDecodeError on startup",
+    "fix": "A comma or quote is wrong in brand.json. Paste it into a JSON validator and fix it."
+  },
+  {
+    "issue": "IndentationError",
+    "fix": "Python needs exact spacing. Re-paste the code and do not mix tabs and spaces."
+  },
+  {
+    "issue": "A platform is missing from the results",
+    "fix": "This is rare. Click Generate again. The checker normally catches and refills it."
+  },
+  {
+    "issue": "Blank page or red error box",
+    "fix": "Read the last line of the error in the terminal. It usually names the real problem."
   }
 ]$tsh$::jsonb,
   $res$[
   {
-    "url": "https://docs.streamlit.io/",
-    "title": "Streamlit Documentation"
+    "title": "Google AI Studio: create a Gemini API key",
+    "url": "https://aistudio.google.com/apikey"
   },
   {
-    "url": "https://www.crummy.com/software/BeautifulSoup/bs4/doc/",
-    "title": "BeautifulSoup Documentation"
+    "title": "Gemini API rate limits",
+    "url": "https://aistudio.google.com/rate-limit"
   },
   {
-    "url": "https://pypi.org/project/python-dotenv/",
-    "title": "python-dotenv (PyPI)"
+    "title": "Python downloads",
+    "url": "https://www.python.org/downloads/"
+  },
+  {
+    "title": "Streamlit documentation",
+    "url": "https://docs.streamlit.io"
+  },
+  {
+    "title": "Streamlit Community Cloud",
+    "url": "https://share.streamlit.io"
   }
 ]$res$::jsonb,
   'builder1',
-  '2026-09-26 publish: shared sdt_ai.py updated (gemini-flash-latest with thinking turned down, readable errors for retired models and empty answers, Gemini key sent in a header), Python/venv setup steps, current HubSpot/Airtable/DataForSEO/ngrok/Railway/Buffer steps, code fixes. No credits: students use their own Gemini or Claude key.'
+  $note$Replace the old guide with 'Build a Free Social Media Post Agent: One-Session Guide' (Bloom & Butter, brand.json, draft/check/fix loop, Streamlit, gemini-flash-latest). Content from 'Build a Free Social Media Post Agent One-Session Guide.md'; code copied verbatim (app.py compiled and its checker smoke-tested).$note$
 )
 on conflict (course_id) do update set
-  what_you_build = excluded.what_you_build, what_you_learn = excluded.what_you_learn, session = excluded.session,
-  starter_code = excluded.starter_code, test_it_out = excluded.test_it_out, troubleshooting = excluded.troubleshooting,
-  resources = excluded.resources, tier = excluded.tier, change_note = excluded.change_note, updated_at = now();
+  what_you_build = excluded.what_you_build,
+  what_you_learn = excluded.what_you_learn,
+  session = excluded.session,
+  starter_code = excluded.starter_code,
+  test_it_out = excluded.test_it_out,
+  troubleshooting = excluded.troubleshooting,
+  resources = excluded.resources,
+  tier = excluded.tier,
+  change_note = excluded.change_note, updated_at = now();

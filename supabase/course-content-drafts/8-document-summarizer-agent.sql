@@ -1,173 +1,394 @@
 insert into public.course_content_draft (course_id, what_you_build, what_you_learn, session, starter_code, test_it_out, troubleshooting, resources, tier, change_note)
 values (
   8,
-  $wyb$A Python command-line tool that detects whether a document is a PDF, Word file, plain text file, or web link, extracts its text, and sends it to your own AI key to produce a structured summary: 3-6 key points, a list of action items, and a one-paragraph executive brief written for someone with 15 seconds to read it. The AI's reply is parsed with the same forgiving bracket-marker format used across every project in this course, so a slightly-off reply degrades gracefully instead of crashing your program.$wyb$,
+  $wyb$A Document Summarizer Agent you build without writing code. Claude writes it as one web page (summarizer.html) from a single prompt; the page talks to Google's free Gemini AI with your own free key. Drop in a PDF, a Word file, a text file, a web link or pasted text and it returns an executive brief, key points, action items, and risks and open questions, plus a chat box for follow-up questions about the same document. Unlike the course version it reads long documents completely, can read scanned PDFs, lets you choose the summary style, and lets you copy or download the result.$wyb$,
   $wyl$[
-  "Detect a document's type from its file extension or a URL",
-  "Extract plain text from PDF, DOCX, TXT, and web pages",
-  "Call an AI model through your own key (a free Gemini key or your own Claude/Anthropic key)",
-  "Design a prompt using bracket markers instead of JSON, and why that's more forgiving",
-  "Parse an AI reply that might come back malformed, without crashing",
-  "Control the cost of a single AI call by capping how much text you send",
-  "Wire multiple files together into one command-line tool"
+  "Get Claude to build a complete web page from one detailed prompt, with nothing to install",
+  "Store a free Gemini key safely in your own browser instead of in the file",
+  "Extract text from PDF, Word, text and web pages, and read scanned PDFs with AI vision",
+  "Summarize a document of any length with map and reduce: chunk, take notes, then merge",
+  "Use forgiving section markers instead of fragile JSON",
+  "Test the hard cases: empty input, no key, wrong file type, scanned PDF, long text, no internet",
+  "Publish the tool online for free and describe it for your portfolio"
 ]$wyl$::jsonb,
   $sess${
-  "model": "Google Gemini (gemini-flash-latest) or Claude Haiku 4.5 - your choice, see sdt_ai.py setup",
-  "builds": [
-    {
-      "time": "15 min",
-      "steps": [
-        {
-          "prompt": "requests\nbeautifulsoup4\nPyPDF2\npython-docx\npython-dotenv\nfpdf2\n",
-          "verify": "requirements.txt sits directly inside your project folder, not in a subfolder. The next step installs everything it lists.",
-          "instruction": "Make an empty folder for this project and open it in your code editor (in VS Code: File > Open Folder). Inside it, create `requirements.txt` with this content - it lists every library this project uses:"
-        },
-        {
-          "instruction": "Set up Python for this project (once, about 5 minutes). Check your version with `python3 --version` on Mac/Linux or `py --version` on Windows. If it is missing or older than 3.10, install the latest Python from python.org/downloads (on Windows, tick \"Add python.exe to PATH\" on the installer's first screen), then open a new terminal. Now open a terminal in your project folder (in VS Code: Terminal > New Terminal) and run the commands below for your system. They create a virtual environment - a private set of libraries for this project only - and install everything requirements.txt lists.",
-          "prompt": "# Mac / Linux\npython3 -m venv .venv\nsource .venv/bin/activate\npython -m pip install -r requirements.txt\n\n# Windows (PowerShell)\npy -m venv .venv\n.venv\\Scripts\\Activate.ps1\npython -m pip install -r requirements.txt\n\n# Windows says \"running scripts is disabled\"? Run this once, then the Activate line again:\n#   Set-ExecutionPolicy -Scope CurrentUser RemoteSigned\n# Ubuntu/Debian says venv or ensurepip is not available? Run: sudo apt install python3-venv",
-          "verify": "Your terminal prompt now starts with (.venv), and the install ended with \"Successfully installed\". Each time you open a new terminal for this project, run the activate line again first - while it is active, plain `python` works on every system, and that is the command every step below uses."
-        },
-        {
-          "prompt": "\"\"\"\nSocial Dev Technologies - your connection to the AI.\n\nYou have TWO ways to power this file. Pick ONE and set it in your .env:\n\n  AI_PROVIDER=gemini    -> your own FREE Google Gemini API key\n  AI_PROVIDER=claude    -> your own Claude/Anthropic API key\n\nEvery project in this course calls ask_ai(...) the exact same way no\nmatter which one you pick - this file is the only place that changes.\n\nSETUP - OPTION 1: Gemini (free, no billing needed):\n\n  1. Go to https://aistudio.google.com/apikey and sign in with any Google\n     account. Click \"Create API key\" - free, no card required.\n  2. In the same folder as this file, create a file named exactly: .env\n  3. Put these two lines inside it:\n\n         AI_PROVIDER=gemini\n         GEMINI_API_KEY=paste_your_own_key_here\n\nSETUP - OPTION 2: Claude (if you already have a paid Claude account):\n\n  1. Go to https://console.anthropic.com/settings/keys and create an API\n     key. This needs billing set up on your Anthropic account - it is a\n     separate thing from a claude.ai Pro subscription, and is billed by\n     Anthropic based on what you actually use.\n  2. In your .env file, put these two lines instead:\n\n         AI_PROVIDER=claude\n         ANTHROPIC_API_KEY=paste_your_own_key_here\n\nNever share either key or put it on GitHub - each one is billed to YOUR\naccount. That's it. Every project in this course reuses this same file.\n\"\"\"\n\nimport os\nimport time\n\nimport requests\nfrom dotenv import load_dotenv\n\n# Reads the .env file sitting next to your project and loads your keys.\nload_dotenv()\n\n# \"gemini-flash-latest\" is Google's name for whatever its newest Flash model\n# is, so this file keeps working when Google retires an older model - which\n# it does regularly. You can pin one specific model with GEMINI_MODEL=... in\n# your .env, but if you ever get a \"not available\" error, delete that line.\nGEMINI_MODEL = os.environ.get(\"GEMINI_MODEL\", \"gemini-flash-latest\")\nGEMINI_URL_TEMPLATE = \"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent\"\n\n# Gemini \"thinks\" before it answers, and that hidden thinking counts toward\n# the same token limit as the answer itself. With a small max_tokens (the\n# 50-300 used for short replies in this course) the thinking could use up\n# the whole limit and the answer would come back empty. So this file turns\n# thinking down to its minimum (these projects don't need it) and gives\n# Gemini this many extra tokens on top of your max_tokens for whatever\n# thinking is left.\nTHINKING_ALLOWANCE = 1024\n\nCLAUDE_MODEL = os.environ.get(\"CLAUDE_MODEL\", \"claude-haiku-4-5\")\nANTHROPIC_URL = \"https://api.anthropic.com/v1/messages\"\nANTHROPIC_VERSION = \"2023-06-01\"\n\n# Both AIs occasionally answer \"overloaded\" during busy periods (Gemini's\n# free tier especially). That's not your code being wrong - retrying a\n# couple of times almost always gets a real answer, so it's built in here\n# rather than left for every project to handle separately.\nMAX_ATTEMPTS = 3\nRETRY_DELAY_SECONDS = 3\n\n\nclass AIError(Exception):\n    \"\"\"Something went wrong talking to the AI. The message explains what.\"\"\"\n\n\ndef _get_provider():\n    \"\"\"\n    Reads AI_PROVIDER from .env. Falls back to guessing from whichever key\n    is actually present, so forgetting to set AI_PROVIDER explicitly\n    doesn't crash a setup that only has one key configured.\n    \"\"\"\n    provider = os.environ.get(\"AI_PROVIDER\", \"\").strip().lower()\n    if provider in (\"gemini\", \"claude\"):\n        return provider\n\n    if os.environ.get(\"GEMINI_API_KEY\"):\n        return \"gemini\"\n    if os.environ.get(\"ANTHROPIC_API_KEY\"):\n        return \"claude\"\n\n    raise AIError(\n        \"No AI provider configured.\\n\"\n        \"Add ONE of these pairs to your .env file:\\n\\n\"\n        \"    AI_PROVIDER=gemini\\n\"\n        \"    GEMINI_API_KEY=paste_your_free_key_here\\n\\n\"\n        \"  ...or...\\n\\n\"\n        \"    AI_PROVIDER=claude\\n\"\n        \"    ANTHROPIC_API_KEY=paste_your_own_key_here\\n\\n\"\n        \"Get a free Gemini key at https://aistudio.google.com/apikey\"\n    )\n\n\ndef _ask_gemini(prompt, system=None, max_tokens=1000):\n    api_key = os.environ.get(\"GEMINI_API_KEY\")\n    if not api_key:\n        raise AIError(\n            \"AI_PROVIDER is set to gemini but no GEMINI_API_KEY was found.\\n\"\n            \"Get a free key at https://aistudio.google.com/apikey and add \"\n            \"it to .env:\\n\"\n            \"    GEMINI_API_KEY=paste_your_own_key_here\"\n        )\n\n    generation_config = {\"maxOutputTokens\": max_tokens + THINKING_ALLOWANCE}\n    # thinkingBudget 0 = \"as little thinking as possible\". Pro models can't\n    # turn thinking down and reject this setting, so it's left off for them.\n    if \"-pro\" not in GEMINI_MODEL:\n        generation_config[\"thinkingConfig\"] = {\"thinkingBudget\": 0}\n\n    payload = {\n        \"contents\": [{\"role\": \"user\", \"parts\": [{\"text\": prompt}]}],\n        \"generationConfig\": generation_config,\n    }\n    if system:\n        payload[\"systemInstruction\"] = {\"parts\": [{\"text\": system}]}\n\n    url = GEMINI_URL_TEMPLATE.format(model=GEMINI_MODEL)\n    # The key goes in a header rather than the URL, so it never shows up in\n    # an error message or traceback you might paste somewhere for help.\n    headers = {\"x-goog-api-key\": api_key}\n\n    last_problem = \"no response\"\n    for attempt in range(MAX_ATTEMPTS):\n        try:\n            response = requests.post(url, headers=headers, json=payload, timeout=90)\n        except requests.RequestException:\n            raise AIError(\n                \"Could not reach Gemini. Check your internet connection and try again.\"\n            ) from None\n\n        if response.status_code in (500, 503):\n            last_problem = f\"Gemini is busy ({response.status_code} - high demand on the free tier)\"\n            if attempt < MAX_ATTEMPTS - 1:\n                time.sleep(RETRY_DELAY_SECONDS)\n            continue\n\n        if response.status_code == 429:\n            raise AIError(\n                \"Gemini says you've hit the free tier's rate limit. Wait a \"\n                \"minute and try again - the free tier only allows a \"\n                \"limited number of requests per minute.\"\n            )\n\n        if response.status_code == 404:\n            if os.environ.get(\"GEMINI_MODEL\"):\n                advice = (\n                    \"Your .env file sets GEMINI_MODEL - delete that line so this \"\n                    \"file uses its default model, then try again.\"\n                )\n            else:\n                advice = \"Check the course page for an updated copy of sdt_ai.py.\"\n            raise AIError(\n                f'Gemini says the model \"{GEMINI_MODEL}\" isn\\'t available to your '\n                f\"API key - Google retires older models.\\n{advice}\\n\"\n                f\"Details: {response.text[:300]}\"\n            )\n\n        if response.status_code == 400:\n            # If a future Gemini model ever refuses the thinking setting\n            # above, ask again without it instead of failing.\n            if \"thinkingConfig\" in generation_config and \"thinking\" in response.text.lower():\n                del generation_config[\"thinkingConfig\"]\n                last_problem = \"Gemini rejected the thinking setting\"\n                continue\n            raise AIError(\n                f\"Gemini rejected the request - double check your GEMINI_API_KEY \"\n                f\"is correct: {response.text[:300]}\"\n            )\n\n        if response.status_code != 200:\n            raise AIError(\n                f\"Gemini returned an error (status {response.status_code}): {response.text[:300]}\"\n            )\n\n        data = response.json()\n        candidates = data.get(\"candidates\") or []\n        if not candidates:\n            block_reason = (data.get(\"promptFeedback\") or {}).get(\"blockReason\")\n            if block_reason:\n                raise AIError(f\"Gemini refused the prompt ({block_reason}). Try rephrasing it.\")\n            raise AIError(f\"Unexpected reply from Gemini: {data}\")\n        candidate = candidates[0]\n        finish_reason = candidate.get(\"finishReason\")\n\n        # A response can come back with no text because Gemini's safety\n        # filters blocked it (finishReason == \"SAFETY\"), not because of a\n        # network problem - so this is not retried like the cases above.\n        if finish_reason == \"SAFETY\":\n            raise AIError(\"Gemini declined to answer (safety filter). Try rephrasing your prompt.\")\n\n        # An answer can arrive split across several parts, so join them all.\n        # Any part marked \"thought\" is Gemini's thinking, not its answer.\n        parts = (candidate.get(\"content\") or {}).get(\"parts\") or []\n        text = \"\".join(part.get(\"text\", \"\") for part in parts if not part.get(\"thought\"))\n        if not text:\n            if finish_reason == \"MAX_TOKENS\":\n                raise AIError(\n                    \"Gemini ran out of room before it wrote any answer - its thinking \"\n                    f\"used up all {generation_config['maxOutputTokens']} tokens it was \"\n                    \"allowed. Raise max_tokens in this ask_ai(...) call (try \"\n                    f\"max_tokens={max(max_tokens * 2, 4000)}) and run it again.\"\n                )\n            raise AIError(\n                f\"Gemini sent back an empty answer (finishReason: {finish_reason}). \"\n                \"Try again, or rephrase your prompt.\"\n            )\n\n        usage = data.get(\"usageMetadata\") or {}\n        return {\n            \"text\": text,\n            \"input_tokens\": usage.get(\"promptTokenCount\"),\n            \"output_tokens\": usage.get(\"candidatesTokenCount\"),\n        }\n\n    raise AIError(\n        f\"Gemini was unavailable after {MAX_ATTEMPTS} tries ({last_problem}). \"\n        \"This happens sometimes on the free tier during high demand - wait \"\n        \"a minute and try again.\"\n    )\n\n\ndef _ask_claude(prompt, system=None, max_tokens=1000):\n    api_key = os.environ.get(\"ANTHROPIC_API_KEY\")\n    if not api_key:\n        raise AIError(\n            \"AI_PROVIDER is set to claude but no ANTHROPIC_API_KEY was found.\\n\"\n            \"Create one at https://console.anthropic.com/settings/keys and \"\n            \"add it to .env:\\n\"\n            \"    ANTHROPIC_API_KEY=paste_your_own_key_here\"\n        )\n\n    payload = {\n        \"model\": CLAUDE_MODEL,\n        \"max_tokens\": max_tokens,\n        \"messages\": [{\"role\": \"user\", \"content\": prompt}],\n    }\n    if system:\n        payload[\"system\"] = system\n\n    last_problem = \"no response\"\n    for attempt in range(MAX_ATTEMPTS):\n        try:\n            response = requests.post(\n                ANTHROPIC_URL,\n                headers={\n                    \"x-api-key\": api_key,\n                    \"anthropic-version\": ANTHROPIC_VERSION,\n                    \"Content-Type\": \"application/json\",\n                },\n                json=payload,\n                timeout=90,\n            )\n        except requests.RequestException:\n            raise AIError(\n                \"Could not reach Claude. Check your internet connection and try again.\"\n            ) from None\n\n        # 529 is Anthropic's \"overloaded\" - like Gemini's 503, a retry\n        # usually works.\n        if response.status_code in (500, 503, 529):\n            last_problem = f\"Claude is busy ({response.status_code} - overloaded)\"\n            if attempt < MAX_ATTEMPTS - 1:\n                time.sleep(RETRY_DELAY_SECONDS)\n            continue\n\n        try:\n            data = response.json()\n        except ValueError:\n            raise AIError(f\"Unexpected reply from Claude (status {response.status_code}).\") from None\n\n        if response.status_code == 401:\n            raise AIError(\n                \"Claude rejected your ANTHROPIC_API_KEY - double check it was copied correctly.\"\n            )\n\n        if response.status_code == 429:\n            raise AIError(\"Claude says you've hit your rate or usage limit. Wait a moment and try again.\")\n\n        if response.status_code == 404:\n            if os.environ.get(\"CLAUDE_MODEL\"):\n                advice = (\n                    \"Your .env file sets CLAUDE_MODEL - delete that line so this \"\n                    \"file uses its default model, then try again.\"\n                )\n            else:\n                advice = \"Check the course page for an updated copy of sdt_ai.py.\"\n            raise AIError(\n                f'Claude says the model \"{CLAUDE_MODEL}\" isn\\'t available to your '\n                f\"API key.\\n{advice}\"\n            )\n\n        if \"error\" in data or response.status_code != 200:\n            error = data.get(\"error\") or {}\n            message = error.get(\"message\") if isinstance(error, dict) else str(error)\n            raise AIError(\n                f\"Claude returned an error (status {response.status_code}): \"\n                f\"{message or str(data)[:300]}\"\n            )\n\n        text = \"\".join(\n            block.get(\"text\", \"\") for block in data.get(\"content\", []) if block.get(\"type\") == \"text\"\n        )\n        if not text:\n            raise AIError(\n                f\"Claude sent back an empty answer (stop_reason: {data.get('stop_reason')}). \"\n                \"Try again, or rephrase your prompt.\"\n            )\n\n        usage = data.get(\"usage\") or {}\n        return {\n            \"text\": text,\n            \"input_tokens\": usage.get(\"input_tokens\"),\n            \"output_tokens\": usage.get(\"output_tokens\"),\n        }\n\n    raise AIError(\n        f\"Claude was unavailable after {MAX_ATTEMPTS} tries ({last_problem}). \"\n        \"Wait a minute and try again.\"\n    )\n\n\ndef ask_ai_detailed(prompt, system=None, max_tokens=1000, project=None):\n    \"\"\"\n    Same as ask_ai, but returns the whole reply as a dict.\n\n        result = ask_ai_detailed(\"Summarise this\", max_tokens=200)\n        print(result[\"text\"])\n    \"\"\"\n    provider = _get_provider()\n    if provider == \"gemini\":\n        return _ask_gemini(prompt, system=system, max_tokens=max_tokens)\n    return _ask_claude(prompt, system=system, max_tokens=max_tokens)\n\n\ndef ask_ai(prompt, system=None, max_tokens=1000, project=None):\n    \"\"\"\n    Send a question to the AI and get the answer back as text.\n\n        answer = ask_ai(\"Write a haiku about Lagos traffic\")\n        print(answer)\n\n    prompt      - what you want the AI to do. This is the important part.\n    system      - optional. Sets the AI's role, e.g. \"You are a careful editor.\"\n    max_tokens  - roughly how long the answer may be. 1000 is plenty for most.\n    project     - unused, kept so call sites read the same across every\n                  project regardless of which AI is behind this file.\n\n    Works identically whichever provider your .env is set to - every\n    project in this course calls this one function and never needs to\n    know which AI is actually answering.\n\n    Returns the AI's answer as a plain string.\n    Raises AIError with a readable message if something is wrong.\n    \"\"\"\n    return ask_ai_detailed(prompt, system=system, max_tokens=max_tokens, project=project)[\"text\"]\n\n\nif __name__ == \"__main__\":\n    # Running this file directly checks that your setup works.\n    print(\"Testing your AI connection...\\n\")\n    try:\n        provider = _get_provider()\n        model = GEMINI_MODEL if provider == \"gemini\" else CLAUDE_MODEL\n        result = ask_ai_detailed(\"Say hello in exactly five words.\", max_tokens=50)\n        print(f\"Provider: {provider} ({model})\")\n        print(\"The AI said:\", result[\"text\"])\n        print(\"\\nYour setup works. You are ready to build.\")\n    except AIError as problem:\n        print(\"Setup problem:\\n\")\n        print(problem)\n",
-          "verify": "Nothing to check yet — you'll test this file once your .env is filled in, in the next step.",
-          "instruction": "Create `sdt_ai.py` with this code — copy it exactly, you'll never edit it. This is the ONLY file that talks to the AI in this whole project:"
-        },
-        {
-          "prompt": "# OPTION 1: your own free Gemini key (recommended - no billing needed)\n# Get one free at https://aistudio.google.com/apikey - no credit card needed\nAI_PROVIDER=gemini\nGEMINI_API_KEY=paste_your_own_key_here\n\n# OPTION 2: your own Claude/Anthropic key (comment OPTION 1 out above,\n# uncomment these two lines instead - needs billing set up on your own\n# Anthropic account)\n# Get one at https://console.anthropic.com/settings/keys\n# AI_PROVIDER=claude\n# ANTHROPIC_API_KEY=paste_your_own_key_here\n",
-          "verify": "Run `python sdt_ai.py` - it should print which provider you're using, then `The AI said: ...`, and end with `Your setup works. You are ready to build.` If you see `No AI provider configured` instead, check that .env sits next to sdt_ai.py and that AI_PROVIDER plus its matching key are both uncommented.",
-          "instruction": "Create `.env` in the same folder with this content. Pick ONE AI option (Gemini or Claude) below."
-        }
-      ],
-      "title": "Connect your AI (Gemini or Claude)",
-      "number": 1,
-      "description": "Set up the one file every build in this project calls to reach the AI, before writing the detector and summarizer that use it."
-    },
-    {
-      "time": "30 min",
-      "steps": [
-        {
-          "instruction": "Create `sample.txt` in your project folder with this content - a tiny test document you'll summarize in Build 4:",
-          "prompt": "Quarterly Planning Notes\n\nRevenue is up 12% this quarter.\nAction: renew the Lagos office lease by Friday.\n",
-          "verify": "sample.txt is saved next to your other project files."
-        },
-        {
-          "prompt": "\"\"\"\nStep 1 of the Document Summarizer Agent.\n\nThis file has one job: given a file path, work out what kind of document\nit is and pull the plain text out of it. A PDF, a Word doc and a plain\ntext file all store \"the same\" words in completely different byte\nformats - this file hides that difference from the rest of the program,\nso summarizer.py only ever has to deal with plain text.\n\"\"\"\n\nimport os\n\nimport requests\nfrom bs4 import BeautifulSoup\nfrom PyPDF2 import PdfReader\nfrom docx import Document\n\n# Extensions we know how to handle, mapped to a short type name.\n# A dict here (instead of a chain of if/elif) means adding a new format\n# later is one new line, not a new branch in three different places.\nSUPPORTED_EXTENSIONS = {\n    \".txt\": \"txt\",\n    \".pdf\": \"pdf\",\n    \".docx\": \"docx\",\n}\n\n# Websites often block programs that don't look like a real browser.\n# Telling them we're a normal browser avoids most of that - same trick\n# the Social Post Generator's article.py uses.\nBROWSER_HEADER = {\"User-Agent\": \"Mozilla/5.0\"}\n\n# Parts of a web page that are never the article/document text.\nNOT_THE_ARTICLE = [\"script\", \"style\", \"nav\", \"footer\", \"header\", \"aside\", \"form\"]\n\n\ndef detect_type(path):\n    \"\"\"\n    Looks at a file path or web address and returns \"txt\", \"pdf\", \"docx\"\n    or \"url\".\n\n        detect_type(\"report.pdf\")                  -> \"pdf\"\n        detect_type(\"notes.txt\")                    -> \"txt\"\n        detect_type(\"https://example.com/a-page\")   -> \"url\"\n\n    Raises ValueError for anything else instead of guessing - guessing\n    wrong here means feeding a PDF's raw bytes to the plain-text reader,\n    which produces garbage instead of a clear error message.\n    \"\"\"\n    if path.startswith(\"http://\") or path.startswith(\"https://\"):\n        return \"url\"\n\n    _, ext = os.path.splitext(path.lower())\n    doc_type = SUPPORTED_EXTENSIONS.get(ext)\n    if doc_type is None:\n        raise ValueError(\n            f\"Don't know how to read '{ext or path}' files.\\n\"\n            f\"This tool handles .txt, .pdf, .docx and web links - \"\n            f\"try saving or exporting your document as one of those.\"\n        )\n    return doc_type\n\n\ndef extract_txt(path):\n    \"\"\"\n    Reads a plain text file.\n\n    errors=\"replace\" matters more than it looks: a .txt file saved by\n    Word or exported from a Mac is sometimes not quite UTF-8. Without\n    this, one odd character crashes the whole run; with it, that one\n    character becomes a harmless \"?\" and everything else still works.\n    \"\"\"\n    with open(path, \"r\", encoding=\"utf-8\", errors=\"replace\") as f:\n        return f.read()\n\n\ndef extract_pdf(path):\n    \"\"\"\n    Pulls text out of a PDF, page by page.\n\n    PyPDF2 only reads text that is actually stored as text in the file.\n    A PDF that is really a scanned photo of a page has no text layer at\n    all, and PyPDF2 returns an empty string for it rather than an error -\n    that's why extract_text() below checks the final length itself.\n    \"\"\"\n    reader = PdfReader(path)\n    pages = [page.extract_text() or \"\" for page in reader.pages]\n    return \"\\n\".join(pages)\n\n\ndef extract_docx(path):\n    \"\"\"\n    Pulls text out of a Word document, paragraph by paragraph.\n\n    python-docx only sees body paragraphs and tables - not headers,\n    footers, or text baked into images. Fine for the reports and\n    contracts this tool targets, but worth knowing if a summary seems to\n    miss something that only appeared in a header or footer.\n    \"\"\"\n    document = Document(path)\n    paragraphs = [p.text for p in document.paragraphs]\n    return \"\\n\".join(p for p in paragraphs if p)\n\n\ndef extract_url(url):\n    \"\"\"\n    Downloads a web page and returns its readable text - the exact same\n    approach as the Social Post Generator's article.py: strip out the\n    parts of a page that are never the content, then pull text from every\n    <p> (paragraph) tag.\n\n    This treats the address as an HTML page. It will NOT correctly read a\n    link that points straight at a PDF or DOCX file for download (the\n    bytes it gets back aren't HTML) - save that file to your computer\n    first and pass the local path to this tool instead.\n    \"\"\"\n    try:\n        page = requests.get(url, headers=BROWSER_HEADER, timeout=15)\n        page.raise_for_status()\n    except requests.RequestException:\n        raise ValueError(\n            f\"Could not open that link.\\n\"\n            f\"Check the address is correct and that the page opens in your browser.\"\n        )\n\n    soup = BeautifulSoup(page.text, \"html.parser\")\n    for junk in soup(NOT_THE_ARTICLE):\n        junk.decompose()\n\n    paragraphs = [p.get_text(\" \", strip=True) for p in soup.find_all(\"p\")]\n    return \"\\n\".join(p for p in paragraphs if p)\n\n\ndef extract_text(path):\n    \"\"\"\n    The one function the rest of the program calls. Detects the type,\n    runs the matching extractor, and returns clean plain text.\n\n        text = extract_text(\"quarterly_report.pdf\")\n        text = extract_text(\"https://example.com/a-blog-post\")\n\n    Raises ValueError with a readable message if the type is unsupported\n    or if nothing readable came out of it.\n    \"\"\"\n    doc_type = detect_type(path)\n\n    if doc_type == \"txt\":\n        text = extract_txt(path)\n    elif doc_type == \"pdf\":\n        text = extract_pdf(path)\n    elif doc_type == \"url\":\n        text = extract_url(path)\n    else:\n        text = extract_docx(path)\n\n    if len(text.strip()) < 20:\n        raise ValueError(\n            f\"Couldn't find any readable text in '{path}'.\\n\"\n            f\"If this is a PDF, it may be a scanned image with no text \"\n            f\"layer underneath it - this tool can't read those without \"\n            f\"OCR (optical character recognition), which is a different \"\n            f\"tool entirely.\"\n        )\n\n    return text\n\n\nif __name__ == \"__main__\":\n    # Run this file on its own to check it works:  python detector.py\n    #\n    # These are genuine round-trip tests, not just \"does the code look\n    # right\" - each one WRITES a real file in the target format, then\n    # reads it back through the exact function main.py will call. A bug\n    # in either direction (writing something unusual, or misreading\n    # something normal) shows up here instead of surprising a student\n    # later on their own document.\n    import tempfile\n\n    tmp_dir = tempfile.gettempdir()\n\n    print(\"Checking .txt extraction...\")\n    txt_path = os.path.join(tmp_dir, \"sdt_test_sample.txt\")\n    with open(txt_path, \"w\", encoding=\"utf-8\") as f:\n        f.write(\n            \"Quarterly Planning Notes\\n\\n\"\n            \"Revenue is up 12% this quarter.\\n\"\n            \"Action: renew the Lagos office lease by Friday.\"\n        )\n    assert detect_type(txt_path) == \"txt\"\n    text = extract_text(txt_path)\n    assert \"Revenue is up 12%\" in text\n    print(f\"  OK - wrote a real .txt file, read back {len(text)} characters\")\n\n    print(\"Checking .docx round-trip...\")\n    docx_path = os.path.join(tmp_dir, \"sdt_test_sample.docx\")\n    doc = Document()\n    doc.add_paragraph(\"Board Meeting Summary\")\n    doc.add_paragraph(\"The team agreed to ship the new pricing page next week.\")\n    doc.save(docx_path)\n    assert detect_type(docx_path) == \"docx\"\n    text = extract_text(docx_path)\n    assert \"ship the new pricing page\" in text\n    print(f\"  OK - wrote a real .docx with python-docx, read it back, got {len(text)} characters\")\n\n    print(\"Checking .pdf round-trip...\")\n    try:\n        from fpdf import FPDF\n\n        pdf_path = os.path.join(tmp_dir, \"sdt_test_sample.pdf\")\n        pdf = FPDF()\n        pdf.add_page()\n        pdf.set_font(\"Helvetica\", size=12)\n        pdf.cell(0, 10, text=\"Contract Review Notes\")\n        pdf.ln(10)\n        pdf.cell(0, 10, text=\"Client must countersign by March 3rd.\")\n        pdf.output(pdf_path)\n\n        assert detect_type(pdf_path) == \"pdf\"\n        text = extract_text(pdf_path)\n        assert \"countersign\" in text\n        print(f\"  OK - wrote a real .pdf with fpdf2, read it back with PyPDF2, got {len(text)} characters\")\n    except ImportError:\n        print(\"  SKIPPED - fpdf2 not installed (test-only dependency, see requirements.txt)\")\n\n    print(\"Checking URL extraction against a real, stable web page...\")\n    try:\n        sample_url = \"https://en.wikipedia.org/wiki/Artificial_intelligence\"\n        assert detect_type(sample_url) == \"url\"\n        text = extract_text(sample_url)\n        assert len(text) > 500\n        print(f\"  OK - fetched a real page, got {len(text)} characters\")\n    except ValueError as problem:\n        # A network hiccup or a site layout change shouldn't fail the\n        # whole test file - it's the one check here that depends on\n        # something outside our control.\n        print(f\"  SKIPPED - could not fetch the test page ({problem})\")\n\n    print(\"Checking an unsupported extension raises a clear error...\")\n    try:\n        detect_type(\"presentation.pptx\")\n        print(\"  FAILED - should have raised ValueError\")\n    except ValueError as e:\n        print(f\"  OK - raised: {e.args[0].splitlines()[0]}\")\n\n    print(\"\\nAll checks passed.\")\n",
-          "verify": "Run `python detector.py` - you should see five checks (.txt, .docx round-trip, .pdf round-trip, a live URL fetch, and an unsupported-extension check), each printing an `OK` line, ending with `All checks passed.`. The .docx and .pdf checks each WRITE a real file with python-docx / fpdf2 and read it back through your own extract_text() - you're not just trusting that the code looks right.",
-          "instruction": "Create `detector.py` with this code:"
-        }
-      ],
-      "title": "Detect the document type and extract its text",
-      "number": 2,
-      "goFurther": "Break it on purpose: create an empty .txt file (0 bytes) and run `extract_text()` on it - you should get a clear \"Couldn't find any readable text\" error instead of a crash, because of the length check inside extract_text(). Now try the opposite: paste sample.txt's contents into itself 500 times to make a huge .txt file, and extract it - this succeeds no matter the size, because detector.py has no size limit at all. The real protection against a giant document lives one file over, in summarizer.py's MAX_CHARACTERS - so a 500-page report and a 2-page memo cost about the same to summarize, but the summary only ever reflects what's in the first ~15,000 characters.",
-      "description": "Before the AI can summarize anything, you need plain text - no matter whether it arrived as a PDF, a Word doc, a plain text file, or a link."
-    },
-    {
-      "time": "35 min",
-      "steps": [
-        {
-          "prompt": "\"\"\"\nStep 2 of the Document Summarizer Agent.\n\nThis file turns extracted document text into a structured summary: key\npoints, action items, and a one-paragraph executive brief.\n\"\"\"\n\nfrom sdt_ai import ask_ai\n\n# Stop sending text to the AI after this many characters.\n#\n# This is a MONEY decision, not a technical one - see article.py in the\n# Social Post Generator for the same idea. 15,000 characters is roughly\n# 8-10 pages: enough for the AI to find every key point and action item in\n# a typical contract or report. A token is roughly 4 characters of English,\n# so this caps a single call's input at about 3,750 tokens. Sending an\n# entire 60-page document instead would use several times more tokens\n# per summary for a result that's barely different - past a certain point,\n# the AI already has more context than it needs to do the job well.\nMAX_CHARACTERS = 15000\n\n# The sections we ask for, in the order we ask for them.\nSECTION_NAMES = [\"KEYPOINTS\", \"ACTIONS\", \"BRIEF\"]\n\n\ndef build_prompt(document_text):\n    \"\"\"\n    Writes the instructions we send to the AI.\n\n    Like the Social Post Generator, we ask for [BRACKET] markers instead\n    of JSON. JSON breaks the moment the AI adds a stray comma, wraps its\n    reply in a code fence, or a bullet point happens to contain a quote\n    mark - and debugging a broken JSON parse is a miserable first\n    experience. Markers are forgiving: anything we don't recognise is\n    simply ignored instead of crashing the whole program (see\n    parse_summary below).\n    \"\"\"\n    trimmed = document_text[:MAX_CHARACTERS]\n\n    return f\"\"\"Read the document below and produce a structured summary.\n\nFormat your answer EXACTLY like this, with each marker in square brackets\non its own line:\n\n[KEYPOINTS]\n- first key point\n- second key point\n(3 to 6 bullet points covering the most important facts or ideas)\n\n[ACTIONS]\n- first action item\n(any tasks, deadlines or commitments mentioned in the document. If there\nare genuinely none, write exactly one line: - None identified)\n\n[BRIEF]\nOne paragraph, 3 to 5 sentences, that a busy executive could read in\n15 seconds and understand what this document is about and why it matters.\n\nAfter the brief, write [END] on its own line.\n\nDo not add any explanation, introduction or closing remark outside these\nsections.\n\nDOCUMENT:\n{trimmed}\"\"\"\n\n\ndef parse_summary(reply):\n    \"\"\"\n    Turns the AI's marker-formatted reply into a dict:\n\n        {\"KEYPOINTS\": \"...\", \"ACTIONS\": \"...\", \"BRIEF\": \"...\"}\n\n    Same forgiving approach as the Social Post Generator's split_posts():\n    anything that isn't a recognised [MARKER] is ignored rather than\n    raising an error, so a slightly-off reply still returns the sections\n    it DID get right instead of losing all of them over one mistake.\n\n    [END] matters here for exactly the same reason it does in the Social\n    Post Generator: without it, a friendly sign-off like \"Let me know if\n    you'd like more detail!\" has nowhere to go but glued onto the end of\n    whatever section came last - usually the brief. See the malformed\n    example in the self-test below for what that actually looks like.\n    \"\"\"\n    sections = {}\n    current = None\n    buffer = []\n\n    for line in reply.splitlines():\n        stripped = line.strip()\n        marker = stripped.strip(\"[]\").upper()\n        is_marker = stripped.startswith(\"[\") and stripped.endswith(\"]\")\n\n        if is_marker and marker == \"END\":\n            break\n\n        if is_marker and marker in SECTION_NAMES:\n            if current:\n                sections[current] = \"\\n\".join(buffer).strip()\n            current = marker\n            buffer = []\n        elif current:\n            # The AI sometimes wraps its whole answer in ``` code fences\n            # even when explicitly told not to. Those aren't part of the\n            # summary, so drop them rather than showing them to the user.\n            if stripped.startswith(\"```\"):\n                continue\n            buffer.append(line)\n\n    if current:\n        sections[current] = \"\\n\".join(buffer).strip()\n\n    return sections\n\n\ndef summarize_document(document_text):\n    \"\"\"\n    The main function. Give it extracted document text, get back a dict\n    with \"KEYPOINTS\", \"ACTIONS\" and \"BRIEF\" keys.\n\n        summary = summarize_document(text)\n        print(summary[\"BRIEF\"])\n    \"\"\"\n    prompt = build_prompt(document_text)\n\n    # max_tokens caps how long the AI's reply may be, which caps what this\n    # costs. 700 comfortably fits 3-6 bullet points, a short action list,\n    # and a 3-5 sentence brief - there's no reason a summary needs more\n    # room than the document itself would take to skim.\n    reply = ask_ai(\n        prompt,\n        max_tokens=700,\n        project=\"document-summarizer-agent\",\n    )\n\n    summary = parse_summary(reply)\n\n    if not summary:\n        raise ValueError(\n            \"The AI replied, but not in the format we asked for.\\n\"\n            \"Run it again - this usually fixes itself.\\n\"\n            \"If it keeps happening, print(reply) to see what came back.\"\n        )\n\n    # A short or simple document sometimes gives the AI genuinely nothing\n    # to put under Action Items, and it skips the section instead of\n    # writing \"- None identified\" like we asked. Rather than throwing that\n    # away as a \"malformed\" reply, treat a missing ACTIONS section as\n    # \"there weren't any\" - the two cases are indistinguishable in\n    # practice and this one is far more common than a real parsing failure.\n    summary.setdefault(\"ACTIONS\", \"None identified\")\n\n    return summary\n\n\nif __name__ == \"__main__\":\n    # Run this file on its own to check the parsing works:\n    #     python summarizer.py\n    #\n    # No AI call happens here - and that's deliberate. Testing parse_summary\n    # directly against text we wrote ourselves means these checks run\n    # instantly, for free, and pass or fail the same way every time. A\n    # test that calls the real AI would use your API quota and could occasionally\n    # \"fail\" just because the AI phrased something differently.\n\n    print(\"Checking a well-formed AI reply...\")\n    good_reply = \"\"\"[KEYPOINTS]\n- Revenue grew 12% quarter-over-quarter\n- The Lagos office lease is up for renewal\n\n[ACTIONS]\n- Renew the Lagos office lease by Friday\n- Schedule a follow-up with the finance team\n\n[BRIEF]\nThis report covers a strong quarter for the business, driven by steady\nrevenue growth, alongside one time-sensitive item: the Lagos office\nlease needs to be renewed by the end of the week.\n\n[END]\"\"\"\n    result = parse_summary(good_reply)\n    assert set(result.keys()) == {\"KEYPOINTS\", \"ACTIONS\", \"BRIEF\"}\n    assert \"12%\" in result[\"KEYPOINTS\"]\n    assert \"Friday\" in result[\"ACTIONS\"]\n    assert \"Lagos office\" in result[\"BRIEF\"]\n    print(f\"  OK - parsed all 3 sections ({sum(len(v) for v in result.values())} characters total)\")\n\n    print(\"Checking a malformed reply with no markers at all...\")\n    # This is what happens when the AI ignores the format entirely and\n    # just writes prose. It should NOT crash - it should return an empty\n    # dict, which is exactly what summarize_document() checks for before\n    # raising its own readable error.\n    no_markers_reply = \"\"\"Sure, here's a summary of the document you shared:\n\nThe company had a good quarter and revenue grew. The Lagos office lease\nneeds attention soon.\n\nLet me know if you'd like anything else!\"\"\"\n    result = parse_summary(no_markers_reply)\n    assert result == {}\n    print(\"  OK - returned an empty dict instead of crashing\")\n\n    print(\"Checking a malformed reply that is missing [END]...\")\n    # This is the sneakier failure: markers are present and well-formed,\n    # but the AI never wrote [END]. Its closing remark has nowhere else to\n    # go, so it gets glued onto the last section - proving why [END] is\n    # asked for, not just decoration.\n    missing_end_reply = \"\"\"[KEYPOINTS]\n- Revenue grew 12%\n\n[BRIEF]\nThe company had a strong quarter overall.\n\nLet me know if you'd like more detail!\"\"\"\n    result = parse_summary(missing_end_reply)\n    assert \"Let me know if you'd like more detail!\" in result[\"BRIEF\"]\n    print(\"  OK - confirmed the sign-off leaks into BRIEF without [END], as expected\")\n\n    print(\"\\nAll checks passed.\")\n",
-          "verify": "Run `python summarizer.py` - no AI call happens, and none is needed: it tests parse_summary() against text you already know the right answer for. You should see three `OK` lines, including one that proves what happens when the AI's reply is missing [END] - its sign-off leaks into the last section instead of being dropped.",
-          "instruction": "Create `summarizer.py` with this code:"
-        }
-      ],
-      "title": "Turn text into a structured summary",
-      "number": 3,
-      "goFurther": "Temporarily change MAX_CHARACTERS from 15000 down to 500, then summarize a long document. The executive brief will still read fine, but the key points will start missing things that were only in the back half of the document - that's the entire cost/quality tradeoff of this project happening in a single number.",
-      "description": "This is the file you'll edit most - it decides what shape a summary takes, and how the AI's reply gets read back into your program."
-    },
-    {
-      "time": "20 min",
-      "steps": [
-        {
-          "prompt": "\"\"\"\nStep 3 of the Document Summarizer Agent - the command you actually run.\n\nRun it with:      python main.py path/to/document.pdf\nWorks with:       .txt, .pdf, .docx files, and http(s) web links\n\"\"\"\n\nimport sys\n\nfrom detector import extract_text\nfrom sdt_ai import AIError\nfrom summarizer import summarize_document\n\n\ndef main():\n    if len(sys.argv) < 2:\n        print(\"Usage: python main.py <path-to-document-or-url>\")\n        print(\"Supports .txt, .pdf, .docx files, and http(s) web links.\")\n        sys.exit(1)\n\n    path = sys.argv[1]\n\n    try:\n        print(f\"Reading {path}...\")\n        text = extract_text(path)\n        print(f\"Extracted {len(text)} characters.\\n\")\n    except ValueError as problem:\n        # These messages are written to be read - show them as they are,\n        # not wrapped in a stack trace a beginner has to decode.\n        print(f\"Could not read that file:\\n{problem}\")\n        sys.exit(1)\n\n    try:\n        print(\"Summarizing (this calls the AI - one request)...\\n\")\n        summary = summarize_document(text)\n    except AIError as problem:\n        print(f\"AI error:\\n{problem}\")\n        sys.exit(1)\n    except ValueError as problem:\n        print(f\"Could not parse the summary:\\n{problem}\")\n        sys.exit(1)\n\n    print(\"=\" * 60)\n    print(\"KEY POINTS\")\n    print(\"=\" * 60)\n    print(summary.get(\"KEYPOINTS\", \"(none returned)\"))\n    print()\n    print(\"=\" * 60)\n    print(\"ACTION ITEMS\")\n    print(\"=\" * 60)\n    print(summary.get(\"ACTIONS\", \"(none returned)\"))\n    print()\n    print(\"=\" * 60)\n    print(\"EXECUTIVE BRIEF\")\n    print(\"=\" * 60)\n    print(summary.get(\"BRIEF\", \"(none returned)\"))\n\n\nif __name__ == \"__main__\":\n    main()\n",
-          "verify": "Run `python main.py sample.txt` (the file from Build 2). You should see `Reading sample.txt...`, then `Extracted 105 characters.` (106 if your editor added a line break at the end), then three sections - KEY POINTS, ACTION ITEMS, and EXECUTIVE BRIEF - with real content about the Lagos office lease. If you see `AI error:` instead, the lines under it say exactly what to fix - usually the .env file from Build 1.",
-          "instruction": "Create `main.py` with this code:"
-        }
-      ],
-      "title": "Wire it into one command",
-      "number": 4,
-      "goFurther": "Run `python main.py https://en.wikipedia.org/wiki/Artificial_intelligence` - a real web address instead of a file path. The exact same summarize_document() call handles it with zero changes, because detector.py already hid the difference between a file and a URL from every file downstream of it.",
-      "description": "One command, any document - this is what you (or a teammate) would actually run."
-    },
-    {
-      "time": "35 min",
-      "steps": [
-        {
-          "prompt": "# --- Challenge: add a fourth section, RISKS ---\n#\n# summarizer.py currently asks for three sections: KEYPOINTS, ACTIONS,\n# BRIEF. Add a fourth: RISKS - potential risks or open questions the\n# document raises (an unsigned contract, a missing dependency, a deadline\n# that looks unrealistic, a number that doesn't add up).\n\n# 1. Add \"RISKS\" to this list:\nSECTION_NAMES = [\"KEYPOINTS\", \"ACTIONS\", \"BRIEF\"]  # TODO: add \"RISKS\" here\n\n# 2. In build_prompt(), add a [RISKS] block to the instructions - follow\n#    the exact same pattern as the existing [ACTIONS] block: 2-3 bullet\n#    points, or \"- None identified\" if there genuinely aren't any.\n\n# 3. parse_summary() needs NO code changes - it already reads whatever\n#    names are in SECTION_NAMES instead of having \"KEYPOINTS\" and\n#    \"ACTIONS\" hardcoded separately. If your RISKS section doesn't show\n#    up after step 2, that's the tell that step 1 is the one you missed.\n\n# 4. Prove it end to end WITHOUT a real AI call: add a new synthetic\n#    reply to the self-test block at the bottom of this file (next to\n#    good_reply) that includes a [RISKS] section, run it through\n#    parse_summary(), and assert on what comes back. See \"Check your\n#    work\" below for the exact assertion to write.\n",
-          "verify": "In summarizer.py's `if __name__` block, add a new synthetic reply string containing a [RISKS] section whose text is exactly `- Vendor contract expires before renewal is signed.`, run it through parse_summary(), and assert `\"Vendor contract expires\" in result[\"RISKS\"]`. Run `python summarizer.py` - your new check should pass alongside the three that were already there, with no AI call made.",
-          "instruction": "Add a `[RISKS]` section to the summary - potential risks or open questions the document raises. Edit `summarizer.py` starting from this skeleton:"
-        }
-      ],
-      "title": "Challenge: Add a fourth summary section",
-      "number": 5,
-      "phaseLabel": "🎯 Challenge",
-      "description": "Every build so far handed you finished, working code. This one hands you the shape of a change and asks you to make it real - the actual test of whether you understand how SECTION_NAMES, build_prompt(), and parse_summary() work together, not just whether you can run someone else's file."
-    }
+  "model": "Claude chat (free account) + Gemini (free API key)",
+  "totalTime": "90 min",
+  "buildCount": 8,
+  "whatYouNeed": [
+    "A computer (a phone can run the finished tool, but building is easier on a computer)",
+    "A Google account (for the free Gemini key)",
+    "A web browser: Chrome, Edge, Firefox or Safari",
+    "A Claude chat at claude.ai",
+    "One test document: a report, contract, article or any PDF with real text"
   ],
   "outcomes": [
-    "Detect a document's type and pull plain text out of PDFs, Word docs, text files, and web pages",
-    "Send extracted text to the AI through your own key - Gemini or Claude, your choice",
-    "Parse a structured AI reply into key points, action items, and an executive brief without using JSON",
-    "Handle a malformed AI reply without crashing your program",
-    "Control what a single summary costs, no matter how long the source document is",
-    "Run the whole tool from the command line on any document or link you give it"
+    "Get Claude to write a complete Document Summarizer as one summarizer.html file, with no coding",
+    "Summarize PDF, Word, text, pasted text and web links into four clear sections",
+    "Read long documents completely and scanned PDFs with AI vision",
+    "Ask follow-up questions about the same document and download the result",
+    "Publish it online for free with your own key kept private"
   ],
-  "portfolio": "You just built a tool that turns any contract, report, or long email thread into a structured summary in seconds - genuinely useful on your own documents, not just a portfolio piece. Run it on something real, take a screenshot of the structured output, and add \"Document Summarizer Agent\" to your build portfolio with a one-line description.",
-  "totalTime": "135 min",
-  "buildCount": 5,
-  "whatYouNeed": [
-    "A free Gemini API key (aistudio.google.com/apikey) OR your own Claude/Anthropic API key (console.anthropic.com/settings/keys)",
-    "Python 3.10+ installed",
-    "A PDF, Word doc, or text file to test with (a contract, report, or article works well)"
+  "builds": [
+    {
+      "number": 1,
+      "title": "What you are building, and your free Gemini key",
+      "time": "15 min",
+      "description": "Skip the Python setup. The course version needed Python, a virtual environment, five code files and a terminal. This version is one file that runs in any browser.",
+      "steps": [
+        {
+          "instruction": "Know what the page does. You give it a document and it returns an Executive brief (one short paragraph you can read in 15 seconds), Key points, Action items (tasks, deadlines and commitments), Risks and open questions, and an Ask a follow-up chat box for the same document."
+        },
+        {
+          "instruction": "See how this version differs from the course version.",
+          "table": {
+            "header": [
+              "Course version",
+              "This version"
+            ],
+            "rows": [
+              [
+                "Install Python, a venv and libraries",
+                "Nothing to install"
+              ],
+              [
+                "5 files and terminal commands",
+                "**1 file**: summarizer.html"
+              ],
+              [
+                "Runs only on your computer",
+                "Runs in any browser, phone included"
+              ],
+              [
+                "Reads the first ~8 pages only",
+                "Reads the whole document"
+              ],
+              [
+                "Cannot read scanned PDFs",
+                "Can read scanned PDFs"
+              ]
+            ]
+          },
+          "callout": {
+            "variant": "tip",
+            "text": "**How it works in one sentence:** you ask Claude to write the page, you save it as one file, and the page talks to Google's free Gemini AI using your own free key. The code comes from Claude, the AI is Gemini, PDF and Word reading use free open-source libraries (PDF.js and Mammoth) that load automatically, and hosting is free on Netlify Drop or GitHub Pages."
+          }
+        },
+        {
+          "instruction": "Check you have what you need: a computer, a Google account, a web browser (Chrome, Edge, Firefox or Safari), a Claude chat, and one test document such as a report, contract, article or any PDF with real text. You do not need to know how to code."
+        },
+        {
+          "instruction": "Go to aistudio.google.com/apikey and sign in with Google. Click Create API key (accept the default project if asked), then copy the key and paste it into a private note.",
+          "callout": {
+            "variant": "warning",
+            "text": "Never post the key on social media, in a chat or on GitHub, and never paste it inside the HTML file. Our page will ask you to paste it into a box instead, which is safer (more on this in Build 6). If the key page is blank, try an incognito window or a personal Google account, since some organizations block it."
+          }
+        },
+        {
+          "instruction": "Know the privacy rule. On Google's free tier, the content you send may be used to improve its products, and AI summaries can miss things or get details wrong.",
+          "callout": {
+            "variant": "warning",
+            "text": "Do not upload contracts, medical records, passwords or anything confidential while using the free key. For anything important, such as legal, money or health matters, treat the summary as a quick guide and check the original document."
+          },
+          "verify": "You have a Gemini key saved in a private note."
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "title": "Ask Claude to write the page",
+      "time": "15 min",
+      "description": "This is the main step. You paste one prompt and Claude gives you the whole tool.",
+      "steps": [
+        {
+          "instruction": "Open a new chat with Claude. This keeps things clean."
+        },
+        {
+          "instruction": "Copy the entire prompt below and send it. Claude replies with a file or a block of code. If it makes a file, download it. If it shows code, copy all of it.",
+          "prompt": "Build me a Document Summarizer Agent as ONE single file called summarizer.html.\nAll HTML, CSS and JavaScript must be inside that one file. I am a complete\nbeginner, so keep the code clean and add short comments explaining each part.\n\nWHAT IT DOES\nThe user gives it a document and it returns a structured summary.\n\nINPUTS (3 tabs):\n1. Upload a file: drag-and-drop or click. Support .pdf, .docx and .txt.\n2. Paste text: a big text box.\n3. Web link: the user pastes a URL.\n\nOUTPUT (shown as separate cards, each with a Copy button):\n- Executive Brief: one paragraph, 3 to 5 sentences\n- Key Points: 3 to 6 bullets\n- Action Items: tasks, deadlines, commitments (write \"None identified\" if none)\n- Risks and Open Questions: 2 to 3 bullets (write \"None identified\" if none)\nAlso add a \"Download as .md\" button for the whole summary, and a \"Copy all\" button.\n\nSUMMARY STYLE: a dropdown with Executive (short and punchy), Detailed,\nand Simple (plain language for a beginner). Change the AI instructions\naccordingly.\n\nAI CONNECTION\n- Use the Google Gemini REST API from the browser with fetch().\n- Endpoint: https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent\n- Send the key in the header x-goog-api-key (never in the URL).\n- Set generationConfig.thinkingConfig.thinkingBudget to 0 and maxOutputTokens\n  to 2000. If the API returns a 400 error mentioning thinking, retry once\n  without thinkingConfig.\n- API key handling: show a \"Gemini API key\" box at the top. Save the key in\n  localStorage so it is remembered on this device only. Add a \"Forget key\"\n  button. NEVER hardcode a key in the file. Add a link to\n  aistudio.google.com/apikey and a one-line explanation that the key stays\n  in the user's own browser.\n- Retry up to 3 times with a 3 second pause on HTTP 500 and 503. On 429,\n  show: \"Free tier rate limit reached. Wait a minute and try again.\"\n  Show a friendly message for 400, 403 and 404 errors that says what to fix.\n\nREADING DOCUMENTS (free libraries from cdnjs.cloudflare.com only):\n- PDF: use PDF.js (pdf.js 3.11.174 and its worker file). Extract text page by page.\n- Word: use Mammoth (mammoth 1.6.0 browser build) with extractRawText.\n- TXT: read with FileReader.\n- Web link: fetch https://r.jina.ai/ followed by the URL, which returns the\n  page as clean readable text and works from a browser. If it fails, show a\n  message telling the user to copy the article text and use the Paste tab.\n- SCANNED PDFs: if a PDF yields almost no text (under 50 characters), show\n  a notice and a button \"Read with AI vision\". That button sends the PDF\n  to Gemini as inline base64 data (mime type application/pdf) and asks for\n  the same summary. Block files over 15 MB with a clear message.\n\nLONG DOCUMENTS (important):\n- If the text is under 30,000 characters, summarize it in one call.\n- If it is longer, split it into chunks of about 12,000 characters (break at\n  paragraph ends), summarize each chunk into short notes, then make ONE final\n  call that merges all the notes into the final structured summary.\n- Process at most 10 chunks. If the document is bigger, tell the user clearly\n  that only the first part was used and how many characters were covered.\n- Pause about 4 seconds between chunk calls so the free tier rate limit is\n  not hit. Show live progress like \"Reading part 3 of 7...\".\n\nREPLY FORMAT (do NOT use JSON):\nAsk the AI to answer with these markers, each on its own line:\n[BRIEF] [KEYPOINTS] [ACTIONS] [RISKS] and finish with [END].\nWrite a forgiving parser: ignore anything unrecognised, remove ``` code\nfences, stop at [END], and if a section is missing show \"None identified\"\ninstead of crashing. If NO markers are found at all, show the raw reply in a\nsingle card with a note that the format was unexpected, plus a \"Try again\"\nbutton.\n\nFOLLOW-UP CHAT:\nAfter a summary, show a box \"Ask a question about this document\". Send the\ndocument text (or its notes if it was long) plus the question to Gemini and\nshow the answer under it. Keep the conversation on screen.\n\nEXTRA FEATURES:\n- A \"History\" panel that saves the last 10 summaries (title, date, summary)\n  in localStorage, with a Clear history button.\n- A visible loading state with a spinner and disabled buttons while working.\n- A one-line privacy note: \"Your document is sent to Google's Gemini API to\n  be summarized. Do not upload confidential files.\"\n- Wrap every localStorage read and write in try/catch.\n\nDESIGN\nClean, modern, mobile friendly, with light and dark mode that follows the\ndevice setting. Calm colors, rounded cards, readable font size, plenty of\nspacing. A clear title and a short subtitle explaining what it does.\n\nWhen you are done, give me: (1) the complete file, and (2) a short\nplain-English list of how to test it.",
+          "callout": {
+            "variant": "warning",
+            "text": "If Claude's answer stops halfway, reply \"Continue from where you stopped and give me the complete file again\". If you only got an explanation, reply \"Give me the complete summarizer.html file now.\" If Claude shows the page in a preview panel (an artifact), that is fine for a quick look, but you still need the downloaded file for the next steps."
+          },
+          "verify": "Claude has given you a complete HTML file, a few hundred lines long."
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "title": "Save the file and open it",
+      "time": "5 min",
+      "description": "Whichever way you got it, the page must end up as summarizer.html.",
+      "steps": [
+        {
+          "instruction": "If Claude gave you a downloadable file, save it as summarizer.html. You are done with this build."
+        },
+        {
+          "instruction": "If Claude gave you code to copy, create a folder on your Desktop called summarizer-agent."
+        },
+        {
+          "instruction": "Open Notepad (Windows) or TextEdit (Mac). On a Mac, choose Format, then Make Plain Text first, otherwise the file will be saved wrongly."
+        },
+        {
+          "instruction": "Paste all the code and save it as summarizer.html inside your folder. The name must end in .html, not .html.txt. On Windows, choose Save as type: All files. If you cannot see file extensions, open File Explorer, click View and tick File name extensions."
+        },
+        {
+          "instruction": "Double-click the file. It opens in your browser.",
+          "callout": {
+            "variant": "warning",
+            "text": "Raw code instead of a page means the file was saved as .txt, so rename it to end in .html. A blank white page means some code was cut off when you copied, so ask Claude for the complete file again and copy from the very first line to the very last."
+          },
+          "verify": "You see the page with the title, the key box and the three input tabs."
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "title": "Test it",
+      "time": "15 min",
+      "description": "Test in this order. Do one thing at a time so you know exactly what works.",
+      "steps": [
+        {
+          "instruction": "Key test. Paste your key into the API key box and refresh the page. The key should still be there. Click Forget key to confirm that button works, then paste it again."
+        },
+        {
+          "instruction": "Paste test. Open the Paste tab, use this text and click Summarize. You should see all four cards, and the risks card should mention the unapproved budget and the missing mockups.",
+          "prompt": "Quarterly Planning Notes\n\nRevenue is up 12% this quarter. The team agreed to open a second office\nin Abuja, but the budget has not been approved yet. Action: renew the\nLagos office lease by Friday. Action: finance to send the revised budget\nto the CEO by the 30th. The new pricing page is planned for next week,\nalthough design has not delivered the final mockups.",
+          "promptKind": "example"
+        },
+        {
+          "instruction": "TXT test. Save the same text as test.txt and upload it."
+        },
+        {
+          "instruction": "PDF test. Upload a real PDF with selectable text."
+        },
+        {
+          "instruction": "Word test. Upload a .docx."
+        },
+        {
+          "instruction": "Link test. Try a normal article link. A blog post or news story works best."
+        },
+        {
+          "instruction": "Follow-up test. Ask a question whose answer is in the document, then one whose answer is not in it. A good agent says the document does not mention it."
+        },
+        {
+          "instruction": "Style test. Summarize the same document as Executive, then as Simple. The two results should feel clearly different.",
+          "verify": "Each input type produces a summary, and the follow-up answers come from the document."
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "title": "Test the hard cases",
+      "time": "15 min",
+      "description": "A real agent is judged by how it behaves when things go wrong. Try each of these.",
+      "steps": [
+        {
+          "instruction": "Run each test and compare it with what should happen.",
+          "table": {
+            "header": [
+              "Test",
+              "What should happen"
+            ],
+            "rows": [
+              [
+                "Click Summarize with nothing added",
+                "A friendly \"add a document first\" message, no crash"
+              ],
+              [
+                "Delete your key and summarize",
+                "A clear message telling you to paste the key"
+              ],
+              [
+                "Upload a .pptx or .png",
+                "A message saying which formats are supported"
+              ],
+              [
+                "Upload a scanned PDF",
+                "A notice and the \"Read with AI vision\" button"
+              ],
+              [
+                "Paste a very long text (copy a long article several times)",
+                "Progress text like \"Reading part 2 of 5\" and one final summary"
+              ],
+              [
+                "Turn off your Wi-Fi and summarize",
+                "A message about connection, not a frozen page"
+              ]
+            ]
+          }
+        },
+        {
+          "instruction": "If any test fails, copy the exact problem into Claude with this fix prompt, filling in the brackets and pasting your full file. This is how professional builders work: test, find a break, describe it, fix it.",
+          "prompt": "My summarizer.html has a problem.\nWhat I did: [describe the steps]\nWhat I expected: [what should have happened]\nWhat actually happened: [what you saw]\nError message from the browser console (F12 > Console): [paste it, or write \"none\"]\nHere is my current file: [paste it]\nPlease find the cause, explain it in simple words, and give me the complete fixed file.",
+          "callout": {
+            "variant": "tip",
+            "text": "Habits that save hours: keep a copy of the file every time it works (summarizer-v1.html, summarizer-v2.html); change one thing at a time, then test; always ask for the **complete** file, not just the changed part; and describe problems with exact words from the screen, not \"it does not work\"."
+          },
+          "verify": "You tested at least three error cases and the page handled each one."
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "title": "Put it online for free",
+      "time": "15 min",
+      "description": "Right now it only lives on your computer. Putting it online gives you a link you can open on your phone and show in your portfolio. It is safe with this design: the key is never inside the file, each visitor pastes their own, and it stays in their own browser.",
+      "steps": [
+        {
+          "instruction": "Option A, Netlify Drop. Go to app.netlify.com/drop and sign up free if asked. Netlify Drop publishes a folder, so make sure your file is inside your summarizer-agent folder and rename it to index.html so the site opens it automatically."
+        },
+        {
+          "instruction": "Drag the folder onto the Drop page. In a few seconds you get a link. Open it and test."
+        },
+        {
+          "instruction": "Option B, GitHub Pages. Create a free account at github.com, click New repository, name it summarizer-agent, set it to Public and create it."
+        },
+        {
+          "instruction": "Click Add file, then Upload files, and upload the file renamed as index.html. Click Commit."
+        },
+        {
+          "instruction": "Go to Settings, then Pages. Under Source choose Deploy from a branch, pick main and the / (root) folder, then Save. After a minute or two your site appears at yourusername.github.io/summarizer-agent.",
+          "callout": {
+            "variant": "warning",
+            "text": "A 404 means the file is not named exactly index.html, or it is inside a sub-folder. If the page loads but summaries fail online only, press F12, open the Console, look for a red message and paste it to Claude. If a friend sees no key, that is correct: every visitor needs their own free key, so add a short note on your portfolio explaining that."
+          },
+          "verify": "The online link opens, you paste your key, and a summary works."
+        }
+      ]
+    },
+    {
+      "number": 7,
+      "title": "Challenge: make it yours",
+      "time": "20 min",
+      "description": "Pick at least two features and ask Claude to add them.",
+      "steps": [
+        {
+          "instruction": "Choose at least two upgrades. Compare two documents (a table of what changed and what is the same, great for contract versions); translate the summary (English, French, Yoruba, Igbo, Hausa, Pidgin and others); a custom focus box such as \"Focus on money and deadlines only\"; reading time saved (\"Original: 14 min read, summary: 40 seconds\"); export to PDF; a tone detector (formal, urgent, positive or negative); or confidence checks that mark each action item with the exact sentence it came from."
+        },
+        {
+          "instruction": "Always paste your current code and ask for the full updated file. Use this template.",
+          "prompt": "Here is my current summarizer.html:\n[paste the whole file]\n\nPlease add: [your feature].\nKeep everything that already works. Give me the complete updated file.",
+          "verify": "Your page has at least two new features and everything that worked before still works."
+        }
+      ]
+    },
+    {
+      "number": 8,
+      "title": "How it actually works",
+      "time": "10 min",
+      "description": "Understanding this part is what turns \"I copied it\" into \"I built it\".",
+      "steps": [
+        {
+          "instruction": "Detecting the document type. The page looks at the file name ending (.pdf, .docx, .txt) or whether you typed a link. This decides which reader to use. An unknown type gets a clear message instead of garbage."
+        },
+        {
+          "instruction": "Extracting text. AI models read text, not file formats. A PDF, a Word file and a web page all store words differently, so a small extractor for each turns them into plain text first. That is what PDF.js and Mammoth do."
+        },
+        {
+          "instruction": "Why scanned PDFs fail. A scanned PDF is a photo of a page with no text inside, so text extractors find nothing. Gemini can look at the PDF as an image instead, which is what the Read with AI vision button does."
+        },
+        {
+          "instruction": "The prompt. The page sends Gemini your text plus strict instructions: use these section markers, keep the brief short, and write \"None identified\" if a section is empty."
+        },
+        {
+          "instruction": "Markers instead of JSON. JSON breaks if the AI adds one stray comma or quote. Markers like [BRIEF] are forgiving: unknown lines are ignored and good sections are kept."
+        },
+        {
+          "instruction": "Handling long documents (map and reduce). A very long document is split into chunks, each chunk is summarized into notes (map), then the notes are combined into one final summary (reduce). This is how real summarization tools handle a 100-page report. It uses more calls, which is why we cap it at 10 chunks and pause between calls."
+        },
+        {
+          "instruction": "Cost control. On the free tier you pay nothing, but you have limits on requests per minute and per day. The chunk cap, the pause and the retry logic all protect you from hitting them."
+        },
+        {
+          "instruction": "Where the key lives. In your browser's localStorage, on your device only. That is why you can publish the page safely.",
+          "verify": "You can explain map and reduce, and why the key is safe in the browser."
+        }
+      ]
+    }
   ],
-  "portfolioPrompt": "I just built a Python command-line tool that detects whether a document is a PDF, Word file, text file, or web link, extracts its text, and uses an AI model (my own Gemini or Claude/Anthropic key) to produce a structured summary: key points, action items, and a one-paragraph executive brief. It parses the AI's reply using a forgiving bracket-marker format instead of JSON, so a slightly malformed reply doesn't crash the whole program.\n\nHelp me write:\n1. A 2-3 sentence project description for my portfolio site\n2. A short LinkedIn post announcing it\n3. Three resume-style bullet points describing what I built and the skills it shows"
+  "portfolio": "Run your tool on a public document, such as a news article or a public report, and take a screenshot showing the four cards. Add your live link and write one line, for example: \"Document Summarizer Agent: upload a PDF, Word file or link and get an executive brief, key points, action items and risks, with long-document and scanned-PDF support. Built with Gemini and plain HTML.\"",
+  "portfolioPrompt": "I just built a Document Summarizer Agent as one HTML page, written by Claude. You upload a PDF, Word file or text file, paste a web link or paste text and it returns an executive brief, key points, action items, and risks and open questions using the free Gemini API. It reads long documents by splitting them into chunks and merging the notes, reads scanned PDFs with AI vision, has Executive, Detailed and Simple styles, answers follow-up questions about the document, and keeps the API key only in the user's browser. I published it free online.\n\nHelp me write:\n1. A 2-3 sentence project description for my portfolio site\n2. A short LinkedIn post announcing it\n3. Three resume-style bullet points describing what I built and the skills it shows"
 }$sess$::jsonb,
-  null,
-  null,
+  null, null,
   $tsh$[
   {
-    "fix": "The PDF is likely corrupted, encrypted, or the download was cut short. Test detector.py against a different, simple PDF first (or just re-run detector.py's own self-test, which generates a known-good one) to confirm your code is fine before assuming the file is.",
-    "issue": "PdfReadError: EOF marker not found"
+    "issue": "\"Rate limit reached\" or a 429 error",
+    "fix": "The free tier allows only so many requests per minute and per day. Wait a minute and retry. For long documents, test with shorter files. Limits can change, so check the limits shown in Google AI Studio."
   },
   {
-    "fix": "python-docx only reads body paragraphs and tables - a document that's mostly a scanned image pasted into Word, or text placed inside a text box, won't show up. Open the file and check whether the words are normal, selectable paragraph text.",
-    "issue": ".docx file extracts as an empty or near-empty string"
+    "issue": "503 or \"model overloaded\"",
+    "fix": "It is a busy period on the free tier. The page already retries 3 times. Wait a few minutes and try again."
   },
   {
-    "fix": "Some sites load their article text with JavaScript after the page first loads, which requests + BeautifulSoup can never see - they only get the initial HTML. Try a plain blog post or news article instead, or copy the text and save it as a .txt file.",
-    "issue": "Summarizing a URL returns almost nothing, or a ValueError about no readable text"
+    "issue": "404 \"model not found\"",
+    "fix": "Google retired or renamed the model. Tell Claude: \"The model name in my file returns 404. Update it to the current Gemini Flash model.\""
   },
   {
-    "fix": "This is a real failure mode of language models, not a bug in your code - roughly 1 reply in every 20-30 restructures its own output slightly. parse_summary() is written to keep whatever sections it DOES recognize instead of discarding the whole reply, and summarize_document() only raises an error when nothing usable came back at all. If you see this, just run it again - see summarizer.py's own self-test for exactly what a malformed reply looks like and how the parser survives it.",
-    "issue": "summarize_document() raises \"The AI replied, but not in the format we asked for\", or a section is just missing"
+    "issue": "400 or 403 error",
+    "fix": "The key is wrong or blocked, or it was copied with a space. Delete the key, create a fresh one and paste it carefully without spaces."
   },
   {
-    "fix": "SECTION_NAMES only controls what parse_summary() looks FOR - it doesn't tell the AI to write it. You also need to add the matching [SECTION] block to the instructions inside build_prompt(). The two have to be updated together, which is exactly what the Challenge build asks you to practice.",
-    "issue": "I added a section name to SECTION_NAMES but it never shows up in the output"
+    "issue": "Nothing happens on click",
+    "fix": "A JavaScript error. Press F12, open Console, copy the red error and give it to Claude with the fix prompt in Build 5."
+  },
+  {
+    "issue": "Link summary fails",
+    "fix": "The site blocks readers, needs a login, or the page is a PDF link. Save the content as a file, or copy the text and use the Paste tab."
+  },
+  {
+    "issue": "PDF extracts jumbled text",
+    "fix": "The layout has columns or tables. Try the Read with AI vision button, which handles layouts better."
+  },
+  {
+    "issue": "Word file is empty",
+    "fix": "The text is inside text boxes or images. Save it as PDF from Word, then upload the PDF."
+  },
+  {
+    "issue": "The summary misses details",
+    "fix": "A very long document hit the 10-chunk cap. Split the document into two files, or ask Claude to raise the cap (watch your rate limits)."
+  },
+  {
+    "issue": "The AI invents something",
+    "fix": "Language models sometimes guess. Use the follow-up box to ask \"Where does the document say this?\" and add the confidence-check feature from Build 7."
+  },
+  {
+    "issue": "Free Gemini is not available to you",
+    "fix": "Region, account type or a policy change. Backup plan: ask Claude to adapt the file for another free-tier AI provider, such as Groq or OpenRouter free models, or use a paid Claude API key if you already have billing set up. Tell Claude which provider and it will rewrite only the AI connection part."
+  },
+  {
+    "issue": "The key box asks again every time",
+    "fix": "Your browser blocks localStorage (private mode or strict settings). Use a normal window, or paste the key each session."
   }
 ]$tsh$::jsonb,
   $res$[
   {
-    "url": "https://pypdf2.readthedocs.io",
-    "title": "PyPDF2 Documentation"
+    "title": "Claude (free account)",
+    "url": "https://claude.ai"
   },
   {
-    "url": "https://python-docx.readthedocs.io",
-    "title": "python-docx Documentation"
+    "title": "Google AI Studio: create a Gemini API key",
+    "url": "https://aistudio.google.com/apikey"
   },
   {
-    "url": "https://requests.readthedocs.io",
-    "title": "Requests Documentation"
+    "title": "Netlify Drop: publish a folder by dragging it",
+    "url": "https://app.netlify.com/drop"
   },
   {
-    "url": "https://www.crummy.com/software/BeautifulSoup/bs4/doc/",
-    "title": "Beautiful Soup Documentation"
+    "title": "GitHub Pages documentation",
+    "url": "https://docs.github.com/pages"
   }
 ]$res$::jsonb,
   'builder1',
-  '2026-09-26 publish: shared sdt_ai.py updated (gemini-flash-latest with thinking turned down, readable errors for retired models and empty answers, Gemini key sent in a header), Python/venv setup steps, current HubSpot/Airtable/DataForSEO/ngrok/Railway/Buffer steps, code fixes. No credits: students use their own Gemini or Claude key.'
+  $note$Replace the Python guide with the free no-code 'Build Your Document Summarizer Agent' guide (Claude writes summarizer.html, Gemini key kept in the browser; long documents, scanned PDFs, follow-up chat). Content from 'Build Your Document Summarizer Agent (Free, No-Code Session Guide).md'; prompts copied verbatim.$note$
 )
 on conflict (course_id) do update set
-  what_you_build = excluded.what_you_build, what_you_learn = excluded.what_you_learn, session = excluded.session,
-  starter_code = excluded.starter_code, test_it_out = excluded.test_it_out, troubleshooting = excluded.troubleshooting,
-  resources = excluded.resources, tier = excluded.tier, change_note = excluded.change_note, updated_at = now();
+  what_you_build = excluded.what_you_build,
+  what_you_learn = excluded.what_you_learn,
+  session = excluded.session,
+  starter_code = excluded.starter_code,
+  test_it_out = excluded.test_it_out,
+  troubleshooting = excluded.troubleshooting,
+  resources = excluded.resources,
+  tier = excluded.tier,
+  change_note = excluded.change_note, updated_at = now();
