@@ -164,6 +164,7 @@ const CUSTOM_CSS = `
   #cos-guide .accordion-panel-inner .prompt-block code{background:transparent;border:0;padding:0;border-radius:0;color:var(--text-code);font-size:13.2px;}
   #cos-guide .go-further{margin-top:22px;border:1px dashed var(--border-strong);border-radius:var(--radius-md);background:var(--surface);}
   #cos-guide .go-further .accordion-trigger{font-weight:600;}
+  #cos-guide .go-further.open .accordion-panel{max-height:3200px;}
   #cos-guide .gf-label{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-right:9px;}
   #cos-guide .gf-diff{margin-left:9px;font-size:13px;letter-spacing:1px;opacity:.85;}
   #cos-guide .completion{margin-top:30px;display:flex;align-items:center;gap:16px;background:var(--success-bg);border:1px solid var(--success-border);border-radius:var(--radius-lg);padding:18px 22px;}
@@ -668,27 +669,52 @@ worked. Do not send, delete or modify anything.</code></pre>
           <button class="accordion-trigger"><span><span class="gf-label">Go further</span>Install the Composio CLI on Windows<span class="gf-diff">🛠️🛠️</span></span><span class="accordion-chev">⌄</span></button>
           <div class="accordion-panel"><div class="accordion-panel-inner">
             <p>Optional — you don't need this for the class build. Composio's CLI doesn't run natively on Windows; it runs inside <strong>WSL</strong> (Windows Subsystem for Linux), which is a Linux terminal built into Windows.</p>
-            <p style="margin-top:12px;"><strong>1. Install WSL.</strong> Open PowerShell as Administrator (right-click PowerShell → Run as administrator), run this, and restart your computer when it asks:</p>
+            <p style="margin-top:12px;"><strong>1. Install WSL.</strong> Open PowerShell as Administrator (right-click PowerShell → Run as administrator), run this, and restart your computer if it asks:</p>
             <div class="prompt-block">
               <div class="prompt-head"><span>POWERSHELL (ADMINISTRATOR)</span><button class="copy-btn">Copy</button></div>
               <pre><code>wsl --install</code></pre>
             </div>
-            <p style="margin-top:12px;"><strong>2. Open the Ubuntu app</strong> from the Start menu (the first launch asks you to pick a username and password), then install Composio:</p>
+            <p class="note">If it says virtualization isn't enabled, switch it on in your computer's BIOS settings (search your laptop model + "enable virtualization"), then run the command again.</p>
+            <p style="margin-top:12px;"><strong>2. Open the Ubuntu app</strong> from the Start menu. The first launch asks you to pick a username and password. The password stays invisible while you type — that's normal. Remember it: Ubuntu asks for it whenever a command starts with <span class="inline-code">sudo</span>.</p>
+            <p style="margin-top:12px;"><strong>3. Install unzip.</strong> The Composio installer needs it and a fresh Ubuntu doesn't have it — skip this and the install stops with "unzip is required". Enter your Ubuntu password when asked:</p>
+            <div class="prompt-block">
+              <div class="prompt-head"><span>UBUNTU (WSL)</span><button class="copy-btn">Copy</button></div>
+              <pre><code>sudo apt update &amp;&amp; sudo apt install -y unzip</code></pre>
+            </div>
+            <p style="margin-top:12px;"><strong>4. Install Composio.</strong> It downloads about 120 MB, so on a slow connection this can take 10–20 minutes. Leave the window open until it says it's done:</p>
             <div class="prompt-block">
               <div class="prompt-head"><span>UBUNTU (WSL)</span><button class="copy-btn">Copy</button></div>
               <pre><code>curl -fsSL https://composio.dev/install | sh</code></pre>
             </div>
-            <p style="margin-top:12px;"><strong>3. Open a new Ubuntu window</strong> so the install takes effect, and check it worked:</p>
+            <p class="note">Heads-up: the installer also adds a Composio plugin to any AI agent tools it finds on your computer, such as Claude Code. To install only the CLI, use <span class="inline-code">curl -fsSL https://composio.dev/install | sh -s -- --no-plugins</span> instead.</p>
+            <p style="margin-top:12px;"><strong>5. Close Ubuntu and open it again</strong> so the install takes effect, then check it worked. Always run <span class="inline-code">composio</span> in Ubuntu, not PowerShell — that's where it's installed.</p>
             <div class="prompt-block">
               <div class="prompt-head"><span>UBUNTU (WSL)</span><button class="copy-btn">Copy</button></div>
               <pre><code>composio --version</code></pre>
             </div>
-            <p style="margin-top:12px;"><strong>4. Log in</strong> — this opens your browser to sign in:</p>
+            <p style="margin-top:12px;"><strong>6. Log in.</strong> Run this, then open the link it shows you in your browser and sign in to Composio:</p>
             <div class="prompt-block">
               <div class="prompt-head"><span>UBUNTU (WSL)</span><button class="copy-btn">Copy</button></div>
               <pre><code>composio login</code></pre>
             </div>
-            <p style="margin-top:12px;">Mac and Linux users can skip step 1 and run the install command from step 2 in their normal terminal.</p>
+            <p style="margin-top:12px;">If it tells you to run <span class="inline-code">composio login --poll</span>, run that to finish. Then check you're signed in — if this prints nothing, or shows <span class="inline-code">"email":null</span>, the login hasn't finished yet:</p>
+            <div class="prompt-block">
+              <div class="prompt-head"><span>UBUNTU (WSL)</span><button class="copy-btn">Copy</button></div>
+              <pre><code>composio whoami</code></pre>
+            </div>
+            <p style="margin-top:12px;"><strong>7. Let Hermes use it.</strong> Hermes on Windows runs its commands in Git Bash, which can't see programs inside Ubuntu — ask it to use Composio now and it reports "no composio". Paste this into Hermes to give it a shortcut. It uses the same login as step 6:</p>
+            <div class="prompt-block">
+              <div class="prompt-head"><span>PROMPT — PASTE IN HERMES</span><button class="copy-btn">Copy</button></div>
+              <pre><code>The Composio CLI is installed inside WSL (Ubuntu), so your terminal can't
+see it. Create a file at ~/bin/composio with exactly these lines, using
+Unix line endings, then run "composio --version" and show me the result:
+
+#!/bin/sh
+export MSYS_NO_PATHCONV=1
+export MSYS2_ARG_CONV_EXCL='*'
+exec /c/Windows/System32/wsl.exe -d Ubuntu -e bash -lc 'exec composio "$@"' composio "$@"</code></pre>
+            </div>
+            <p style="margin-top:12px;">Mac and Linux users can skip steps 1, 2 and 7 and run the rest in their normal terminal. On a Mac, skip step 3 too — unzip is built in. On Linux other than Ubuntu or Debian, install unzip with your own package manager.</p>
           </div></div>
         </div>
 
