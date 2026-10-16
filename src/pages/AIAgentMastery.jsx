@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   CheckCircle2, ArrowRight, Info, CircleHelp, Loader2, AlertCircle,
@@ -9,6 +9,7 @@ import { usePro } from '../hooks/usePro';
 import { usePaystackCheckout } from '../hooks/usePaystackCheckout';
 import { useScholarshipOffer } from '../hooks/useScholarshipOffer';
 import CheckoutAuthModal from '../components/CheckoutAuthModal';
+import CouponField from '../components/CouponField';
 import AgentsLiveFlowDiagram from '../components/AgentsLiveFlowDiagram';
 import { DemoVideo, DemoLoop } from '../components/DemoMedia';
 import { DEMO_VIDEO, DEMO_LOOP } from '../data/demoMedia';
@@ -208,7 +209,13 @@ export default function AIAgentMastery() {
   // Approved scholarship applicant, signed in with the applied email.
   // Display only — create-paystack-checkout decides what is actually charged.
   const hasScholarship = useScholarshipOffer();
-  const price = hasScholarship ? SCHOLARSHIP_PRICE_NAIRA : AI_AGENT_MASTERY_PRICE;
+  // A discount code the buyer typed and the server confirmed: { code, price }.
+  // Also display only — the code is sent with the checkout and checked again.
+  const [coupon, setCoupon] = useState(null);
+  const price = coupon
+    ? Math.min(coupon.price, AI_AGENT_MASTERY_PRICE)
+    : hasScholarship ? SCHOLARSHIP_PRICE_NAIRA : AI_AGENT_MASTERY_PRICE;
+  const discounted = price < AI_AGENT_MASTERY_PRICE;
 
   usePageSeo({
     title: 'AI Agent Mastery | Social Dev Technologies',
@@ -482,12 +489,12 @@ export default function AIAgentMastery() {
             LIVE COHORT
           </span>
           <div className="font-display font-extrabold text-[36px] text-ink mt-2 mb-1">
-            {hasScholarship && (
+            {discounted && (
               <span className="text-lg font-bold text-body line-through mr-2">₦{AI_AGENT_MASTERY_PRICE.toLocaleString()}</span>
             )}
             ₦{price.toLocaleString()} <span className="text-base font-bold text-body">one-time</span>
           </div>
-          {hasScholarship && (
+          {hasScholarship && !coupon && (
             <p className="text-[12.5px] font-bold text-green mb-3">Scholarship price applied</p>
           )}
           <ul className="flex flex-col gap-2.5 mb-6">
@@ -511,14 +518,17 @@ export default function AIAgentMastery() {
               You're enrolled — go to your classes →
             </Link>
           ) : (
-            <button
-              onClick={() => checkout('aimastery')}
-              disabled={checkoutLoading === 'aimastery'}
-              className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-deep disabled:opacity-60 text-white font-extrabold px-5 py-3.5 rounded-xl shadow-[0_10px_22px_rgba(15,26,42,.35)] transition-colors"
-            >
-              {checkoutLoading === 'aimastery' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              {checkoutLoading === 'aimastery' ? 'Starting checkout…' : `Join the cohort — ₦${price.toLocaleString()} →`}
-            </button>
+            <>
+              <CouponField plan="aimastery" applied={coupon} onApplied={setCoupon} />
+              <button
+                onClick={() => checkout('aimastery', coupon ? { coupon: coupon.code } : {})}
+                disabled={checkoutLoading === 'aimastery'}
+                className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-deep disabled:opacity-60 text-white font-extrabold px-5 py-3.5 rounded-xl shadow-[0_10px_22px_rgba(15,26,42,.35)] transition-colors"
+              >
+                {checkoutLoading === 'aimastery' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                {checkoutLoading === 'aimastery' ? 'Starting checkout…' : `Join the cohort — ₦${price.toLocaleString()} →`}
+              </button>
+            </>
           )}
 
           {!hasAiMastery && !hasScholarship && isScholarshipOpen() && (

@@ -17,6 +17,7 @@ import AdminSupport from './admin/AdminSupport';
 import AdminReferrals from './admin/AdminReferrals';
 import AdminSurvey from './admin/AdminSurvey';
 import AdminScholarships from './admin/AdminScholarships';
+import AdminDiscountCodes from './admin/AdminDiscountCodes';
 import AdminLeads from './admin/AdminLeads';
 import AdminCommunityBot from './admin/AdminCommunityBot';
 
@@ -78,7 +79,8 @@ export default function Admin() {
                 <Route path="referrals" element={<AdminReferrals />} />
                 <Route path="webinar-survey" element={<AdminSurvey />} />
                 <Route path="scholarships" element={<AdminScholarships />} />
-                <Route path="leads" element={<AdminLeads />} />
+                <Route path="discount-codes" element={<AdminDiscountCodes />} />
+                <Route path="leads"element={<AdminLeads />} />
                 <Route path="community-bot" element={<AdminCommunityBot />} />
               </Route>
             </Routes>
