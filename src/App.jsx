@@ -255,7 +255,9 @@ function AppShell() {
           </Routes>
         </main>
         {!hideFooter && <Footer />}
-        {!hideChrome && <WhatsAppFloatButton />}
+        {/* Hidden on the AI Agent Mastery sales page to keep it distraction-free
+            (founder request 2026-10-18); the footer still links to WhatsApp. */}
+        {!hideChrome && location.pathname.replace(/\/+$/, '') !== '/ai-agent-mastery' && <WhatsAppFloatButton />}
 
         {selectedAgent && (
           <Suspense fallback={null}>
