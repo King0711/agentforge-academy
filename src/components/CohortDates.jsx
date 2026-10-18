@@ -1,5 +1,4 @@
 import { useSyncExternalStore } from 'react';
-import { CalendarDays } from 'lucide-react';
 import { aiMasteryCohortDays, nextAiMasteryCohortStart } from '../data/aiMasteryCohort';
 
 // "Thursday, October 22 - Saturday, October 24" for the next AI Agent Mastery
@@ -14,7 +13,7 @@ const fmt = (d) =>
 const subscribe = () => () => {};
 const getLabel = () => {
   const days = aiMasteryCohortDays(nextAiMasteryCohortStart());
-  return `${fmt(days[0])} - ${fmt(days[days.length - 1])}`;
+  return `${fmt(days[0])} – ${fmt(days[days.length - 1])}`;
 };
 
 export default function CohortDates() {
@@ -23,9 +22,13 @@ export default function CohortDates() {
   return (
     <p
       data-client-only
-      className="inline-flex items-center gap-2 mt-4 mb-0 text-[14.5px] sm:text-base font-extrabold text-ink"
+      className="inline-flex items-center gap-2.5 mb-0 px-4 py-2 rounded-xl border-2 border-red-500 bg-red-500/5 text-red-600 dark:text-red-400 font-extrabold uppercase tracking-wide text-[11.5px] sm:text-[13.5px] leading-snug"
     >
-      <CalendarDays className="w-4 h-4 text-link flex-shrink-0" /> {label}
+      <span className="relative flex w-2.5 h-2.5 flex-shrink-0" aria-hidden="true">
+        <span className="absolute inset-0 rounded-full bg-red-500 opacity-60 animate-ping" />
+        <span className="relative w-2.5 h-2.5 rounded-full bg-red-500" />
+      </span>
+      Live · {label} · 3-day masterclass
     </p>
   );
 }
