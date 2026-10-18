@@ -12,7 +12,7 @@ import { usePro } from '../hooks/usePro';
 import { usePageSeo } from '../hooks/usePageSeo';
 
 export default function Catalog({ progress, onSelectAgent }) {
-  const { hasBuilder1, hasBuilder2, isAdmin } = usePro();
+  const { hasBuilder1, hasBuilder2, bonusCourseIds, isAdmin } = usePro();
 
   // Canonical always points at the bare URL regardless of active filters —
   // ?q=/?department=/?difficulty= are the same underlying content filtered,
@@ -97,6 +97,7 @@ export default function Catalog({ progress, onSelectAgent }) {
               onClick={() => onSelectAgent(agent)}
               hasBuilder1={hasBuilder1}
               hasBuilder2={hasBuilder2}
+              bonusCourseIds={bonusCourseIds}
               isAdmin={isAdmin}
             />
           ))}

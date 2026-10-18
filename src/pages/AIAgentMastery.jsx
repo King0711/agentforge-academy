@@ -122,6 +122,9 @@ const OUTCOMES = [
   'Run your agents somewhere you can actually keep using them',
 ];
 
+// The price the cohort sells for once the launch price ends (founder, 2026-10-18).
+const REGULAR_PRICE = 50000;
+
 const FAQS = [
   { q: 'Is this the same as Builder 1 / Builder 2?', a: "No — those are self-paced, permanent-access guides for individual agent builds. AI Agent Mastery is live/cohort-taught, and the goal is a team of agents led by one chief of staff, not a portfolio of separate builds." },
   { q: 'Do I need to have done Builder 1 / Builder 2 first?', a: "It helps, but it isn't required — the cohort starts from the fundamentals of agent architecture before building up to the full team." },
@@ -129,6 +132,9 @@ const FAQS = [
   { q: 'Will it really replace a team?', a: "It takes over the repetitive work a team would otherwise do — triage, scheduling, research, first drafts — so you stop paying for, or doing, that busywork. It checks with you before anything risky, so you stay in charge of the decisions." },
   { q: 'Do I need to pay for any tools?', a: "Mostly no — Telegram, the shared task board, and the app connections we use are free. The one thing that can cost money is the AI model that powers your agents: in class we use a ChatGPT Plus plan, and other paid model plans work too. You can complete the build with a single model. We tell you exactly what to have ready before the first class." },
   { q: 'What if I miss a live class?', a: 'Class recordings are available so you can catch up, though attending live is strongly recommended.' },
+  { q: 'Why is the price so low?', a: `The regular price is ₦${REGULAR_PRICE.toLocaleString()}. ₦${AI_AGENT_MASTERY_PRICE.toLocaleString()} is the current cohort price, and it will not stay.` },
+  { q: 'What are the free Builder 1 courses?', a: 'Every student gets 5 of our Builder 1 agent-building courses free with the cohort, so you can keep practising on your own after the live days.' },
+  { q: 'Will this make me money?', a: 'We give you the skill and the roadmap, including a full live day on monetizing it. We do not guarantee earnings; what you make depends on the work you put in.' },
   { q: 'How long will I have access?', a: "The cohort runs over 3 live days — the third dedicated to monetizing your new skill — and you'll have access for 6 months to the classes, recordings, resources, and your project." },
 ];
 
@@ -195,6 +201,57 @@ function jumpToPricing(e) {
   window.history.replaceState(null, '', '#pricing');
 }
 
+// A repeated call to action between sections: the same button every time, a
+// different line of copy depending on what the visitor just read, and the
+// price in the label so nobody has to scroll to learn it. Hidden for
+// students who already own the cohort.
+function SectionCta({ children, note, hidden }) {
+  if (hidden) return null;
+  return (
+    <div className="px-4 sm:px-6 lg:px-[5vw] pb-14 -mt-4 text-center">
+      <a
+        href="#pricing"
+        onClick={jumpToPricing}
+        className="inline-flex items-center justify-center gap-2 bg-brand text-white font-extrabold text-base px-8 py-4 rounded-2xl shadow-[0_10px_22px_rgba(15,26,42,.4)] hover:bg-brand-deep transition-colors"
+      >
+        {children} <ArrowRight className="w-4 h-4" />
+      </a>
+      {note && <p className="text-[12.5px] text-body mt-3 mb-0">{note}</p>}
+    </div>
+  );
+}
+
+// Mobile-only bar pinned to the bottom once the hero has scrolled away, and
+// gone again while the pricing card itself is on screen (no point pointing at
+// what you're looking at). Starts hidden so the prerendered snapshot is clean.
+function StickyJoinBar({ price }) {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const hero = document.getElementById('aim-hero');
+    const pricing = document.getElementById('pricing');
+    if (!hero || !pricing || !('IntersectionObserver' in window)) return undefined;
+    const state = { heroVisible: true, pricingVisible: false };
+    const update = () => setShow(!state.heroVisible && !state.pricingVisible);
+    const heroObs = new IntersectionObserver(([e]) => { state.heroVisible = e.isIntersecting; update(); });
+    const pricingObs = new IntersectionObserver(([e]) => { state.pricingVisible = e.isIntersecting; update(); });
+    heroObs.observe(hero);
+    pricingObs.observe(pricing);
+    return () => { heroObs.disconnect(); pricingObs.disconnect(); };
+  }, []);
+  if (!show) return null;
+  return (
+    <div className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-[#0F1A2A]/95 backdrop-blur border-t border-border px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <a
+        href="#pricing"
+        onClick={jumpToPricing}
+        className="flex items-center justify-center gap-2 w-full bg-brand text-white font-extrabold text-[15px] py-3.5 rounded-xl shadow-[0_8px_18px_rgba(15,26,42,.35)]"
+      >
+        Join the cohort — ₦{price.toLocaleString()} <ArrowRight className="w-4 h-4" />
+      </a>
+    </div>
+  );
+}
+
 export default function AIAgentMastery() {
   const { hasAiMastery } = usePro();
   const {
@@ -227,6 +284,7 @@ export default function AIAgentMastery() {
     <div>
       {/* Hero */}
       <div
+        id="aim-hero"
         className="relative overflow-hidden pt-16 pb-14 px-4 sm:px-6 lg:px-[5vw] text-center bg-bg"
       >
         <div className="relative max-w-3xl mx-auto">
@@ -265,12 +323,19 @@ export default function AIAgentMastery() {
               onClick={jumpToPricing}
               className="bg-brand text-white font-extrabold text-base px-8 py-4 rounded-2xl shadow-[0_10px_22px_rgba(15,26,42,.4)] hover:bg-brand-deep transition-colors"
             >
-              Join the next cohort →
+              Join the next cohort — ₦{price.toLocaleString()} →
             </a>
             <a href="#demo" className="text-body-strong font-bold text-[14.5px] hover:text-link transition-colors">
               Watch it in action ↓
             </a>
           </div>
+          <p className="text-[12.5px] text-body mt-4 mb-0">
+            No coding needed · 5 Builder 1 courses free · Limited seats per cohort
+          </p>
+          <p className="text-[13px] font-bold text-body-strong mt-2 mb-0">
+            <span className="line-through font-semibold text-body">₦{REGULAR_PRICE.toLocaleString()}</span>
+            {' '}now ₦{price.toLocaleString()} — one-time payment
+          </p>
 
         </div>
       </div>
@@ -295,6 +360,10 @@ export default function AIAgentMastery() {
           <DemoLoop demo={DEMO_LOOP} />
         </div>
       </div>
+
+      <SectionCta hidden={hasAiMastery} note="Live cohort. Access starts the moment you pay.">
+        I want to build this — ₦{price.toLocaleString()}
+      </SectionCta>
 
       {/* About the instructor */}
       <InstructorSection closingLine="AI Agent Mastery is that exact system, taught live, over the course of the cohort." />
@@ -326,6 +395,10 @@ export default function AIAgentMastery() {
           </div>
         </div>
       </div>
+
+      <SectionCta hidden={hasAiMastery} note="Three live evenings. Replays included.">
+        Reserve my seat — ₦{price.toLocaleString()}
+      </SectionCta>
 
       {/* Honest check */}
       <div className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto">
@@ -362,6 +435,10 @@ export default function AIAgentMastery() {
           ))}
         </div>
       </div>
+
+      <SectionCta hidden={hasAiMastery} note="You don't need to be a programmer.">
+        Yes, this is me. Join the cohort
+      </SectionCta>
 
       {/* Using tools vs. owning an assistant */}
       <div className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto">
@@ -457,9 +534,13 @@ export default function AIAgentMastery() {
           AgentBuildTestimonials.jsx for the data. */}
       <AgentBuildTestimonials />
 
+      <SectionCta hidden={hasAiMastery} note="Join them in the next cohort.">
+        Join them — ₦{price.toLocaleString()}
+      </SectionCta>
+
       {/* FAQ */}
       <div className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto">
-        <SectionHeading>Your questions, answered</SectionHeading>
+        <SectionHeading eyebrow="Still deciding?">Your questions, answered</SectionHeading>
         <div className="grid sm:grid-cols-2 gap-3.5 max-w-3xl mx-auto">
           {FAQS.map((item) => (
             <div key={item.q} className="bg-white dark:bg-[#131E2F] border-[1.5px] border-border-soft rounded-2xl p-4.5">
@@ -475,7 +556,7 @@ export default function AIAgentMastery() {
 
       {/* Pricing / offer — the ONLY plan sold on this page */}
       <div id="pricing" className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-3xl mx-auto scroll-mt-20">
-        <SectionHeading eyebrow="Your investment">Join the cohort</SectionHeading>
+        <SectionHeading eyebrow="Your investment">Secure your seat before the price goes back up</SectionHeading>
 
         {checkoutError && (
           <div className="max-w-md mx-auto mb-6 flex items-start gap-2 text-sm text-rose bg-[#FBEAE9] dark:bg-rose/10 border border-rose/20 rounded-lg px-3 py-2.5 text-left">
@@ -488,7 +569,10 @@ export default function AIAgentMastery() {
           <span className="absolute -top-3.5 left-7 bg-brand text-white text-[11px] font-extrabold px-3.5 py-1.5 rounded-full">
             LIVE COHORT
           </span>
-          <div className="font-display font-extrabold text-[36px] text-ink mt-2 mb-1">
+          <p className="text-[12.5px] font-bold text-body mt-2 mb-0">
+            Regular price <span className="line-through">₦{REGULAR_PRICE.toLocaleString()}</span> · current cohort price
+          </p>
+          <div className="font-display font-extrabold text-[36px] text-ink mb-1">
             {discounted && (
               <span className="text-lg font-bold text-body line-through mr-2">₦{AI_AGENT_MASTERY_PRICE.toLocaleString()}</span>
             )}
@@ -503,6 +587,7 @@ export default function AIAgentMastery() {
               '6 months access to classes, replays, and resources',
               'A chief of staff plus a squad of specialist agents, built end to end',
               'Guardrails and safety checks built in from the start',
+              '5 Builder 1 agent-building courses, free',
               'Community/support',
               'Certificate of completion',
             ].map((f) => (
@@ -539,7 +624,7 @@ export default function AIAgentMastery() {
 
           <p className="flex items-start gap-1.5 text-[12px] text-body mt-4">
             <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-            One-time payment, not a subscription. Access starts the moment you pay.
+            One-time payment, not a subscription. Access starts the moment you pay. Limited seats per cohort.
           </p>
         </div>
       </div>
@@ -554,7 +639,7 @@ export default function AIAgentMastery() {
             <h2 className="font-display font-extrabold text-2xl sm:text-[26px] text-white m-0 flex items-center gap-2.5">
               <Bot className="w-6 h-6" /> Ready to build your AI team?
             </h2>
-            <p className="text-[#D5DEE9] mt-2 mb-0 text-[15px]">Live cohort. A team of agents that actually runs your busywork.</p>
+            <p className="text-[#D5DEE9] mt-2 mb-0 text-[15px]">Secure your seat before the price goes back up to ₦{REGULAR_PRICE.toLocaleString()}.</p>
           </div>
           <a
             href="#pricing"
@@ -565,6 +650,8 @@ export default function AIAgentMastery() {
           </a>
         </div>
       </div>
+
+      {!hasAiMastery && <StickyJoinBar price={price} />}
 
       <CheckoutAuthModal open={authModalOpen} onClose={closeAuthModal} onSubmit={submitLead} loading={leadLoading} error={leadError} />
     </div>

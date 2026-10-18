@@ -5,9 +5,10 @@ import { getTechColor } from '../data/techStack';
 import { getBuilderPagePath } from '../data/agents';
 
 import EmojiIcon from './EmojiIcon';
-export default function AgentCard({ agent, completed, onClick, hasBuilder1 = false, hasBuilder2 = false, isAdmin = false }) {
+export default function AgentCard({ agent, completed, onClick, hasBuilder1 = false, hasBuilder2 = false, isAdmin = false, bonusCourseIds = [] }) {
   const difficulty = getDifficulty(agent.difficulty);
-  const unlocked = hasAccessToDifficulty(agent.difficulty, { hasBuilder1, hasBuilder2, isAdmin });
+  const unlocked = hasAccessToDifficulty(agent.difficulty, { hasBuilder1, hasBuilder2, isAdmin })
+    || bonusCourseIds.includes(agent.id);
   const locked = !unlocked;
 
   const card = (

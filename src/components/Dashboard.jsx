@@ -11,7 +11,7 @@ import UpgradeOfferCard from './UpgradeOfferCard';
 
 import EmojiIcon from './EmojiIcon';
 export default function Dashboard({ progress, onSelectAgent }) {
-  const { hasBuilder1, hasBuilder2, isAdmin, isPro } = usePro();
+  const { hasBuilder1, hasBuilder2, bonusCourseIds, isAdmin, isPro } = usePro();
   const { offer: upgradeOffer } = useUpgradeOffer();
   const { completed, xp, streak, history, isCompleted } = progress;
 
@@ -176,6 +176,7 @@ export default function Dashboard({ progress, onSelectAgent }) {
                 onClick={() => onSelectAgent(agent)}
                 hasBuilder1={hasBuilder1}
                 hasBuilder2={hasBuilder2}
+                bonusCourseIds={bonusCourseIds}
                 isAdmin={isAdmin}
               />
             ))}
