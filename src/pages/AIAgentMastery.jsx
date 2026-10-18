@@ -11,6 +11,7 @@ import { useScholarshipOffer } from '../hooks/useScholarshipOffer';
 import CheckoutAuthModal from '../components/CheckoutAuthModal';
 import CouponField from '../components/CouponField';
 import CohortCountdown from '../components/CohortCountdown';
+import CohortDates from '../components/CohortDates';
 import AgentsLiveFlowDiagram from '../components/AgentsLiveFlowDiagram';
 import { DemoVideo, DemoLoop } from '../components/DemoMedia';
 import { DEMO_VIDEO, DEMO_LOOP } from '../data/demoMedia';
@@ -294,6 +295,7 @@ export default function AIAgentMastery() {
           >
             <EmojiText>🤖 Live cohort — enrollment open</EmojiText>
           </span>
+          <div><CohortDates /></div>
 
           <p
             className="italic text-[14px] sm:text-[15px] text-body-strong max-w-lg mx-auto mt-5 leading-relaxed"
