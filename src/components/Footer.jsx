@@ -1,6 +1,26 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 export default function Footer() {
+  const { pathname } = useLocation();
+  // The AI Agent Mastery sales page keeps only legal links, FAQ and a contact
+  // line (founder request 2026-10-18). Contact is WhatsApp, not email: the
+  // apex domain has no MX record, so mail to support@ bounces.
+  if (pathname.replace(/\/+$/, '') === '/ai-agent-mastery') {
+    return (
+      <footer className="mt-auto bg-[#0F1A2A] text-white px-4 sm:px-6 lg:px-8 py-7">
+        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[13.5px] text-[#B7C3D1]">
+          <Link to="/legal/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+          <Link to="/legal/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+          <Link to="/faq" className="hover:text-white transition-colors">FAQ</Link>
+          <a href="https://wa.me/2349066006963" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">Contact us on WhatsApp</a>
+        </div>
+        <div className="max-w-6xl mx-auto mt-4 text-center text-[12.5px] text-[#8A96A5]">
+          © <span>{new Date().getFullYear()}</span> Social Dev Technologies. All rights reserved.
+        </div>
+      </footer>
+    );
+  }
+
   return (
     // Deliberately a fixed dark color rather than bg-ink — this footer was
     // already designed as a permanent dark band even in the light theme, and

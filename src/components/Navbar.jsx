@@ -56,17 +56,22 @@ export default function Navbar() {
   const displayName = user?.user_metadata?.display_name || user?.email || '';
   const initial = displayName.charAt(0).toUpperCase();
 
+  // The AI Agent Mastery sales page is a single-purpose landing page: only
+  // the logo stays (not a link), so nothing pulls the visitor away from the
+  // offer (founder request 2026-10-18).
+  const focused = location.pathname.replace(/\/+$/, '') === '/ai-agent-mastery';
+
   return (
     <header className="sticky top-0 z-40 bg-surface border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[70px] flex items-center gap-4">
-        <Link to="/" className="flex items-center gap-2.5 flex-shrink-0">
+        <Link to={focused ? '#' : '/'} onClick={focused ? (e) => e.preventDefault() : undefined} className="flex items-center gap-2.5 flex-shrink-0">
           <img src="/logo-icon.webp" alt="" className="w-9 h-9 sm:w-10 sm:h-10 object-contain rounded-lg" />
           <span className="font-display font-extrabold text-[15px] sm:text-base text-ink tracking-tight whitespace-nowrap">
             Social Dev<span className="text-link"> Technologies</span>
           </span>
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-6 ml-6 font-semibold text-[15px] text-body flex-shrink-0">
+        {!focused && <nav className="hidden lg:flex items-center gap-6 ml-6 font-semibold text-[15px] text-body flex-shrink-0">
           {links.map((link) =>
             link.children ? (
               <div key={link.label} className="relative group flex-shrink-0">
@@ -111,9 +116,9 @@ export default function Navbar() {
               </NavLink>
             ),
           )}
-        </nav>
+        </nav>}
 
-        <div className="hidden lg:flex items-center gap-4 ml-auto flex-shrink-0">
+        {!focused && <div className="hidden lg:flex items-center gap-4 ml-auto flex-shrink-0">
           <button
             onClick={toggleTheme}
             aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
@@ -197,28 +202,28 @@ export default function Navbar() {
               <Link to="/welcome" className="font-bold text-link text-[15px] whitespace-nowrap flex-shrink-0 hover:text-ink transition-colors">
                 Log in
               </Link>
-              <Link
+              {!focused && <Link
                 to="/welcome"
                 className="bg-brand text-white font-bold px-5 py-[11px] rounded-full text-[15px] leading-none whitespace-nowrap flex-shrink-0 hover:bg-brand-deep transition-colors"
               >
                 Start building
-              </Link>
+              </Link>}
             </>
           )}
-        </div>
+        </div>}
 
-        <button
+        {!focused && <button
           onClick={() => setOpen((o) => !o)}
           aria-label={open ? 'Close menu' : 'Open menu'}
           aria-expanded={open}
           className="lg:hidden ml-auto w-9 h-9 flex items-center justify-center rounded-lg bg-[#E8EDF3] dark:bg-white/10 text-link flex-shrink-0"
         >
           {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
+        </button>}
       </div>
 
       <AnimatePresence>
-        {open && (
+        {open && !focused && (
           <m.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
