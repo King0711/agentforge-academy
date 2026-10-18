@@ -254,7 +254,11 @@ function StickyJoinBar({ price }) {
 }
 
 export default function AIAgentMastery() {
-  const { hasAiMastery } = usePro();
+  const { hasAiMastery: enrolled, isAdmin } = usePro();
+  // usePro counts admins as enrolled, which would hide every repeated CTA from
+  // the founder previewing the page. Only real students get the sales buttons
+  // taken away.
+  const hasAiMastery = enrolled && !isAdmin;
   const {
     checkout, loadingKey: checkoutLoading, error: checkoutError,
     authModalOpen, closeAuthModal, submitLead, leadLoading, leadError,
@@ -527,6 +531,10 @@ export default function AIAgentMastery() {
           </div>
         </div>
       </div>
+
+      <SectionCta hidden={hasAiMastery} note="Limited seats per cohort.">
+        Yes, this is me — secure my seat · ₦{price.toLocaleString()}
+      </SectionCta>
 
       {/* Testimonials — real screenshots (on file), see
           AgentBuildTestimonials.jsx for the data. */}
