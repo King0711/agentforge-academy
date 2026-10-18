@@ -13,10 +13,15 @@ export function usePro() {
   const [hasVibeCoding, setHasVibeCoding] = useState(false);
   const [hasAiMastery, setHasAiMastery] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  // The few Builder 1 courses an AI Agent Mastery purchase includes
+  // (guide_purchases rows with tier 'aimastery_bonus'): individually unlocked,
+  // they do NOT make the buyer a Builder 1 owner.
+  const [bonusCourseIds, setBonusCourseIds] = useState([]);
   const [proLoading, setProLoading] = useState(true);
 
   useEffect(() => {
     if (!isSupabaseConfigured || !user) {
+      setBonusCourseIds([]);
       setHasBuilder1(false);
       setHasBuilder2(false);
       setHasVibeCoding(false);
@@ -41,7 +46,7 @@ export function usePro() {
         .select('builder1_expires_at, builder2_expires_at, vibecoding_expires_at, aimastery_expires_at, is_admin')
         .eq('user_id', user.id)
         .single(),
-      supabase.from('guide_purchases').select('tier').eq('user_id', user.id),
+      supabase.from('guide_purchases').select('tier, course_id').eq('user_id', user.id),
     ]).then(([{ data, error }, { data: guideRows }]) => {
       if (cancelled) return;
       if (error || !data) {
@@ -56,6 +61,7 @@ export function usePro() {
       const admin = Boolean(data.is_admin);
       const ownedTiers = new Set((guideRows || []).map((r) => r.tier));
       setIsAdmin(admin);
+      setBonusCourseIds((guideRows || []).filter((r) => r.tier === 'aimastery_bonus').map((r) => r.course_id));
       setHasBuilder1(admin || isActive(data.builder1_expires_at) || ownedTiers.has('builder1'));
       setHasBuilder2(admin || isActive(data.builder2_expires_at) || ownedTiers.has('builder2'));
       setHasVibeCoding(admin || isActive(data.vibecoding_expires_at));
@@ -74,5 +80,5 @@ export function usePro() {
   // both are separate products, not part of the builder1/builder2 "Pro" bundle.
   const isPro = isAdmin || (hasBuilder1 && hasBuilder2);
 
-  return { hasBuilder1, hasBuilder2, hasVibeCoding, hasAiMastery, isPro, isAdmin, proLoading };
+  return { hasBuilder1, hasBuilder2, hasVibeCoding, hasAiMastery, bonusCourseIds, isPro, isAdmin, proLoading };
 }

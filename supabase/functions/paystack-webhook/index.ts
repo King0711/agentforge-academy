@@ -286,6 +286,13 @@ const TIER_COURSE_IDS = {
   builder2: [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
 };
 
+// The five Builder 1 courses an AI Agent Mastery purchase includes (promised on
+// the sales page). Stored under their own tier, 'aimastery_bonus', so the buyer
+// is NOT treated as a Builder 1 owner (that would unlock all 12, block buying
+// Builder 1, and trigger the Pro-upgrade offer). The front end needs no list:
+// usePro reads these rows from guide_purchases.
+const AIMASTERY_BONUS_COURSE_IDS = [1, 5, 7, 8, 9];
+
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // profiles.email mirrors auth.users.email (handle_new_user) and is not client-
@@ -508,6 +515,19 @@ serve(async (req) => {
       .from('entitlements')
       .update(entitlementUpdate)
       .eq('user_id', userId);
+
+    if (plan === 'aimastery') {
+      // Permanent, like any guide purchase. ignoreDuplicates so anyone who
+      // already owns one of these (e.g. Builder 1) keeps their existing row.
+      await supabase
+        .from('guide_purchases')
+        .upsert(
+          AIMASTERY_BONUS_COURSE_IDS.map((course_id) => ({
+            user_id: userId, course_id, tier: 'aimastery_bonus', provider_transaction_id: txId,
+          })),
+          { onConflict: 'user_id,course_id', ignoreDuplicates: true },
+        );
+    }
   }
 
   // No plan grants AI Builder credits anymore as of 2026-09-22 (builder1/
