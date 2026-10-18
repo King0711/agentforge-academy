@@ -10,6 +10,7 @@ import { usePaystackCheckout } from '../hooks/usePaystackCheckout';
 import { useScholarshipOffer } from '../hooks/useScholarshipOffer';
 import CheckoutAuthModal from '../components/CheckoutAuthModal';
 import CouponField from '../components/CouponField';
+import CohortCountdown from '../components/CohortCountdown';
 import AgentsLiveFlowDiagram from '../components/AgentsLiveFlowDiagram';
 import { DemoVideo, DemoLoop } from '../components/DemoMedia';
 import { DEMO_VIDEO, DEMO_LOOP } from '../data/demoMedia';
@@ -337,6 +338,7 @@ export default function AIAgentMastery() {
             {' '}now ₦{price.toLocaleString()} — one-time payment
           </p>
 
+          <div className="mt-8"><CohortCountdown /></div>
         </div>
       </div>
 
@@ -557,6 +559,7 @@ export default function AIAgentMastery() {
       {/* Pricing / offer — the ONLY plan sold on this page */}
       <div id="pricing" className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-3xl mx-auto scroll-mt-20">
         <SectionHeading eyebrow="Your investment">Secure your seat before the price goes back up</SectionHeading>
+        <div className="mb-8"><CohortCountdown /></div>
 
         {checkoutError && (
           <div className="max-w-md mx-auto mb-6 flex items-start gap-2 text-sm text-rose bg-[#FBEAE9] dark:bg-rose/10 border border-rose/20 rounded-lg px-3 py-2.5 text-left">
