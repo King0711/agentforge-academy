@@ -11,6 +11,7 @@ import { useScholarshipOffer } from '../hooks/useScholarshipOffer';
 import CheckoutAuthModal from '../components/CheckoutAuthModal';
 import CouponField from '../components/CouponField';
 import CohortCountdown from '../components/CohortCountdown';
+import CohortDates from '../components/CohortDates';
 import AgentsLiveFlowDiagram from '../components/AgentsLiveFlowDiagram';
 import { DemoVideo, DemoLoop } from '../components/DemoMedia';
 import { DEMO_VIDEO, DEMO_LOOP } from '../data/demoMedia';
@@ -20,7 +21,6 @@ import { usePageSeo } from '../hooks/usePageSeo';
 import { SCHOLARSHIP_PRICE_NAIRA, isScholarshipOpen } from '../data/scholarship';
 import { AI_AGENT_MASTERY_PRICE } from '../data/pricing';
 
-import { EmojiText } from '../components/EmojiIcon';
 // This page sells ONE product: AI Agent Mastery. Same pattern as
 // VibeCoding.jsx — checkout is hardcoded to plan: 'aimastery', this page
 // never offers the guides ladder or Vibe Coding.
@@ -289,11 +289,7 @@ export default function AIAgentMastery() {
         className="relative overflow-hidden pt-16 pb-14 px-4 sm:px-6 lg:px-[5vw] text-center bg-bg"
       >
         <div className="relative max-w-3xl mx-auto">
-          <span
-            className="inline-flex items-center gap-2 bg-white dark:bg-[#131E2F] border-[1.5px] border-border text-link font-bold text-[12.5px] px-4 py-2 rounded-full shadow-[0_3px_10px_rgba(15,26,42,.1)]"
-          >
-            <EmojiText>🤖 Live cohort — enrollment open</EmojiText>
-          </span>
+          <CohortDates />
 
           <p
             className="italic text-[14px] sm:text-[15px] text-body-strong max-w-lg mx-auto mt-5 leading-relaxed"
