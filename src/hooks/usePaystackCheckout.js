@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabaseClient';
 import { invokeWithRetry } from '../lib/invokeFunction';
 import { getStoredReferralCode } from '../lib/referral';
-import { pixelTrack, trackInitiateCheckout } from '../lib/pixel';
+import { getMetaBrowserIds, pixelTrack, trackInitiateCheckout } from '../lib/pixel';
 
 // Where CheckoutComplete.jsx finds the email to send the first-login code to.
 // sessionStorage, so it lives only in this tab and goes when the tab closes.
@@ -75,7 +75,7 @@ export function usePaystackCheckout() {
 
       trackInitiateCheckout(plan);
       const { data, error: fnError } = await invokeWithRetry('create-paystack-checkout', {
-        body: { plan, redirectOrigin: window.location.origin, ...extra },
+        body: { plan, redirectOrigin: window.location.origin, capi: getMetaBrowserIds(), ...extra },
       });
       if (fnError) {
         await readFunctionError(fnError, 'create-paystack-checkout');
@@ -108,6 +108,7 @@ export function usePaystackCheckout() {
         body: {
           plan: pending.plan,
           redirectOrigin: window.location.origin,
+          capi: getMetaBrowserIds(),
           // Only the discount code travels from the original call: the server
           // re-checks it and decides the price.
           ...(pending.extra?.coupon ? { coupon: pending.extra.coupon } : {}),

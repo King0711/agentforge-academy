@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { cleanFbc, cleanFbp, requestClient } from '../_shared/metaCapi.ts';
 
 // Set PAYSTACK_SECRET_KEY in your Supabase Edge Function secrets.
 // SUPABASE_URL and SUPABASE_ANON_KEY are injected automatically.
@@ -355,6 +356,19 @@ serve(async (req) => {
     ? redirectOrigin
     : 'https://socialdevtechnologies.com';
 
+  // What the server-side Meta Purchase event needs to be matched to this buyer.
+  // Paystack calls the webhook, not the buyer's browser, so the webhook can't see
+  // these itself: capture them here and read them back from the signed metadata.
+  // The browser sends only fbp/fbc (cookies it alone can read); address and
+  // browser come from this request. Shapes are validated, nothing is trusted.
+  const buyer = requestClient(req);
+  const capi = {
+    ...(cleanFbp(body.capi?.fbp) ? { fbp: cleanFbp(body.capi.fbp) } : {}),
+    ...(cleanFbc(body.capi?.fbc) ? { fbc: cleanFbc(body.capi.fbc) } : {}),
+    ...(buyer.ip ? { ip: buyer.ip.slice(0, 64) } : {}),
+    ...(buyer.userAgent ? { ua: buyer.userAgent.slice(0, 400) } : {}),
+  };
+
   const paystackRes = await fetch('https://api.paystack.co/transaction/initialize', {
     method: 'POST',
     headers: {
@@ -374,6 +388,8 @@ serve(async (req) => {
         ...(scholarshipId ? { scholarship_id: scholarshipId } : {}),
         // paystack-webhook redeems this code once the payment is verified.
         ...(coupon ? { coupon_id: coupon.id } : {}),
+        // paystack-webhook uses this for the server-side Meta Purchase event only.
+        capi,
       },
       // A guest has no session to land in /dashboard with: send them to a page
       // that confirms the payment and gets them logged in with an emailed code.

@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SITE_ORIGIN, cleanFbc, cleanFbp, purchaseValue, sendCapiEvent } from '../_shared/metaCapi.ts';
 
 // Set PAYSTACK_SECRET_KEY in your Supabase Edge Function secrets — Paystack
 // signs webhooks with your secret key directly (no separate webhook secret).
@@ -550,6 +551,50 @@ serve(async (req) => {
     })
     .select('id')
     .single();
+
+  // Server-side Meta Purchase (Conversions API). The browser pixel sends its own
+  // Purchase from the return page with eventID = this reference; sending the same
+  // event_id and name here lets Meta merge the two, and still records the sale
+  // for buyers who never come back to the page or run an ad blocker. Only here,
+  // after the signature, amount and grant checks, so it can't be forged.
+  // value is the amount actually charged (naira, > 0) or the event is skipped:
+  // never a default. Best-effort, bounded by a 4s timeout, never blocks the 200.
+  try {
+    const value = purchaseValue(amountNaira);
+    if (value === null || !/^[A-Z]{3}$/.test(currency)) {
+      console.warn('meta capi: Purchase skipped, no usable amount/currency', txId);
+    } else {
+      const capiMeta = payload.data?.metadata?.capi ?? {};
+      let phone: string | null = null;
+      const { data: profileRow } = await supabase.from('profiles').select('phone').eq('id', userId).maybeSingle();
+      if (profileRow?.phone) phone = profileRow.phone;
+      await sendCapiEvent({
+        eventName: 'Purchase',
+        eventId: txId,
+        eventSourceUrl: `${SITE_ORIGIN}${isGuestCheckout ? '/checkout/complete' : '/dashboard'}`,
+        userData: {
+          email,
+          phone,
+          externalId: userId,
+          clientIp: typeof capiMeta.ip === 'string' ? capiMeta.ip : null,
+          clientUserAgent: typeof capiMeta.ua === 'string' ? capiMeta.ua : null,
+          fbp: cleanFbp(capiMeta.fbp),
+          fbc: cleanFbc(capiMeta.fbc),
+        },
+        customData: {
+          value,
+          currency,
+          content_name: effectivePlan,
+          content_ids: [effectivePlan],
+          content_type: 'product',
+          num_items: 1,
+          order_id: txId,
+        },
+      });
+    }
+  } catch (err) {
+    console.error('meta capi: Purchase failed', txId, (err as Error)?.message);
+  }
 
   // Scholarship redemption — only now, after the signature-verified, amount-
   // checked payment has been granted. scholarship_id is in the metadata

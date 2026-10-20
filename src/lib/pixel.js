@@ -28,6 +28,65 @@ export function pixelTrack(event, params, eventId) {
   fbq('track', event, params || {}, eventId ? { eventID: eventId } : undefined);
 }
 
+// One unique id per event. The browser pixel (eventID) and the server copy sent
+// through the Conversions API carry the same one, which is how Meta merges them
+// into a single event instead of counting two.
+export function newEventId() {
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  } catch {
+    // fall through
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}${Math.random().toString(36).slice(2, 12)}`;
+}
+
+function readCookie(name) {
+  try {
+    const hit = document.cookie.split('; ').find((c) => c.startsWith(`${name}=`));
+    return hit ? decodeURIComponent(hit.slice(name.length + 1)) : '';
+  } catch {
+    return '';
+  }
+}
+
+// The pixel's own browser identifiers, which let Meta match a server event to the
+// visitor. _fbp is set by fbevents.js; _fbc by an ad click, or rebuilt here from
+// the fbclid in the landing URL when the cookie isn't there yet.
+export function getMetaBrowserIds() {
+  const fbp = readCookie('_fbp');
+  let fbc = readCookie('_fbc');
+  if (!fbc) {
+    try {
+      const fbclid = new URLSearchParams(window.location.search).get('fbclid');
+      if (fbclid && /^[A-Za-z0-9_-]{1,500}$/.test(fbclid)) fbc = `fb.1.${Date.now()}.${fbclid}`;
+    } catch {
+      // no fbclid
+    }
+  }
+  return { ...(fbp ? { fbp } : {}), ...(fbc ? { fbc } : {}) };
+}
+
+// Server copy of a browser event (meta-capi Edge Function -> Conversions API).
+// Fire-and-forget: a failure must never reach the page.
+function sendServerEvent(eventName, eventId, params) {
+  try {
+    supabase.functions
+      .invoke('meta-capi', {
+        body: {
+          event_name: eventName,
+          event_id: eventId,
+          // Path only: the query string can carry tokens.
+          event_source_url: `${window.location.origin}${window.location.pathname}`,
+          ...getMetaBrowserIds(),
+          ...params,
+        },
+      })
+      .catch(() => {});
+  } catch {
+    // Tracking must never throw into the app.
+  }
+}
+
 // Anything Meta has no standard event for.
 export function pixelTrackCustom(event, params) {
   fbq('trackCustom', event, params || {});
@@ -136,10 +195,17 @@ function usePixelViewContent() {
   useEffect(() => {
     const page = PRODUCT_PAGES[normalisePath(pathname)];
     if (!page) return;
+    // One id per page view, shared by the pixel event and its server copy so
+    // Meta counts them once. event_name must match exactly on both sides.
+    const eventId = newEventId();
     pixelTrack('ViewContent', {
       content_name: page.name,
       content_type: 'product',
       ...(page.value ? { value: page.value, currency: CURRENCY } : {}),
+    }, eventId);
+    sendServerEvent('ViewContent', eventId, {
+      content_name: page.name,
+      ...(page.value ? { value: page.value } : {}),
     });
   }, [pathname]);
 }
@@ -180,9 +246,13 @@ function rememberSent(ref) {
 // guest return to /checkout/complete.
 export function trackPurchase(reference, payment) {
   if (readSent().includes(reference)) return;
+  // The amount actually charged, as a number above zero. Anything else is not
+  // sent at all: a Purchase with a missing, zero or default value is what Meta
+  // reports as a placeholder price (pixel_placeholder_value_single_event_actions).
   const value = Number(payment.amount);
+  if (!Number.isFinite(value) || value <= 0) return;
   pixelTrack('Purchase', {
-    value: Number.isFinite(value) ? value : undefined,
+    value: Math.round(value * 100) / 100,
     currency: payment.currency || CURRENCY,
     content_name: payment.plan || undefined,
     content_ids: payment.plan ? [payment.plan] : undefined,
