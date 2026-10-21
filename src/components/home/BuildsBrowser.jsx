@@ -61,7 +61,7 @@ export default function BuildsBrowser({ builds }) {
             <h3 className="font-display font-extrabold text-xl leading-snug tracking-[-0.02em] text-ink mt-4 mb-2.5">{b.title}</h3>
             <p className="t-card text-body line-clamp-3 mb-5">{b.description}</p>
             <div className="mt-auto flex items-center justify-between gap-3 border-t border-border pt-4">
-              <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-body">
+              <span className="t-mono inline-flex items-center gap-1.5 text-body">
                 <Clock className="w-4 h-4" /> {b.buildTime}
               </span>
               <Link

@@ -128,7 +128,7 @@ export default function Pricing() {
               <article key={program.to} className="card-flat flex flex-col p-7 lg:p-9">
                 <h3 className="font-display font-extrabold text-2xl lg:text-3xl leading-tight tracking-[-0.03em] text-ink">{program.name}</h3>
                 <div className="t-num text-5xl lg:text-6xl text-link mt-5">₦{program.price.toLocaleString()}</div>
-                <div className="text-sm font-semibold text-body mt-2 mb-5">one-time</div>
+                <div className="t-mono text-body mt-2 mb-5">one-time</div>
                 <p className="t-card text-body mb-5">{program.text}</p>
                 <ul className="list-none m-0 p-0 flex flex-col gap-2.5 mb-7 flex-1">
                   {program.bullets.map((f) => (

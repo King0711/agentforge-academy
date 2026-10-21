@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, CalendarDays, Check, MessageCircle, Video } from 'lucide-react';
+import { ArrowRight, CalendarDays, MessageCircle, Video } from 'lucide-react';
 import AutomationFlowDiagram from '../components/AutomationFlowDiagram';
 import YouTubeFacade from '../components/YouTubeFacade';
 import EmailCapture from '../components/EmailCapture';
@@ -10,6 +10,7 @@ import ProgramsTable from '../components/home/ProgramsTable';
 import MasterySection from '../components/home/MasterySection';
 import TestimonialQueue from '../components/home/TestimonialQueue';
 import ClassSlide from '../components/home/ClassSlide';
+import AgentSquad from '../components/home/AgentSquad';
 import BuildsBrowser from '../components/home/BuildsBrowser';
 import VibeProjects from '../components/home/VibeProjects';
 import HowGuidesWork from '../components/home/HowGuidesWork';
@@ -78,7 +79,10 @@ function Hero() {
           by side, then the class screenshot at full content width: it is a wide
           image, so in half a column its slide text was unreadable. */}
       <div className={INNER}>
-        <h1 className="t-hero text-white max-w-[15em]">Build an AI assistant, a web app or working AI agents.</h1>
+        <div className="grid lg:grid-cols-[1.18fr_1fr] gap-10 lg:gap-6 items-center">
+          <h1 className="t-hero text-white">Build an AI assistant, a web app or working AI agents.</h1>
+          <AgentSquad className="hidden lg:block w-full max-w-[470px] justify-self-end" />
+        </div>
         <div className="mt-8 md:mt-10 grid lg:grid-cols-[1.1fr_1fr] gap-8 lg:gap-16 lg:items-end">
           <div className="min-w-0">
             <p className="text-lg md:text-xl leading-relaxed text-body mb-8 md:mb-10 max-w-[30em]">
@@ -174,7 +178,7 @@ function Programs() {
         <ul className="list-none m-0 mt-6 mb-10 md:mb-12 p-0 flex flex-wrap gap-x-9 gap-y-3">
           {FORMAT_FACTS.map((f) => (
             <li key={f} className="flex items-center gap-2.5 text-base font-bold text-ink">
-              <Check className="w-5 h-5 flex-shrink-0 text-green" /> {f}
+              <span aria-hidden="true" className="node-dot" /> {f}
             </li>
           ))}
         </ul>
@@ -199,7 +203,7 @@ function Instructor() {
   return (
     <section className={`section-white ${PAD_S}`}>
       <div className={`${INNER} flex flex-col md:flex-row md:items-center gap-8 md:gap-16`}>
-        <div className="relative flex-shrink-0 self-start">
+        <div className="relative z-10 flex-shrink-0 self-start md:-mt-32">
           {/* A solid offset block behind the photo. */}
           <div aria-hidden="true" className="absolute inset-0 translate-x-3 translate-y-3 md:translate-x-4 md:translate-y-4 rounded-[22px] md:rounded-[28px] bg-brand" />
           <img
@@ -209,7 +213,7 @@ function Instructor() {
             height={200}
             loading="lazy"
             decoding="async"
-            className="relative w-[140px] h-[140px] md:w-60 md:h-60 rounded-[22px] md:rounded-[28px] object-cover"
+            className="relative w-[140px] h-[140px] md:w-64 md:h-72 rounded-[22px] md:rounded-[28px] object-cover"
           />
         </div>
         <div className="min-w-0">
@@ -262,7 +266,7 @@ function BeforeYouStart() {
         </div>
         <ul className="list-none m-0 p-0 grid md:grid-cols-3 gap-x-12 gap-y-9">
           {BEFORE_YOU_START.map((item) => (
-            <li key={item.title} className="border-t-4 border-ink pt-6">
+            <li key={item.title} className="rule-node pt-7">
               <h3 className="font-display font-extrabold text-[22px] lg:text-2xl leading-tight tracking-[-0.02em] text-ink mb-4">{item.title}</h3>
               <p className="t-card text-body">{item.text}</p>
             </li>

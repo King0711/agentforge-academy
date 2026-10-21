@@ -184,7 +184,7 @@ export default function VibeCoding() {
         <SectionHeading lead="The Social Dev VIBE Method: four steps you repeat on every project.">The framework behind every project</SectionHeading>
         <ol className="list-none m-0 p-0 grid sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-10">
           {VIBE_STEPS.map((step) => (
-            <li key={step.letter} className="border-t-4 border-ink pt-5">
+            <li key={step.letter} className="rule-node pt-6">
               <div aria-hidden="true" className="font-display font-extrabold text-[88px] lg:text-[112px] leading-[0.9] tracking-[-0.05em] text-link">{step.letter}</div>
               <h3 className="font-display font-extrabold text-2xl tracking-[-0.02em] text-ink mt-4 mb-2">{step.word}</h3>
               <p className="t-card text-body">{step.text}</p>
@@ -243,7 +243,7 @@ export default function VibeCoding() {
         <SectionHeading>You don't need to be a programmer</SectionHeading>
         <ul className="list-none m-0 p-0 grid sm:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-9">
           {WHO_FOR.map((w) => (
-            <li key={w.title} className="border-t-4 border-ink pt-5">
+            <li key={w.title} className="rule-node pt-6">
               <h3 className="font-display font-extrabold text-2xl tracking-[-0.02em] text-ink mb-2.5">{w.title}</h3>
               <p className="t-card text-body">{w.text}</p>
             </li>

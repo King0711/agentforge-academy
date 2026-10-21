@@ -219,6 +219,17 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
+/* Small technical labels (prices' "one-time", fact labels, build times): the
+   mono face we already load, set small and spaced. It gives the page a voice
+   that is not the default sans everywhere. */
+@utility t-mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
 @utility t-h3 {
   font-family: var(--font-display);
   font-weight: 700;
@@ -300,6 +311,33 @@
   && .btn-primary:hover { background: var(--color-brand-deep); }
   && .btn-secondary { border-color: var(--card-link); color: var(--card-link); }
 }
+/* The page's one recurring mark, taken from the agent diagrams: a line that
+   starts at a node. It replaces the thick top bars. Colour it with --rule. */
+@utility rule-node {
+  position: relative;
+  border-top: 2px solid var(--rule, var(--color-ink));
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: -6px;
+    width: 10px;
+    height: 10px;
+    border-radius: 9999px;
+    background: var(--rule, var(--color-ink));
+  }
+}
+/* The same node, as a list bullet. */
+@utility node-dot {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background: var(--color-link);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-yellow) 55%, transparent);
+}
+
 /* The quiet card: a hairline border and nothing else, for most content. The
    shadowed card-float is kept for the one or two things that should lift. */
 @utility card-flat {

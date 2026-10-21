@@ -64,7 +64,7 @@ function Includes({ items }) {
 function Fact({ label, children }) {
   return (
     <div className="border-t border-border py-3.5 min-w-0">
-      <div className="text-[13px] font-bold uppercase tracking-[0.06em] text-body leading-snug mb-1">{label}</div>
+      <div className="t-mono text-body mb-1.5">{label}</div>
       <div className="text-[15px] leading-[1.55] text-ink">{children}</div>
     </div>
   );
@@ -85,7 +85,7 @@ export default function ProgramsTable({ buildCount, totalHours }) {
             <Link to={flagship.to} className="hover:underline underline-offset-4">{flagship.name}</Link>
           </h3>
           <div className="t-num text-6xl lg:text-[88px] text-yellow mt-6">{flagship.price}</div>
-          <div className="text-sm font-semibold text-body mt-2">one-time</div>
+          <div className="t-mono text-body mt-2">one-time</div>
           <p className="text-base leading-relaxed text-body mt-6 mb-8 max-w-[26em]">{flagship.build}</p>
           <Link to={flagship.to} className="btn btn-primary mt-auto w-full sm:w-fit">
             See details <ArrowRight className="w-5 h-5" />
@@ -116,7 +116,7 @@ export default function ProgramsTable({ buildCount, totalHours }) {
               <Link to={p.to} className="hover:underline underline-offset-4">{p.name}</Link>
             </h3>
             <div className="t-num whitespace-nowrap text-5xl text-link mt-4">{p.price}</div>
-            <div className="text-sm font-semibold text-body mt-2 mb-5">one-time</div>
+            <div className="t-mono text-body mt-2 mb-5">one-time</div>
             <Fact label="Best for">{p.bestFor}</Fact>
             <Fact label="Length">{p.length}</Fact>
             <Fact label="Access">{p.access}</Fact>
