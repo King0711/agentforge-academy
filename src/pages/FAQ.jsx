@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { m } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
+import { Plus, Minus } from 'lucide-react';
+import { Band, PageHero } from '../components/page/MarketingParts';
 
 const FAQS = [
   {
@@ -110,48 +110,40 @@ export default function FAQ() {
   }, []);
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
-      <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-        <span className="inline-flex items-center gap-2 text-[13px] font-bold px-4 py-1.5 rounded-full bg-[#E8EDF3] dark:bg-brand/15 text-link">
-          FAQ
-        </span>
-        <h1 className="font-display font-extrabold text-[32px] sm:text-[42px] leading-[1.1] text-ink tracking-[-1px] mt-4 mb-10">
-          Frequently asked questions
-        </h1>
+    <div>
+      <PageHero
+        title="Frequently asked questions"
+        lead="Straight answers about access, payment and what you need before you start."
+      />
 
-        <div className="flex flex-col gap-3">
+      <Band narrow>
+        <div className="border-b border-border">
           {FAQS.map((f, i) => {
             const open = openIndex === i;
             return (
-              <div
-                key={f.q}
-                className="bg-white dark:bg-[#131E2F] border-[1.5px] border-border-soft rounded-2xl overflow-hidden"
-              >
+              <div key={f.q} className="border-t border-border">
                 <button
                   onClick={() => setOpenIndex(open ? -1 : i)}
-                  className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left"
+                  aria-expanded={open}
+                  className="w-full flex items-center justify-between gap-6 py-6 text-left"
                 >
-                  <span className="font-bold text-ink text-[15px]">{f.q}</span>
-                  <ChevronDown className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+                  <span className="font-display font-extrabold text-lg lg:text-xl leading-snug tracking-[-0.01em] text-ink">{f.q}</span>
+                  {open ? <Minus className="w-5 h-5 text-link flex-shrink-0" /> : <Plus className="w-5 h-5 text-link flex-shrink-0" />}
                 </button>
-                {open && (
-                  <p className="px-5 pb-4 text-sm leading-relaxed text-body">{f.a}</p>
-                )}
+                {open && <p className="t-body text-body pb-7 pr-10 m-0">{f.a}</p>}
               </div>
             );
           })}
         </div>
 
-        <div className="mt-12 pt-8 border-t border-border-soft text-center">
-          <p className="text-sm text-body mb-3">Still have questions?</p>
-          <div className="flex items-center justify-center gap-4 text-sm font-bold">
-            <a href="https://wa.me/2349066006963" target="_blank" rel="noreferrer" className="text-link hover:underline">
-              Message us on WhatsApp
-            </a>
-            <Link to="/" className="text-link hover:underline">← Back to home</Link>
-          </div>
+        <div className="mt-12 flex flex-wrap items-center gap-x-8 gap-y-3">
+          <p className="text-lg font-bold text-ink m-0">Still have questions?</p>
+          <a href="https://wa.me/2349066006963" target="_blank" rel="noreferrer" className="btn btn-secondary">
+            Message us on WhatsApp
+          </a>
+          <Link to="/" className="font-bold text-link hover:underline underline-offset-4">Back to home</Link>
         </div>
-      </m.div>
+      </Band>
     </div>
   );
 }

@@ -118,22 +118,22 @@ export default function HowGuidesWork({ buildCount }) {
 
   return (
     <>
-      <div className="max-w-[640px] mb-8 md:mb-11">
-        <h2 className="t-h2 text-ink">How AI Agent Guides work</h2>
-        <p className="t-lead text-body mt-3.5">
+      <div className="max-w-[760px] mb-10 md:mb-14">
+        <h2 className="t-section text-ink">How AI Agent Guides work</h2>
+        <p className="t-lead text-body mt-5">
           Each of the <span>{buildCount}</span> builds follows the same three steps.
         </p>
       </div>
 
       {/* In the three-column row the cards have a fixed height, so the captions line
           up; stacked on smaller screens each card just fits its screenshot. */}
-      <ol className="grid lg:grid-cols-3 gap-8 lg:gap-9 list-none p-0 m-0">
+      <ol className="grid lg:grid-cols-3 gap-6 lg:gap-9 list-none p-0 m-0">
         {STEPS.map((step, i) => (
-          <li key={step.title} className="relative min-w-0">
+          <li key={step.title} className="card-flat relative min-w-0 p-5 md:p-6">
             {i > 0 && (
               <span
                 aria-hidden="true"
-                className="hidden lg:flex absolute top-[71px] -left-8 z-[2] w-7 h-7 rounded-full bg-brand text-white items-center justify-center"
+                className="hidden lg:flex absolute top-[85px] -left-[30px] z-[2] w-7 h-7 rounded-full bg-yellow text-[#0F1A2A] items-center justify-center"
               >
                 <ArrowRight className="w-4 h-4" />
               </span>

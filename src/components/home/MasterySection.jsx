@@ -65,8 +65,8 @@ export default function MasterySection() {
     <>
       <div className="grid lg:grid-cols-[1fr_1.15fr] gap-9 lg:gap-14 items-center mb-11 lg:mb-16">
         <div className="min-w-0">
-          <h2 className="t-h2 text-ink">Build an AI team that does the work of a whole team</h2>
-          <p className="t-lead text-body mt-4 mb-5 lg:mb-6 max-w-[30em]">
+          <h2 className="t-section text-ink">Build an AI team that does the work of a whole team</h2>
+          <p className="t-lead text-body mt-5 mb-6 lg:mb-7 max-w-[30em]">
             Live cohort. Build a chief of staff plus a squad of specialist agents (research, design, images, coding, video)
             that you run from your phone, with guardrails built in.
           </p>
@@ -79,7 +79,7 @@ export default function MasterySection() {
             ))}
           </ul>
           <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:gap-3.5">
-            <Link to="/ai-agent-mastery" className="btn btn-primary w-full sm:w-auto">
+            <Link to="/ai-agent-mastery" className="btn btn-primary btn-lg w-full sm:w-auto">
               See AI Agent Mastery <ArrowRight className="w-5 h-5" />
             </Link>
             <p className="text-[15px] font-semibold text-body text-center sm:text-left">
@@ -89,7 +89,7 @@ export default function MasterySection() {
         </div>
 
         <div className="min-w-0">
-          <div className="rounded-2xl overflow-hidden border border-border bg-[#0F1A2A]">
+          <div className="rounded-xl overflow-hidden border border-border bg-[#0F1A2A]">
             <DemoVideo />
           </div>
           <div className="mt-4">
@@ -102,25 +102,23 @@ export default function MasterySection() {
         </div>
       </div>
 
-      <h3 className="t-h3 text-ink text-2xl lg:text-[28px] tracking-[-0.02em] mb-3 lg:mb-4">What your assistant does</h3>
-      <dl className="mb-11 lg:mb-14 border-b border-border">
+      <h3 className="font-display font-extrabold text-[28px] lg:text-4xl leading-tight tracking-[-0.03em] text-ink mb-6 lg:mb-8">What your assistant does</h3>
+      <dl className="m-0 mb-16 lg:mb-24 border-b border-border">
         {CAPABILITIES.map((c) => (
-          <div key={c.name} className="flex flex-col sm:flex-row sm:gap-8 border-t border-border py-3.5 lg:py-4">
-            <dt className="sm:w-[140px] flex-shrink-0 font-bold text-base text-ink">{c.name}</dt>
-            <dd className="m-0 flex-1 min-w-0 text-[15px] lg:text-base leading-relaxed text-body">{c.text}</dd>
+          <div key={c.name} className="grid md:grid-cols-[1fr_1.1fr] gap-2 md:gap-12 items-baseline border-t border-border py-6 lg:py-9">
+            <dt className="font-display font-extrabold text-4xl lg:text-[64px] leading-none tracking-[-0.04em] text-ink">{c.name}</dt>
+            <dd className="m-0 max-w-[28em] text-base lg:text-lg leading-relaxed text-body">{c.text}</dd>
           </div>
         ))}
       </dl>
 
-      <h3 className="t-h3 text-ink text-2xl lg:text-[28px] tracking-[-0.02em] mb-3 lg:mb-4">The three live evenings</h3>
-      <ol className="list-none m-0 p-0 border-b border-border">
+      <h3 className="font-display font-extrabold text-[28px] lg:text-4xl leading-tight tracking-[-0.03em] text-ink mb-8 lg:mb-10">The three live evenings</h3>
+      <ol className="list-none m-0 p-0 grid lg:grid-cols-3 gap-9 lg:gap-12">
         {DAYS.map((d) => (
-          <li key={d.day} className="flex flex-col sm:flex-row gap-1.5 sm:gap-8 border-t border-border py-[18px] lg:py-[22px]">
-            <div className="t-h3 text-link sm:w-[140px] flex-shrink-0">{d.day}</div>
-            <div className="flex-1 min-w-0">
-              <h4 className="t-h3 text-ink mb-1.5">{d.title}</h4>
-              <p className="t-card text-body">{d.text}</p>
-            </div>
+          <li key={d.day} className="border-t-4 border-brand pt-5">
+            <div className="font-display font-extrabold text-5xl leading-none tracking-[-0.04em] text-link mb-5">{d.day}</div>
+            <h4 className="t-h3 text-ink text-[21px] mb-2.5">{d.title}</h4>
+            <p className="t-card text-body">{d.text}</p>
           </li>
         ))}
       </ol>
