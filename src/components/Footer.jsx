@@ -14,6 +14,7 @@ export default function Footer() {
           <Link to="/legal/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
           <Link to="/faq" className="hover:text-white transition-colors">FAQ</Link>
           <a href="https://wa.me/2349066006963" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">Contact us on WhatsApp</a>
+          <a href="https://www.instagram.com/socialdevtechnologies/" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">Instagram</a>
         </div>
         <div className="max-w-6xl mx-auto mt-4 text-center text-[12.5px] text-[#8A96A5]">
           © <span>{new Date().getFullYear()}</span> Social Dev Technologies. All rights reserved.
@@ -76,6 +77,7 @@ export default function Footer() {
             <div className="flex flex-col gap-3 text-[14.5px] text-white/75">
               <a href="https://www.linkedin.com/company/social-dev-technologies/" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">LinkedIn</a>
               <a href="https://www.facebook.com/SocialDevTech/" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">Facebook</a>
+              <a href="https://www.instagram.com/socialdevtechnologies/" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">Instagram</a>
               <a href="https://wa.me/2349066006963" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">WhatsApp</a>
             </div>
           </div>
