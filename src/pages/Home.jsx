@@ -11,6 +11,7 @@ import MasterySection from '../components/home/MasterySection';
 import TestimonialQueue from '../components/home/TestimonialQueue';
 import ClassSlide from '../components/home/ClassSlide';
 import AgentSquad from '../components/home/AgentSquad';
+import CountUp from '../components/home/CountUp';
 import BuildsBrowser from '../components/home/BuildsBrowser';
 import VibeProjects from '../components/home/VibeProjects';
 import HowGuidesWork from '../components/home/HowGuidesWork';
@@ -126,7 +127,7 @@ function Hero() {
         <div className="grid grid-cols-3 gap-4 lg:gap-8">
           {STATS.map((st) => (
             <div key={st.label} className="min-w-0">
-              <div className="t-num text-5xl sm:text-6xl lg:text-[60px] xl:text-[80px] text-white">{st.value}</div>
+              <div className="t-num text-5xl sm:text-6xl lg:text-[60px] xl:text-[80px] text-white"><CountUp value={st.value} /></div>
               <div className="text-[13px] lg:text-base font-semibold leading-snug text-body mt-2.5 lg:mt-3">{st.label}</div>
             </div>
           ))}
