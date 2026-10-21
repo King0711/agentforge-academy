@@ -75,7 +75,15 @@ export function usePaystackCheckout() {
 
       trackInitiateCheckout(plan);
       const { data, error: fnError } = await invokeWithRetry('create-paystack-checkout', {
-        body: { plan, redirectOrigin: window.location.origin, capi: getMetaBrowserIds(), ...extra },
+        body: {
+          plan,
+          redirectOrigin: window.location.origin,
+          capi: getMetaBrowserIds(),
+          // Someone who already has an account never passes through signup, so the
+          // referral link they followed is attached to the payment instead.
+          referral_code: getStoredReferralCode() || undefined,
+          ...extra,
+        },
       });
       if (fnError) {
         await readFunctionError(fnError, 'create-paystack-checkout');
