@@ -78,7 +78,7 @@ export default function About() {
         <SectionHeading>What we believe</SectionHeading>
         <ul className="list-none m-0 p-0 grid md:grid-cols-2 gap-x-16 gap-y-10">
           {PRINCIPLES.map((p) => (
-            <li key={p.title} className="border-t-4 border-ink pt-5">
+            <li key={p.title} className="rule-node pt-6">
               <h3 className="font-display font-extrabold text-2xl leading-tight tracking-[-0.02em] text-ink mb-3">{p.title}</h3>
               <p className="t-body text-body m-0">{p.text}</p>
             </li>
@@ -98,7 +98,7 @@ export default function About() {
 
 function Stat({ value, label }) {
   return (
-    <div className="border-t-4 border-ink pt-4">
+    <div className="rule-node pt-5">
       <dd className="t-num m-0 text-5xl lg:text-7xl text-link">{value}</dd>
       <dt className="text-base font-semibold text-body mt-2">{label}</dt>
     </div>

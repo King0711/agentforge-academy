@@ -114,8 +114,8 @@ export default function MasterySection() {
 
       <h3 className="font-display font-extrabold text-[28px] lg:text-4xl leading-tight tracking-[-0.03em] text-ink mb-8 lg:mb-10">The three live evenings</h3>
       <ol className="list-none m-0 p-0 grid lg:grid-cols-3 gap-9 lg:gap-12">
-        {DAYS.map((d) => (
-          <li key={d.day} className="border-t-4 border-brand pt-5">
+        {DAYS.map((d, i) => (
+          <li key={d.day} className={`rule-node [--rule:var(--color-brand)] pt-7 ${['', 'lg:mt-14', 'lg:mt-28'][i]}`}>
             <div className="font-display font-extrabold text-5xl leading-none tracking-[-0.04em] text-link mb-5">{d.day}</div>
             <h4 className="t-h3 text-ink text-[21px] mb-2.5">{d.title}</h4>
             <p className="t-card text-body">{d.text}</p>

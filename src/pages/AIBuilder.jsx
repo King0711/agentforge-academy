@@ -203,7 +203,7 @@ export default function AIBuilder() {
         <SectionHeading>How many of these sound like you?</SectionHeading>
         <ul className="list-none m-0 p-0 grid sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-9 mb-12">
           {HONEST_CHECK.map((group) => (
-            <li key={group.title} className="border-t-4 border-ink pt-5">
+            <li key={group.title} className="rule-node pt-6">
               <h3 className="font-display font-extrabold text-xl leading-snug tracking-[-0.02em] text-ink mb-3">{group.title}</h3>
               <ul className="list-none m-0 p-0 flex flex-col gap-2.5">
                 {group.items.map((item) => (
@@ -222,7 +222,7 @@ export default function AIBuilder() {
       <Band tone="white">
         <SectionHeading>Using AI vs. Building with AI</SectionHeading>
         <div className="grid md:grid-cols-2 gap-x-16 gap-y-10 mb-10">
-          <div className="border-t-4 border-border pt-5">
+          <div className="rule-node [--rule:var(--color-border)] pt-6">
             <h3 className="font-display font-extrabold text-2xl tracking-[-0.02em] text-body mb-4">Using AI</h3>
             <ul className="list-none m-0 p-0 flex flex-col gap-3">
               {USING.map((t) => (
@@ -230,7 +230,7 @@ export default function AIBuilder() {
               ))}
             </ul>
           </div>
-          <div className="border-t-4 border-brand pt-5">
+          <div className="rule-node [--rule:var(--color-brand)] pt-6">
             <h3 className="font-display font-extrabold text-2xl tracking-[-0.02em] text-ink mb-4">Building with AI</h3>
             <ul className="list-none m-0 p-0 flex flex-col gap-3">
               {BUILDING.map((t) => (
@@ -291,7 +291,7 @@ export default function AIBuilder() {
         <SectionHeading>Your AI Builder journey</SectionHeading>
         <ol className="list-none m-0 p-0 grid md:grid-cols-3 gap-x-12 gap-y-9 mb-14">
           {TRACKS.map((track) => (
-            <li key={track.title} className="border-t-4 border-ink pt-5">
+            <li key={track.title} className="rule-node pt-6">
               <div className="text-sm font-extrabold text-link mb-3"><EmojiText>{track.tag}</EmojiText></div>
               <h3 className="font-display font-extrabold text-2xl tracking-[-0.02em] text-ink mb-2">{track.title}</h3>
               <p className="t-card text-body">{track.text}</p>
@@ -410,7 +410,7 @@ export default function AIBuilder() {
         </div>
         <ul className="list-none m-0 p-0 grid md:grid-cols-3 gap-x-12 gap-y-8 mb-14">
           {MONEY_PATHS.map((p) => (
-            <li key={p.label} className="border-t-4 border-ink pt-5">
+            <li key={p.label} className="rule-node pt-6">
               <h3 className="font-display font-extrabold text-2xl tracking-[-0.02em] text-ink mb-2">{p.label}</h3>
               <p className="t-card text-body m-0">{p.text}</p>
             </li>
@@ -440,7 +440,7 @@ export default function AIBuilder() {
       <Band>
         <SectionHeading>Are AI Agent Guides for you?</SectionHeading>
         <div className="grid md:grid-cols-2 gap-x-16 gap-y-10">
-          <div className="border-t-4 border-green pt-5">
+          <div className="rule-node [--rule:var(--color-green)] pt-6">
             <h3 className="font-display font-extrabold text-2xl tracking-[-0.02em] text-ink mb-5">This is for you if…</h3>
             <ul className="list-none m-0 p-0 flex flex-col gap-3.5">
               {FOR_YOU.map((item) => (
@@ -448,7 +448,7 @@ export default function AIBuilder() {
               ))}
             </ul>
           </div>
-          <div className="border-t-4 border-border pt-5">
+          <div className="rule-node [--rule:var(--color-border)] pt-6">
             <h3 className="font-display font-extrabold text-2xl tracking-[-0.02em] text-body mb-5">This might not be for you if…</h3>
             <ul className="list-none m-0 p-0 flex flex-col gap-3.5">
               {NOT_FOR_YOU.map((item) => (
