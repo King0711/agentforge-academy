@@ -12,6 +12,7 @@ function programs({ buildCount, totalHours }) {
     {
       to: '/ai-agent-mastery',
       name: 'AI Agent Mastery',
+      tag: 'Live cohort',
       price: `₦${AI_AGENT_MASTERY_PRICE.toLocaleString()}`,
       format: 'Live cohort on Zoom',
       bestFor: 'Founders, operators, consultants and freelancers',
@@ -21,19 +22,9 @@ function programs({ buildCount, totalHours }) {
       includes: ['Live instructor-led classes', 'A team that works while you sleep', 'Certificate of completion'],
     },
     {
-      to: '/ai-builder',
-      name: 'AI Agent Guides',
-      price: `From ₦${BUILDER1_PRICE.toLocaleString()}`,
-      format: 'Self-paced guides',
-      bestFor: 'Self-paced learners who want to build, not just watch videos',
-      length: `${buildCount} builds, about ${totalHours} hours in total`,
-      access: 'Permanent',
-      build: 'A portfolio of working agents: Gmail triage, WhatsApp bots, invoice processing and more',
-      includes: ['Runs on your own free Gemini key', 'Portfolio write-up every session'],
-    },
-    {
       to: '/vibe-coding',
       name: 'Vibe Coding Bootcamp',
+      tag: 'Live cohort',
       price: `₦${VIBECODING_PRICE.toLocaleString()}`,
       format: 'Live cohort on Zoom',
       bestFor: 'Beginners, entrepreneurs, business owners, students and creators',
@@ -42,17 +33,20 @@ function programs({ buildCount, totalHours }) {
       build: 'A deployed website, web app and AI-powered product. No coding experience required',
       includes: ['Live instructor-led classes', 'Portfolio site, to-do app, Supabase CRUD app and more', 'Certificate of completion'],
     },
+    {
+      to: '/ai-builder',
+      name: 'AI Agent Guides',
+      tag: 'Self-paced',
+      price: `From ₦${BUILDER1_PRICE.toLocaleString()}`,
+      format: 'Self-paced guides',
+      bestFor: 'Self-paced learners who want to build, not just watch videos',
+      length: `${buildCount} builds, about ${totalHours} hours in total`,
+      access: 'Permanent',
+      build: 'A portfolio of working agents: Gmail triage, WhatsApp bots, invoice processing and more',
+      includes: ['Runs on your own free Gemini key', 'Portfolio write-up every session'],
+    },
   ];
 }
-
-const ROWS = [
-  ['Format', 'format'],
-  ['Best for', 'bestFor'],
-  ['Length', 'length'],
-  ['Access', 'access'],
-  ['You build', 'build'],
-  ['Includes', 'includes'],
-];
 
 function Includes({ items }) {
   return (
@@ -67,79 +61,75 @@ function Includes({ items }) {
   );
 }
 
-function SeeDetails({ to }) {
+function Fact({ label, children }) {
   return (
-    <Link to={to} className="inline-flex items-center gap-1.5 font-bold text-[15px] text-link hover:underline underline-offset-4">
-      See details <ArrowRight className="w-4 h-4" />
-    </Link>
+    <div className="border-t border-border py-3.5 min-w-0">
+      <div className="text-[13px] font-bold uppercase tracking-[0.06em] text-body leading-snug mb-1">{label}</div>
+      <div className="text-[15px] leading-[1.55] text-ink">{children}</div>
+    </div>
   );
 }
 
+// The first program is the flagship (founder-confirmed): it gets a full-width
+// block with the price at poster size. The other two sit below it, smaller.
+// Every cell still repeats a fact from that program's own page.
 export default function ProgramsTable({ buildCount, totalHours }) {
-  const list = programs({ buildCount, totalHours });
+  const [flagship, ...others] = programs({ buildCount, totalHours });
 
   return (
-    <>
-      {/* Wide screens: one table */}
-      <div className="hidden lg:block rounded-2xl border border-border bg-surface overflow-hidden">
-        <table className="w-full table-fixed border-collapse text-left">
-          <caption className="sr-only">Compare AI Agent Mastery, AI Agent Guides and Vibe Coding Bootcamp</caption>
-          <thead>
-            <tr className="border-b border-border">
-              <td className="w-[168px]" />
-              {list.map((p) => (
-                <th key={p.name} scope="col" className="align-top p-5 border-l border-border font-normal">
-                  <Link to={p.to} className="block group">
-                    <div className="t-h3 text-ink text-lg group-hover:underline underline-offset-4">{p.name}</div>
-                    <div className="t-num text-[28px] text-link mt-2.5">{p.price}</div>
-                    <div className="text-[13px] text-body mt-1">one-time</div>
-                  </Link>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {ROWS.map(([label, key]) => (
-              <tr key={key} className="border-b border-border">
-                <th scope="row" className="align-top px-5 py-4 text-[13px] font-semibold text-body w-[168px]">{label}</th>
-                {list.map((p) => (
-                  <td key={p.name} className="align-top px-5 py-4 border-l border-border text-[15px] leading-[1.55] text-ink">
-                    {key === 'includes' ? <Includes items={p.includes} /> : p[key]}
-                  </td>
-                ))}
-              </tr>
-            ))}
-            <tr>
-              <td />
-              {list.map((p) => (
-                <td key={p.name} className="px-5 py-4 border-l border-border">
-                  <SeeDetails to={p.to} />
-                </td>
-              ))}
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      {/* Phones and tablets: one block per program */}
-      <div className="lg:hidden flex flex-col gap-4">
-        {list.map((p) => (
-          <div key={p.name} className="rounded-2xl border border-border bg-surface p-5">
-            <h3 className="t-h3 text-ink text-lg">{p.name}</h3>
-            <div className="t-num text-[28px] text-link mt-2">{p.price}</div>
-            <div className="text-[13px] text-body mb-4">one-time</div>
-            {ROWS.map(([label, key]) => (
-              <div key={key} className="border-t border-border py-3">
-                <div className="text-[13px] font-semibold text-body leading-snug mb-0.5">{label}</div>
-                <div className="text-[15px] leading-[1.55] text-ink">
-                  {key === 'includes' ? p.includes.join('. ') + '.' : p[key]}
-                </div>
-              </div>
-            ))}
-            <div className="pt-1"><SeeDetails to={p.to} /></div>
+    <div className="flex flex-col gap-6 lg:gap-8">
+      <article className="card-flat grid overflow-hidden lg:grid-cols-[.8fr_1.2fr]">
+        <div className="section-dark flex flex-col p-8 lg:p-12">
+          <span className="mb-5 inline-flex w-fit rounded-full bg-white/15 px-3 py-1 text-xs font-extrabold text-white">{flagship.tag}</span>
+          <h3 className="font-display font-extrabold text-3xl lg:text-4xl leading-tight tracking-[-0.03em] text-white">
+            <Link to={flagship.to} className="hover:underline underline-offset-4">{flagship.name}</Link>
+          </h3>
+          <div className="t-num text-6xl lg:text-[88px] text-yellow mt-6">{flagship.price}</div>
+          <div className="text-sm font-semibold text-body mt-2">one-time</div>
+          <p className="text-base leading-relaxed text-body mt-6 mb-8 max-w-[26em]">{flagship.build}</p>
+          <Link to={flagship.to} className="btn btn-primary mt-auto w-full sm:w-fit">
+            See details <ArrowRight className="w-5 h-5" />
+          </Link>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-x-10 p-8 lg:p-12 content-start">
+          <Fact label="Best for">{flagship.bestFor}</Fact>
+          <Fact label="Length">{flagship.length}</Fact>
+          <Fact label="Access">{flagship.access}</Fact>
+          <Fact label="Format">{flagship.format}</Fact>
+          <div className="sm:col-span-2">
+            <Fact label="Includes"><Includes items={flagship.includes} /></Fact>
           </div>
+        </div>
+      </article>
+
+      <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
+        {others.map((p) => (
+          <article key={p.name} className="card-flat flex flex-col p-7 lg:p-9">
+            <span
+              className={`mb-4 inline-flex w-fit rounded-full px-3 py-1 text-xs font-extrabold ${
+                p.tag === 'Self-paced' ? 'bg-yellow/30 text-ink' : 'bg-link/10 text-link'
+              }`}
+            >
+              {p.tag}
+            </span>
+            <h3 className="font-display font-extrabold text-2xl leading-tight tracking-[-0.02em] text-ink">
+              <Link to={p.to} className="hover:underline underline-offset-4">{p.name}</Link>
+            </h3>
+            <div className="t-num whitespace-nowrap text-5xl text-link mt-4">{p.price}</div>
+            <div className="text-sm font-semibold text-body mt-2 mb-5">one-time</div>
+            <Fact label="Best for">{p.bestFor}</Fact>
+            <Fact label="Length">{p.length}</Fact>
+            <Fact label="Access">{p.access}</Fact>
+            <Fact label="You build">{p.build}</Fact>
+            <Fact label="Includes"><Includes items={p.includes} /></Fact>
+            <div className="mt-auto pt-6">
+              <Link to={p.to} className="btn btn-primary w-full">
+                See details <ArrowRight className="w-5 h-5" />
+              </Link>
+            </div>
+          </article>
         ))}
       </div>
-    </>
+    </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useCallback, useSyncExternalStore } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  CheckCircle2, ArrowRight, CalendarDays, Info, CircleHelp, Loader2, AlertCircle, Timer,
+  CheckCircle2, CalendarDays, Info, Loader2, AlertCircle, Timer,
   Code2, Database, Rocket, Wrench,
 } from 'lucide-react';
 import { usePro } from '../hooks/usePro';
@@ -11,7 +11,7 @@ import CheckoutAuthModal from '../components/CheckoutAuthModal';
 import { usePageSeo } from '../hooks/usePageSeo';
 import { VIBECODING_PRICE } from '../data/pricing';
 
-import EmojiIcon from '../components/EmojiIcon';
+import { Band, ClosingBand, PageHero, SectionHeading } from '../components/page/MarketingParts';
 // This page sells ONE product: the Vibe Coding bootcamp. Unlike Pricing.jsx
 // / AIBuilder.jsx (which sell builder1/builder2/pro), checkout here is
 // hardcoded to plan: 'vibecoding' — this page never offers the automation
@@ -107,31 +107,18 @@ function CohortCountdown({ dateStr }) {
   ];
 
   return (
-    <div data-client-only className="flex flex-col items-center gap-2.5">
+    <div data-client-only className="flex flex-col items-start gap-2.5">
       <span className="inline-flex items-center gap-1.5 text-[12.5px] font-bold uppercase tracking-wide text-body">
         <Timer className="w-3.5 h-3.5 text-link" /> Next launch cohort starts in
       </span>
       <div className="flex items-center gap-2 sm:gap-2.5">
         {units.map((unit) => (
-          <div key={unit.label} className="bg-white dark:bg-[#131E2F] border-[1.5px] border-border-soft rounded-xl px-3 sm:px-3.5 py-2 min-w-[58px] sm:min-w-[64px] text-center">
+          <div key={unit.label} className="card-flat px-3 sm:px-3.5 py-2 min-w-[58px] sm:min-w-[64px] text-center">
             <div className="font-display font-extrabold text-xl sm:text-2xl text-ink tabular-nums leading-none">{String(unit.value).padStart(2, '0')}</div>
             <div className="text-[10.5px] font-bold uppercase tracking-wide text-gray-400 mt-1">{unit.label}</div>
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-function SectionHeading({ eyebrow, children }) {
-  return (
-    <div className="text-center mb-9">
-      {eyebrow && (
-        <span className="inline-flex items-center gap-2 text-[13px] font-bold px-4 py-1.5 rounded-full bg-[#E8EDF3] dark:bg-brand/15 text-link mb-3">
-          {eyebrow}
-        </span>
-      )}
-      <h2 className="font-display font-extrabold text-[26px] sm:text-[38px] text-ink tracking-[-.8px] max-w-2xl mx-auto">{children}</h2>
     </div>
   );
 }
@@ -156,213 +143,168 @@ export default function VibeCoding() {
 
   return (
     <div>
-      {/* Hero */}
-      <div
-        className="relative overflow-hidden pt-16 pb-14 px-4 sm:px-6 lg:px-[5vw] text-center bg-bg"
-      >
-        <div className="relative max-w-3xl mx-auto">
-          <span
-            className="inline-flex items-center gap-2 bg-white dark:bg-[#131E2F] border-[1.5px] border-border text-link font-bold text-[12.5px] px-4 py-2 rounded-full shadow-[0_3px_10px_rgba(15,26,42,.1)]"
-          >
-            🚀 Launch cohort — enrollment open
-          </span>
-
-          <h1
-            className="font-display font-extrabold text-[36px] sm:text-[54px] leading-[1.05] text-ink tracking-[-1.5px] mt-5"
-          >
-            Stop just using AI. <span className="text-link">Start building with it.</span>
-          </h1>
-
-          <p
-            className="text-[17px] leading-relaxed text-body mt-5 max-w-lg mx-auto"
-          >
-            Turn your ideas into real websites, web applications, and AI-powered products — even if you've never
-            been a professional programmer. Learn to use AI as your development partner.
-          </p>
-
-          <div
-            className="flex flex-col sm:flex-row gap-3.5 items-center justify-center mt-8"
-          >
-            <a
-              href="#pricing"
-              className="bg-brand text-white font-extrabold text-base px-8 py-4 rounded-2xl shadow-[0_10px_22px_rgba(15,26,42,.4)] hover:bg-brand-deep transition-colors"
-            >
+      <PageHero
+        title={<>Stop just using AI. <span className="text-yellow">Start building with it.</span></>}
+        lead="Turn your ideas into real websites, web applications, and AI-powered products, even if you've never been a professional programmer. Learn to use AI as your development partner."
+        actions={
+          <>
+            <a href="#pricing" className="btn btn-primary btn-lg w-full sm:w-auto">
               Join the launch cohort — ₦{VIBECODING_PRICE.toLocaleString()} →
             </a>
-            <a href="#what-youll-build" className="text-body-strong font-bold text-[14.5px] hover:text-link transition-colors">
+            <a href="#what-youll-build" className="btn btn-secondary btn-lg w-full sm:w-auto">
               See what you'll build ↓
             </a>
-          </div>
-
-          <div className="flex flex-wrap justify-center gap-x-5 gap-y-1.5 mt-6 text-[13px] text-body font-semibold">
-            <span>4 weeks</span><span>·</span><span>8 live classes</span><span>·</span><span>6 months access</span>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+        facts={['Launch cohort, enrollment open', '4 weeks', '8 live classes', '6 months access']}
+      />
 
       {/* You have ideas */}
-      <div className="bg-[#0F1A2A] py-16 px-4 sm:px-6 lg:px-[5vw]">
-        <div className="max-w-3xl mx-auto text-center">
-          <span className="text-[13px] font-bold uppercase tracking-[3px] mb-5 inline-block" style={{ color: '#B8CCE4' }}>
-            You have ideas
-          </span>
-          <h2 className="font-display font-extrabold text-[26px] sm:text-[38px] leading-[1.15] tracking-[-1px] text-white">
-            Now learn how to build them.
-          </h2>
-          <p className="text-[#E2EAF3] text-[15px] leading-relaxed mt-4 max-w-lg mx-auto">
-            You may think you need to become a professional programmer before you can build a website, a business
-            tool, an online platform, or an AI assistant. <span className="text-yellow font-bold">You don't.</span> With the right
-            workflow, you can describe an idea, work with AI to plan it, generate and understand code, test what you
-            build, fix problems, and turn your idea into a working product.
-          </p>
-          <p className="text-[#D5DEE9] text-[14px] mt-7">
-            Africa shouldn't just use AI. <span className="text-yellow font-bold">Africa should build with AI.</span>
-          </p>
-        </div>
-      </div>
-
-      {/* VIBE Method */}
-      <div className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto">
-        <SectionHeading eyebrow="The Social Dev VIBE Method">The framework behind every project</SectionHeading>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3.5 max-w-4xl mx-auto">
-          {VIBE_STEPS.map((step) => (
-            <div key={step.letter} className="bg-white dark:bg-[#131E2F] border-[1.5px] border-border-soft rounded-2xl p-5 text-center">
-              <div className="w-11 h-11 mx-auto rounded-full bg-brand text-white font-display font-extrabold text-lg flex items-center justify-center mb-3">
-                {step.letter}
-              </div>
-              <h3 className="font-display font-bold text-[14.5px] text-ink mb-1.5">{step.word}</h3>
-              <p className="text-[12.5px] text-body leading-relaxed">{step.text}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* What you'll build */}
-      <div id="what-youll-build" className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto scroll-mt-20">
-        <SectionHeading eyebrow="Six real projects">What you'll build</SectionHeading>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3.5 max-w-4xl mx-auto">
-          {PROJECTS.map((p, i) => (
-            <div key={p.name} className="bg-white dark:bg-[#131E2F] border-[1.5px] border-border-soft rounded-2xl p-5">
-              <div className="flex items-center gap-2 mb-2.5">
-                <EmojiIcon emoji={p.icon} className="w-5 h-5 text-link" />
-                <span className="text-[10.5px] font-bold uppercase tracking-wide text-link">Project {i + 1}</span>
-              </div>
-              <h3 className="font-display font-bold text-[14px] text-ink mb-1.5">{p.name}</h3>
-              <p className="text-[12.5px] text-body leading-relaxed">{p.text}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 4-week timeline */}
-      <div id="curriculum" className="bg-[#F6F8FB] dark:bg-[#141416] border-y border-border-soft px-4 sm:px-6 lg:px-[5vw] py-16">
-        <div className="max-w-4xl mx-auto">
-          <SectionHeading eyebrow="4 weeks, 8 live classes">Your bootcamp, week by week</SectionHeading>
-          <div className="flex flex-col gap-3">
-            {WEEKS.map((w, i) => (
-              <div key={w.week} className="flex gap-3.5">
-                <div className="flex flex-col items-center flex-shrink-0">
-                  <div className="w-9 h-9 rounded-full bg-brand text-white font-display font-extrabold text-[13px] flex items-center justify-center">
-                    {w.week}
-                  </div>
-                  {i < WEEKS.length - 1 && <div className="w-0.5 flex-1 bg-brand/25 my-1" />}
-                </div>
-                <div className={`bg-white dark:bg-[#131E2F] border-[1.5px] border-border-soft rounded-2xl p-4.5 flex-1 ${i < WEEKS.length - 1 ? 'mb-1' : ''}`}>
-                  <p className="font-display font-bold text-[14.5px] text-ink leading-tight">Week {w.week} — {w.title}</p>
-                  <p className="text-[12.5px] text-body mt-1.5 leading-relaxed">{w.text}</p>
-                  <p className="text-[11.5px] text-link font-bold mt-2">Project: {w.project}</p>
-                </div>
-              </div>
-            ))}
+      <Band tone="white">
+        <div className="grid lg:grid-cols-[1.1fr_1fr] gap-10 lg:gap-20 items-start">
+          <div>
+            <h2 className="t-section text-ink">You have ideas. Now learn how to build them.</h2>
+          </div>
+          <div>
+            <p className="t-lead text-body">
+              You may think you need to become a professional programmer before you can build a website, a business
+              tool, an online platform, or an AI assistant. <strong className="text-ink">You don't.</strong> With the right
+              workflow, you can describe an idea, work with AI to plan it, generate and understand code, test what you
+              build, fix problems, and turn your idea into a working product.
+            </p>
+            <p className="font-display font-extrabold text-2xl md:text-3xl leading-tight tracking-[-0.02em] text-ink mt-8 border-l-4 border-yellow pl-5">
+              Africa shouldn't just use AI. Africa should build with AI.
+            </p>
           </div>
         </div>
-      </div>
+      </Band>
+
+      {/* VIBE Method */}
+      <Band>
+        <SectionHeading lead="The Social Dev VIBE Method: four steps you repeat on every project.">The framework behind every project</SectionHeading>
+        <ol className="list-none m-0 p-0 grid sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-10">
+          {VIBE_STEPS.map((step) => (
+            <li key={step.letter} className="border-t-4 border-ink pt-5">
+              <div aria-hidden="true" className="font-display font-extrabold text-[88px] lg:text-[112px] leading-[0.9] tracking-[-0.05em] text-link">{step.letter}</div>
+              <h3 className="font-display font-extrabold text-2xl tracking-[-0.02em] text-ink mt-4 mb-2">{step.word}</h3>
+              <p className="t-card text-body">{step.text}</p>
+            </li>
+          ))}
+        </ol>
+      </Band>
+
+      {/* What you'll build */}
+      <Band id="what-youll-build" tone="white">
+        <SectionHeading lead="Six real projects, from a first website to a product of your own.">What you'll build</SectionHeading>
+        <ol className="list-none m-0 p-0 grid md:grid-cols-2 gap-x-14 border-b border-border md:border-b-0">
+          {PROJECTS.map((p, i) => (
+            <li key={p.name} className="flex gap-5 border-t border-border py-6 lg:py-7 min-w-0">
+              <span aria-hidden="true" className="t-num w-10 flex-shrink-0 pt-0.5 text-3xl text-link">{String(i + 1).padStart(2, '0')}</span>
+              <div className="min-w-0">
+                <h3 className="font-display font-extrabold text-xl lg:text-2xl leading-tight tracking-[-0.02em] text-ink mb-2">{p.name}</h3>
+                <p className="t-card text-body">{p.text}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </Band>
+
+      {/* 4-week timeline */}
+      <Band id="curriculum" tone="dark" size="lg">
+        <SectionHeading lead="4 weeks, 8 live classes.">Your bootcamp, week by week</SectionHeading>
+        <ol className="list-none m-0 p-0 border-b border-border">
+          {WEEKS.map((w) => (
+            <li key={w.week} className="grid lg:grid-cols-[220px_1.4fr_1fr] gap-3 lg:gap-12 border-t border-border py-7 lg:py-9 items-baseline">
+              <div className="font-display font-extrabold text-4xl lg:text-5xl leading-none tracking-[-0.04em] text-yellow">Week {w.week}</div>
+              <div className="min-w-0">
+                <h3 className="font-display font-extrabold text-xl lg:text-2xl leading-tight tracking-[-0.02em] text-ink mb-2">{w.title}</h3>
+                <p className="t-card text-body max-w-[36em]">{w.text}</p>
+              </div>
+              <p className="text-base font-bold text-ink">Project: <span className="font-semibold text-body">{w.project}</span></p>
+            </li>
+          ))}
+        </ol>
+      </Band>
 
       {/* What you'll learn */}
-      <div className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto">
+      <Band>
         <SectionHeading>What you'll learn</SectionHeading>
-        <div className="grid sm:grid-cols-2 gap-2.5 max-w-3xl mx-auto text-left">
+        <ul className="list-none m-0 p-0 grid sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-3.5">
           {LEARN.map((item) => (
-            <div key={item} className="flex items-start gap-2.5 text-[13px] font-semibold text-body-strong">
-              <CheckCircle2 className="w-4 h-4 text-green mt-0.5 flex-shrink-0" /> <span>{item}</span>
-            </div>
+            <li key={item} className="flex items-start gap-2.5 text-base font-semibold text-ink">
+              <CheckCircle2 className="w-5 h-5 text-green mt-0.5 flex-shrink-0" /> <span>{item}</span>
+            </li>
           ))}
-        </div>
-      </div>
+        </ul>
+      </Band>
 
       {/* Who is this for */}
-      <div className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto">
-        <SectionHeading eyebrow="Who is this for">You don't need to be a programmer</SectionHeading>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-4xl mx-auto">
+      <Band tone="white">
+        <SectionHeading>You don't need to be a programmer</SectionHeading>
+        <ul className="list-none m-0 p-0 grid sm:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-9">
           {WHO_FOR.map((w) => (
-            <div key={w.title} className="bg-white dark:bg-[#131E2F] border-[1.5px] border-border-soft rounded-2xl p-4.5">
-              <h3 className="font-display font-bold text-[13.5px] text-ink mb-1.5">{w.title}</h3>
-              <p className="text-[12px] text-body leading-relaxed">{w.text}</p>
-            </div>
+            <li key={w.title} className="border-t-4 border-ink pt-5">
+              <h3 className="font-display font-extrabold text-2xl tracking-[-0.02em] text-ink mb-2.5">{w.title}</h3>
+              <p className="t-card text-body">{w.text}</p>
+            </li>
           ))}
-        </div>
-      </div>
+        </ul>
+      </Band>
 
       {/* Toolkit */}
-      <div className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto">
-        <SectionHeading eyebrow="Your AI development toolkit">The tools you'll use</SectionHeading>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 max-w-4xl mx-auto">
+      <Band size="sm">
+        <SectionHeading className="!mb-8">The tools you'll use</SectionHeading>
+        <ul className="list-none m-0 p-0 grid sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-8">
           {TOOLKIT.map((t) => (
-            <div key={t.name} className="bg-white dark:bg-[#131E2F] border-[1.5px] border-border-soft rounded-2xl p-4 text-center">
-              <div className="w-9 h-9 mx-auto rounded-lg bg-[#E8EDF3] dark:bg-brand/15 text-link flex items-center justify-center mb-2.5"><t.icon className="w-4.5 h-4.5" /></div>
-              <h3 className="font-display font-bold text-[12.5px] text-ink mb-1">{t.name}</h3>
-              <p className="text-[11px] text-body leading-relaxed">{t.text}</p>
-            </div>
+            <li key={t.name} className="border-t border-border pt-4">
+              <h3 className="font-display font-extrabold text-lg text-ink mb-1.5">{t.name}</h3>
+              <p className="t-card text-body">{t.text}</p>
+            </li>
           ))}
-        </div>
-      </div>
+        </ul>
+      </Band>
 
       {/* FAQ */}
-      <div className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto">
+      <Band tone="white">
         <SectionHeading>Your questions, answered</SectionHeading>
-        <div className="grid sm:grid-cols-2 gap-3.5 max-w-3xl mx-auto">
+        <dl className="m-0 grid md:grid-cols-2 gap-x-14">
           {FAQS.map((item) => (
-            <div key={item.q} className="bg-white dark:bg-[#131E2F] border-[1.5px] border-border-soft rounded-2xl p-4.5">
-              <div className="flex items-start gap-2.5 mb-1.5">
-                <CircleHelp className="w-4 h-4 text-link mt-0.5 flex-shrink-0" />
-                <span className="font-display font-bold text-[14px] text-ink">{item.q}</span>
-              </div>
-              <p className="text-[13px] text-body leading-relaxed m-0 pl-6.5">{item.a}</p>
+            <div key={item.q} className="border-t border-border py-6">
+              <dt className="font-display font-extrabold text-lg text-ink mb-2">{item.q}</dt>
+              <dd className="m-0 t-card text-body">{item.a}</dd>
             </div>
           ))}
-        </div>
-      </div>
+        </dl>
+      </Band>
 
       {/* Pricing / offer — the ONLY plan sold on this page */}
-      <div id="pricing" className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-3xl mx-auto scroll-mt-20">
-        <SectionHeading eyebrow="Your investment">Join the launch cohort</SectionHeading>
+      <Band id="pricing" narrow>
+        <SectionHeading>Join the launch cohort</SectionHeading>
 
         {cohortDate && (
-          <div className="flex justify-center -mt-4 mb-9">
+          <div className="mb-9">
             <CohortCountdown dateStr={vibecodingCohortDate} />
           </div>
         )}
 
         {checkoutError && (
-          <div className="max-w-md mx-auto mb-6 flex items-start gap-2 text-sm text-rose bg-[#FBEAE9] dark:bg-rose/10 border border-rose/20 rounded-lg px-3 py-2.5 text-left">
+          <div className="mb-6 flex items-start gap-2 text-sm text-rose bg-[#FBEAE9] dark:bg-rose/10 border border-rose/20 rounded-lg px-3 py-2.5 text-left">
             <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
             {checkoutError}
           </div>
         )}
 
-        <div className="rounded-[24px] border-[2.5px] border-brand bg-[#F6F8FB] dark:bg-[#131E2F] p-7 sm:p-8 relative">
-          <span className="absolute -top-3.5 left-7 bg-brand text-white text-[11px] font-extrabold px-3.5 py-1.5 rounded-full">
-            LAUNCH COHORT
-          </span>
-          <div className="font-display font-extrabold text-[36px] text-ink mt-2 mb-1">
-            ₦{VIBECODING_PRICE.toLocaleString()} <span className="text-base font-bold text-body">one-time</span>
+        <div className="card-flat border-2 !border-brand p-7 sm:p-10">
+          <div className="t-eyebrow text-link mb-4">Launch cohort</div>
+          <div className="t-num text-6xl sm:text-7xl text-ink">
+            ₦{VIBECODING_PRICE.toLocaleString()} <span className="font-sans text-base font-bold text-body">one-time</span>
           </div>
           {cohortDate && (
-            <span className="inline-flex items-center gap-1 bg-white dark:bg-[#131E2F] text-link font-bold text-[12px] px-2.5 py-1 rounded-full w-fit mb-4">
-              <CalendarDays className="w-3.5 h-3.5" /> Cohort starts {cohortDate}
-            </span>
+            <p className="inline-flex items-center gap-1.5 mt-4 text-sm font-bold text-link">
+              <CalendarDays className="w-4 h-4" /> Cohort starts {cohortDate}
+            </p>
           )}
-          <ul className="flex flex-col gap-2.5 mb-6">
+          <ul className="list-none m-0 mt-7 mb-8 p-0 grid sm:grid-cols-2 gap-x-8 gap-y-3">
             {[
               '8 live instructor-led classes',
               '4 weeks of training',
@@ -375,14 +317,14 @@ export default function VibeCoding() {
               'Final capstone project',
               'Certificate of completion',
             ].map((f) => (
-              <li key={f} className="flex items-start gap-2.5 text-[13.5px] text-body-strong"><CheckCircle2 className="w-4 h-4 text-green mt-0.5 flex-shrink-0" /> <span>{f}</span></li>
+              <li key={f} className="flex items-start gap-2.5 text-[15px] font-semibold text-ink"><CheckCircle2 className="w-4 h-4 text-green mt-1 flex-shrink-0" /> <span>{f}</span></li>
             ))}
           </ul>
 
           {hasVibeCoding ? (
             <Link
               to="/vibe-coding/course"
-              className="flex items-center justify-center gap-2 w-full bg-green text-white font-extrabold px-5 py-3.5 rounded-xl transition-colors"
+              className="flex items-center justify-center gap-2 w-full bg-green text-white font-extrabold px-5 py-4 rounded-xl transition-colors"
             >
               You're enrolled — go to your classes →
             </Link>
@@ -390,38 +332,26 @@ export default function VibeCoding() {
             <button
               onClick={handleCheckout}
               disabled={checkoutLoading === 'vibecoding'}
-              className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-deep disabled:opacity-60 text-white font-extrabold px-5 py-3.5 rounded-xl shadow-[0_10px_22px_rgba(15,26,42,.35)] transition-colors"
+              className="btn btn-primary btn-lg w-full disabled:opacity-60"
             >
               {checkoutLoading === 'vibecoding' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               {checkoutLoading === 'vibecoding' ? 'Starting checkout…' : `Join the launch cohort — ₦${VIBECODING_PRICE.toLocaleString()} →`}
             </button>
           )}
 
-          <p className="flex items-start gap-1.5 text-[12px] text-body mt-4">
+          <p className="flex items-start gap-1.5 text-[13px] text-body mt-4">
             <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
             One-time payment, not a subscription. Access starts the moment you pay.
           </p>
         </div>
-      </div>
+      </Band>
 
-      {/* Final CTA */}
-      <div className="px-4 sm:px-6 lg:px-[5vw] pb-16 max-w-6xl mx-auto">
-        <div
-          className="rounded-[24px] px-8 sm:px-10 py-9 flex items-center justify-between flex-wrap gap-5 shadow-[0_20px_44px_-16px_rgba(15,26,42,.6)]"
-          style={{ background: '#264D73' }}
-        >
-          <div>
-            <h2 className="font-display font-extrabold text-2xl sm:text-[26px] text-white m-0">Ready to build with AI?</h2>
-            <p className="text-[#D5DEE9] mt-2 mb-0 text-[15px]">4 weeks. 8 live classes. Your own product, shipped.</p>
-          </div>
-          <a
-            href="#pricing"
-            className="bg-yellow text-ink font-extrabold text-base px-7 py-[15px] rounded-2xl shadow-[0_10px_20px_rgba(0,0,0,.18)] hover:brightness-95 transition-all flex-shrink-0 flex items-center gap-2"
-          >
-            Join the cohort <ArrowRight className="w-4 h-4" />
-          </a>
-        </div>
-      </div>
+      <ClosingBand
+        title="Ready to build with AI?"
+        text="4 weeks. 8 live classes. Your own product, shipped."
+        href="#pricing"
+        label="Join the cohort"
+      />
 
       <CheckoutAuthModal open={authModalOpen} onClose={closeAuthModal} onSubmit={submitLead} loading={leadLoading} error={leadError} />
     </div>

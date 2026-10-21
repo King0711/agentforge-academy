@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { saveCheckoutPrefill } from '../lib/checkoutPrefill';
+import { OPEN_ADVISOR_EVENT as OPEN_EVENT } from '../lib/advisor';
 import { AI_AGENT_MASTERY_PRICE, VIBECODING_PRICE, BUILDER1_PRICE, BUILDER2_PRICE, PRO_PRICE } from '../data/pricing';
 
 const WA_NUMBER = '2349066006963';
@@ -72,6 +73,14 @@ export default function WhatsAppFloatButton() {
   const [courses, setCourses] = useState([]);
   const [guide, setGuide] = useState('');
 
+  // Other buttons on the page ("Talk to an advisor") open this same form by
+  // dispatching a window event, so there is one form and one set of copy.
+  useEffect(() => {
+    const onOpen = () => setOpen(true);
+    window.addEventListener(OPEN_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_EVENT, onOpen);
+  }, []);
+
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => e.key === 'Escape' && setOpen(false);
@@ -105,9 +114,11 @@ export default function WhatsAppFloatButton() {
         onClick={() => setOpen(true)}
         aria-label="Chat with an advisor on WhatsApp"
         title="Chat with an advisor on WhatsApp"
-        className="fixed bottom-5 right-5 z-30 w-14 h-14 rounded-full bg-[#128C7E] hover:bg-[#075E54] text-white flex items-center justify-center transition-colors"
+        className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-[max(1.25rem,env(safe-area-inset-right))] z-30 h-[60px] min-w-[60px] rounded-full bg-[#128C7E] hover:bg-[#075E54] text-white flex items-center justify-center gap-3 lg:pl-5 lg:pr-6 shadow-[0_14px_32px_-8px_rgba(7,94,84,.65)] transition-colors"
       >
-        <WhatsAppGlyph className="w-7 h-7" />
+        <WhatsAppGlyph className="w-8 h-8 flex-shrink-0" />
+        {/* The label only shows where there is room; phones get just the circle. */}
+        <span className="hidden lg:inline text-[15px] font-extrabold leading-none whitespace-nowrap">Chat with an advisor</span>
       </button>
 
       {open && (
