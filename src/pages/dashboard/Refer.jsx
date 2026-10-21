@@ -87,7 +87,7 @@ export default function Refer() {
           <Gift className="w-6 h-6 text-link" /> Refer & Earn
         </h1>
         <p className="text-body mt-1.5">
-          Share your link. When someone signs up through it and pays for any course you're enrolled in, you earn {REFERRAL_COMMISSION_PERCENT}% of what they pay.
+          Share your link. When someone who wasn't referred by anyone else uses it and pays for any course you're enrolled in, you earn {REFERRAL_COMMISSION_PERCENT}% of what they pay.
         </p>
       </div>
 

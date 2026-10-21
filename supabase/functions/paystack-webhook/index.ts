@@ -650,6 +650,22 @@ serve(async (req) => {
   // delivery of the same charge can't credit twice.
   try {
     if (paymentRow?.id) {
+      // Attribute first: an account that already existed (a past buyer, say)
+      // never went through handle_new_user, so this is where its referral link
+      // counts. No-op when the buyer already has a referrer (first touch wins).
+      let referralCodeToAttribute = String(payload.data?.metadata?.referral_code ?? '');
+      if (!referralCodeToAttribute && isGuestCheckout) {
+        const { data: leadRow } = await supabase
+          .from('checkout_leads')
+          .select('referral_code')
+          .eq('id', metadataLeadId)
+          .maybeSingle();
+        referralCodeToAttribute = leadRow?.referral_code ?? '';
+      }
+      if (referralCodeToAttribute) {
+        await supabase.rpc('attribute_referral', { p_user: userId, p_code: referralCodeToAttribute });
+      }
+
       const { data: referral } = await supabase
         .from('referrals')
         .select('id, referrer_id')

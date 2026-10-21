@@ -301,6 +301,12 @@ serve(async (req) => {
 
   let amountNaira = PRICES[plan];
 
+  // A signed-in buyer's referral link code (guests carry theirs on the lead).
+  // Only a shape check here; paystack-webhook asks the database to attribute it
+  // after the payment is verified, so an unknown code is simply ignored.
+  const signedInReferral = String(body.referral_code ?? '').trim().toUpperCase();
+  const referralCode = user && /^[A-Z0-9]{4,20}$/.test(signedInReferral) ? signedInReferral : undefined;
+
   // Scholarship price: the JWT-verified, email-CONFIRMED user, never anything
   // the client sends. The application must be
   // approved and unredeemed and the offer unexpired; webhook redemption makes it
@@ -388,6 +394,8 @@ serve(async (req) => {
         ...(scholarshipId ? { scholarship_id: scholarshipId } : {}),
         // paystack-webhook redeems this code once the payment is verified.
         ...(coupon ? { coupon_id: coupon.id } : {}),
+        // paystack-webhook attributes this referral if the buyer has none yet.
+        ...(referralCode ? { referral_code: referralCode } : {}),
         // paystack-webhook uses this for the server-side Meta Purchase event only.
         capi,
       },
