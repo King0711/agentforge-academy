@@ -38,7 +38,7 @@ const FAQS = [
   },
   {
     q: 'Do I need to pay for any tools for AI Agent Mastery?',
-    a: 'Mostly no: Telegram, the shared task board, and the app connections we use are free. The one thing that can cost money is the AI model that powers your agents. In class we use a ChatGPT Plus plan, and other paid model plans work too. You can complete the build with a single model, and we tell you exactly what to have ready before the first class.',
+    a: 'No. Everything we use in class is free, and we tell you exactly what to set up before the first class.',
   },
   {
     q: 'Do I get a certificate?',
