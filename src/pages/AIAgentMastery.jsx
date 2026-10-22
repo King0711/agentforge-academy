@@ -16,6 +16,7 @@ import AgentsLiveFlowDiagram from '../components/AgentsLiveFlowDiagram';
 import { DemoVideo, DemoLoop } from '../components/DemoMedia';
 import { DEMO_VIDEO, DEMO_LOOP } from '../data/demoMedia';
 import InstructorSection from '../components/InstructorSection';
+import { INSTRUCTOR } from '../data/instructor';
 import AgentBuildTestimonials from '../components/AgentBuildTestimonials';
 import { usePageSeo } from '../hooks/usePageSeo';
 import { SCHOLARSHIP_PRICE_NAIRA, isScholarshipOpen } from '../data/scholarship';
@@ -131,7 +132,7 @@ const FAQS = [
   { q: 'Do I need to have done Builder 1 / Builder 2 first?', a: "It helps, but it isn't required — the cohort starts from the fundamentals of agent architecture before building up to the full team." },
   { q: 'What will my AI team actually be able to do?', a: 'By the end, a chief of staff you can message from your phone. It triages your inbox, manages your calendar, and hands research, design, image, coding, and video work to specialist agents on a shared board — with guardrails so it checks with you before anything risky.' },
   { q: 'Will it really replace a team?', a: "It takes over the repetitive work a team would otherwise do — triage, scheduling, research, first drafts — so you stop paying for, or doing, that busywork. It checks with you before anything risky, so you stay in charge of the decisions." },
-  { q: 'Do I need to pay for any tools?', a: "Mostly no — Telegram, the shared task board, and the app connections we use are free. The one thing that can cost money is the AI model that powers your agents: in class we use a ChatGPT Plus plan, and other paid model plans work too. You can complete the build with a single model. We tell you exactly what to have ready before the first class." },
+  { q: 'Do I need to pay for any tools?', a: "No. Everything we use in class is free, and we tell you exactly what to set up before the first class." },
   { q: 'What if I miss a live class?', a: 'Class recordings are available so you can catch up, though attending live is strongly recommended.' },
   { q: 'Why is the price so low?', a: `The regular price is ₦${REGULAR_PRICE.toLocaleString()}. ₦${AI_AGENT_MASTERY_PRICE.toLocaleString()} is the current cohort price, and it will not stay.` },
   { q: 'What are the free Builder 1 courses?', a: 'Every student gets 5 of our Builder 1 agent-building courses free with the cohort, so you can keep practising on your own after the live days.' },
@@ -301,6 +302,9 @@ export default function AIAgentMastery() {
             "In January of this year, I built my first AI agent to handle customer messages. Since then, it's done
             the work of a 3-person team and I haven't paid a single staff salary for those roles."
           </p>
+          <p className="text-[12.5px] font-bold text-body-strong mt-1.5 mb-0">
+            — {INSTRUCTOR.name}, your instructor
+          </p>
 
           <h1
             className="font-display font-extrabold text-[32px] sm:text-[50px] leading-[1.08] text-ink tracking-[-1.5px] mt-5"
@@ -331,7 +335,7 @@ export default function AIAgentMastery() {
             </a>
           </div>
           <p className="text-[12.5px] text-body mt-4 mb-0">
-            No coding needed · 5 Builder 1 courses free · Limited seats per cohort
+            No coding needed · No paid tools needed · 5 Builder 1 courses free
           </p>
           <p className="text-[13px] font-bold text-body-strong mt-2 mb-0">
             <span className="line-through font-semibold text-body">₦{REGULAR_PRICE.toLocaleString()}</span>
