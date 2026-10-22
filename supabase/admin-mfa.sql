@@ -44,6 +44,8 @@ revoke all on public.admin_security_settings from anon, authenticated;
 grant select on public.admin_security_settings to anon, authenticated;
 
 -- ---------- the check ----------
+-- NOTE: session-policy.sql (2026-10-22) replaces the body below with a version that also
+-- requires a RECENT totp code. Do not re-run this file after that one.
 -- SECURITY INVOKER on purpose: it is called from policies that run as whichever
 -- role queried, and it reveals nothing beyond the caller's own session level
 -- and a flag the table above already exposes.

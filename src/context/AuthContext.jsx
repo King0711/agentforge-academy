@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { getStoredReferralCode } from '../lib/referral';
+import { DEFAULT_AUTH_POLICY, fetchAuthPolicy, isMfaFresh, readMfaClaims } from '../lib/sessionPolicy';
 
 const AuthContext = createContext(null);
 
@@ -25,6 +26,98 @@ export function AuthProvider({ children }) {
 
     return () => listener.subscription.unsubscribe();
   }, []);
+
+  // ---- Two-step verification ---------------------------------------------------
+  // An account with a verified authenticator app may only use the site while this
+  // session has entered a code from it within auth_policy.mfa_max_age_minutes
+  // (supabase/session-policy.sql). Signing in with a password or an emailed code only
+  // gets a session to the "code needed" screen (MfaChallenge, rendered by AppShell);
+  // nothing else renders until the code is entered. When the window runs out mid-visit
+  // the same screen comes back. This is the honest-user flow: the database enforces the
+  // same rule independently for admin accounts (admin_session_ok), which is what stops
+  // someone who simply ignores this screen.
+  //   'none'     signed out, or no authenticator on the account
+  //   'checking' signed in, still finding out whether the account has one
+  //   'ok'       code entered recently enough
+  //   'required' a code is needed now
+  const [factor, setFactor] = useState(null); // { userId, factorId | null }
+  const [authPolicy, setAuthPolicy] = useState(DEFAULT_AUTH_POLICY);
+  const [now, setNow] = useState(() => Date.now());
+  const userId = session?.user?.id ?? null;
+  const accessToken = session?.access_token ?? null;
+
+  const lookupFactor = useCallback(async () => {
+    const [factors, policy] = await Promise.all([supabase.auth.mfa.listFactors(), fetchAuthPolicy()]);
+    const verified = (factors.data?.totp ?? []).find((f) => f.status === 'verified');
+    // A failed lookup counts as "no authenticator": the screen is a convenience for
+    // honest users, so an outage shouldn't lock everyone out of the site.
+    return { factorId: verified?.id ?? null, policy };
+  }, []);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || !userId) return undefined;
+    let cancelled = false;
+    lookupFactor().then(({ factorId, policy }) => {
+      if (cancelled) return;
+      setFactor({ userId, factorId });
+      setAuthPolicy(policy);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, lookupFactor]);
+
+  // Re-check the clock when the window is due to close, and when a laptop wakes up or
+  // the tab comes back (timers are throttled while hidden).
+  useEffect(() => {
+    if (!accessToken) return undefined;
+    const { lastTotpAt } = readMfaClaims(accessToken);
+    let timer;
+    if (lastTotpAt) {
+      const wait = Math.max(0, lastTotpAt + authPolicy.mfaMaxAgeMinutes * 60_000 - Date.now()) + 1000;
+      timer = setTimeout(() => setNow(Date.now()), wait);
+    }
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') setNow(Date.now());
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [accessToken, authPolicy.mfaMaxAgeMinutes]);
+
+  let mfaStatus = 'none';
+  if (session && factor?.userId !== userId) {
+    mfaStatus = 'checking';
+  } else if (session && factor?.factorId) {
+    mfaStatus = isMfaFresh(readMfaClaims(accessToken), authPolicy.mfaMaxAgeMinutes, now) ? 'ok' : 'required';
+  }
+  const mfaFactorId = factor?.userId === userId ? factor?.factorId ?? null : null;
+
+  const verifyMfa = useCallback(async (code) => {
+    if (!mfaFactorId) return { error: { message: 'No authenticator app is set up on this account.' } };
+    const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: mfaFactorId, code });
+    if (error) return { error };
+    // The new token must show the code as entered just now. If it doesn't, sign in
+    // from scratch rather than leaving the person stuck on this screen.
+    const { data } = await supabase.auth.getSession();
+    const claims = readMfaClaims(data.session?.access_token);
+    if (!isMfaFresh(claims, authPolicy.mfaMaxAgeMinutes, Date.now())) {
+      await supabase.auth.signOut();
+      return { error: { message: 'Please sign in again to finish verifying.' } };
+    }
+    setNow(Date.now());
+    return { error: null };
+  }, [mfaFactorId, authPolicy.mfaMaxAgeMinutes]);
+
+  // For after an authenticator is enrolled or removed in this visit.
+  const refreshMfa = useCallback(async () => {
+    if (!userId) return;
+    const { factorId, policy } = await lookupFactor();
+    setFactor({ userId, factorId });
+    setAuthPolicy(policy);
+  }, [userId, lookupFactor]);
 
   // Real signup + confirmation-email flow, restored now that Auth's SMTP is
   // confirmed working (verified domain on Resend, tested via the emailed
@@ -145,6 +238,11 @@ export function AuthProvider({ children }) {
     updatePassword,
     signInWithGoogle,
     signOut,
+    mfaStatus,
+    mfaFactorId,
+    verifyMfa,
+    refreshMfa,
+    authPolicy,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
