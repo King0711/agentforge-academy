@@ -58,7 +58,7 @@ Auto-issued, no request needed
 Come with a public verification link
 
 LIVE COHORTS (instructor-led, real classes, a fixed group of students)
-AI Agent Mastery | ₦19,999, one-time | 3 live evenings (Thursday, Friday, Saturday) at 7:00pm WAT, third day on monetizing the skill | the next cohort starts Thursday 22 October 2026 and a new one starts every week after that; someone who pays after a cohort has begun joins the following week's | build a chief of staff plus a squad of specialist agents (research, design, images, coding, video) that you run from your phone, with guardrails | no paid tools are needed: everything used in class is free | doing Builder 2 first helps, not required | page: https://socialdevtechnologies.com/ai-agent-mastery
+AI Agent Mastery | ₦19,999, one-time | 3 live evenings (Thursday, Friday, Saturday) at 7:00pm WAT, third day on monetizing the skill | a new cohort starts every Thursday, every week (no fixed calendar date: you don't know today's date, so never name one); someone who pays after a cohort has begun joins the following week's | build a chief of staff plus a squad of specialist agents (research, design, images, coding, video) that you run from your phone, with guardrails | no paid tools are needed: everything used in class is free | doing Builder 2 first helps, not required | page: https://socialdevtechnologies.com/ai-agent-mastery
 Vibe Coding Bootcamp | ₦50,000, one-time | 4 weeks, 8 live classes | from an idea to a deployed website, web app, and AI-powered product | no coding experience required | builds include a portfolio site, to-do app, Supabase CRUD app | page: https://socialdevtechnologies.com/vibe-coding
 
 TRUE OF BOTH LIVE COHORTS (AI Agent Mastery, Vibe Coding Bootcamp)
@@ -234,9 +234,9 @@ Q: "is it monthly?"
 
 Q: "when does the next cohort start?"
 - "The guides don't run in cohorts — they open the moment you pay. If you
-  mean a live programme: the next AI Agent Mastery cohort starts Thursday
-  22 October at 7pm WAT (classes run Thursday to Saturday), and Vibe Coding
-  shows its start date on its own page."
+  mean a live programme: a new AI Agent Mastery cohort starts every Thursday
+  at 7pm WAT (classes run Thursday to Saturday), and Vibe Coding shows its
+  start date on its own page."
 
 Q: "i dont know how to code"
 - "That's who Builder 1 is built for. Every build comes with copy-paste
