@@ -47,7 +47,19 @@ export function AuthProvider({ children }) {
   const accessToken = session?.access_token ?? null;
 
   const lookupFactor = useCallback(async () => {
-    const [factors, policy] = await Promise.all([supabase.auth.mfa.listFactors(), fetchAuthPolicy()]);
+    // Two-step verification is for admin accounts only; students are never asked for a
+    // code, whatever factors their account might have. (RLS lets a user read their own
+    // entitlements row, which is where is_admin lives.)
+    const { data: auth } = await supabase.auth.getUser();
+    const { data: ent } = await supabase
+      .from('entitlements')
+      .select('is_admin')
+      .eq('user_id', auth?.user?.id ?? '')
+      .maybeSingle();
+    const policy = await fetchAuthPolicy();
+    if (!ent?.is_admin) return { factorId: null, policy };
+
+    const factors = await supabase.auth.mfa.listFactors();
     const verified = (factors.data?.totp ?? []).find((f) => f.status === 'verified');
     // A failed lookup counts as "no authenticator": the screen is a convenience for
     // honest users, so an outage shouldn't lock everyone out of the site.
