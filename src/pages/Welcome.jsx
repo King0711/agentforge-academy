@@ -8,6 +8,14 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { setRememberMe } from '../lib/supabaseClient';
+import {
+  clearLoginFailures,
+  isAuthRateLimited,
+  loginLockSeconds,
+  lockMessage,
+  RATE_LIMITED_MESSAGE,
+  recordLoginFailure,
+} from '../lib/loginThrottle';
 import { pixelTrack } from '../lib/pixel';
 import { agents } from '../data/agents';
 import { isVisibleToPublic } from '../data/departments';
@@ -113,7 +121,7 @@ export default function Welcome() {
       if (err && err.code !== 'otp_disabled') throw err;
       setCodeSent(true);
     } catch (err) {
-      setError(err.message || 'Could not send a login code. Please try again.');
+      setError(isAuthRateLimited(err) ? RATE_LIMITED_MESSAGE : err.message || 'Could not send a login code. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -145,14 +153,25 @@ export default function Welcome() {
       setError('Enter the code we emailed you.');
       return;
     }
+    const locked = loginLockSeconds();
+    if (locked > 0) {
+      setError(lockMessage(locked));
+      return;
+    }
     setLoading(true);
     try {
       setRememberMe(remember);
       const { error: err } = await verifyLoginCode(email, code);
       if (err) throw err;
+      clearLoginFailures();
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message || 'That code didn\'t work. Please try again.');
+      if (isAuthRateLimited(err)) {
+        setError(RATE_LIMITED_MESSAGE);
+      } else {
+        recordLoginFailure();
+        setError(err.message || 'That code didn\'t work. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -164,6 +183,13 @@ export default function Welcome() {
     if (!email || !password) {
       setError('Please enter your email and password.');
       return;
+    }
+    if (mode !== 'signup') {
+      const locked = loginLockSeconds();
+      if (locked > 0) {
+        setError(lockMessage(locked));
+        return;
+      }
     }
     setLoading(true);
     try {
@@ -180,10 +206,16 @@ export default function Welcome() {
         setRememberMe(remember);
         const { error: err } = await signIn(email, password);
         if (err) throw err;
+        clearLoginFailures();
         navigate('/dashboard');
       }
     } catch (err) {
-      setError(err.message || 'Something went wrong. Please try again.');
+      if (isAuthRateLimited(err)) {
+        setError(RATE_LIMITED_MESSAGE);
+      } else {
+        if (mode !== 'signup') recordLoginFailure();
+        setError(err.message || 'Something went wrong. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
