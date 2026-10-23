@@ -245,7 +245,7 @@ const HTML_BODY = `
             <li><input type="checkbox" data-key="need-computer"> <span>A Windows, Mac or Linux computer. Your assistant runs on it, so it needs to stay on for the scheduled jobs to run.</span></li>
             <li><input type="checkbox" data-key="need-model"> <span><strong>A model to power it.</strong> This is the one part of the build that can cost money: a ChatGPT Plus plan (what we use in class), or a Hermes subscription ($20, $100 or $200 plans — the $20 plan includes access to 200+ models). Claude also works but needs extra credits on top of your Claude plan.</span></li>
             <li><input type="checkbox" data-key="need-telegram"> <span>A Telegram account on your phone. It's free.</span></li>
-            <li><input type="checkbox" data-key="need-apps"> <span>The accounts you want your assistant to reach — Gmail and Google Calendar to start. Notion, Obsidian and GitHub are optional extras.</span></li>
+            <li><input type="checkbox" data-key="need-apps"> <span>The accounts you want your assistant to reach — Gmail and Google Calendar to start. Notion is an optional extra.</span></li>
           </ul>
         </div>
         <p class="note"><strong>Context window:</strong> pick a model with at least 64,000 tokens of context. Every model on the plans above clears that comfortably.</p>
@@ -619,7 +619,7 @@ If a task doesn't clearly fit any member, ask me rather than guessing.</code></p
       <section class="step" data-step="apps" hidden>
         <div class="step-cat">Build 7 · Step 8 of 10</div>
         <h1 class="step-title">Build 7 — Connect your apps with Composio</h1>
-        <p class="step-dek">One secure door to Gmail, Google Calendar, Notion, Obsidian, GitHub and over a thousand other apps — instead of wiring each one in separately.</p>
+        <p class="step-dek">One secure door to Gmail, Google Calendar, Notion and over a thousand other apps — instead of wiring each one in separately.</p>
         <div class="pill-row"><span class="pill">Tool · Composio (Free, open source)</span><span class="pill">1000+ integrations</span></div>
 
         <div class="block concept">
@@ -669,66 +669,118 @@ If a task doesn't clearly fit any member, ask me rather than guessing.</code></p
           </div></div>
         </div>
 
-        <h3 class="h-sub">Step 2 — Sign in through your browser</h3>
-        <div class="block step-list">
-          <div class="step-item"><div class="step-num">1</div><div class="step-body">Run this, then open the link it shows you in your browser and sign in to Composio (create a free account if you don't have one):
-            <div class="prompt-block">
-              <div class="prompt-head"><span>TERMINAL · UBUNTU ON WINDOWS</span><button class="copy-btn">Copy</button></div>
-              <pre><code>composio login</code></pre>
-            </div>
-          </div></div>
-          <div class="step-item"><div class="step-num">2</div><div class="step-body">If it tells you to run <span class="inline-code">composio login --poll</span>, run that to finish. Then check you're signed in — if this prints nothing, or shows <span class="inline-code">"email":null</span>, the login hasn't finished yet:
-            <div class="prompt-block">
-              <div class="prompt-head"><span>TERMINAL · UBUNTU ON WINDOWS</span><button class="copy-btn">Copy</button></div>
-              <pre><code>composio whoami</code></pre>
-            </div>
-          </div></div>
-        </div>
-
+        <h3 class="h-sub">Step 2 — Let Hermes reach Composio</h3>
         <div class="accordion">
-          <button class="accordion-trigger">On Windows? Let Hermes use Composio<span class="accordion-chev">⌄</span></button>
+          <button class="accordion-trigger">On Windows? Create the Composio shortcut<span class="accordion-chev">⌄</span></button>
           <div class="accordion-panel"><div class="accordion-panel-inner">
-            <p>Hermes on Windows runs its commands in Git Bash, which can't see programs inside Ubuntu — ask it to use Composio now and it reports "no composio". Paste this into Hermes to give it a shortcut. It uses the same sign-in as Step 2:</p>
+            <p>Composio is installed inside Ubuntu, but Hermes on Windows runs its commands in <strong>Git Bash</strong>, which can't see programs inside Ubuntu — ask it to use Composio and it reports "no composio". The fix is a tiny shortcut file that forwards every <span class="inline-code">composio</span> command to Ubuntu. Paste this into Hermes:</p>
             <div class="prompt-block">
               <div class="prompt-head"><span>PROMPT — PASTE IN HERMES</span><button class="copy-btn">Copy</button></div>
               <pre><code>The Composio CLI is installed inside WSL (Ubuntu), so your terminal can't
 see it. Create a file at ~/bin/composio with exactly these lines, using
-Unix line endings, then run "composio --version" and show me the result:
+Unix line endings. Make it executable with chmod +x, make sure ~/bin is on
+your PATH, then run "composio --version" and show me the result:
 
 #!/bin/sh
 export MSYS_NO_PATHCONV=1
 export MSYS2_ARG_CONV_EXCL='*'
 exec /c/Windows/System32/wsl.exe -d Ubuntu -e bash -lc 'exec composio "$@"' composio "$@"</code></pre>
             </div>
-            <p style="margin-top:12px;">Mac and Linux users skip this — Hermes can already see programs in your normal terminal.</p>
+            <p class="note">The file is called <span class="inline-code">composio</span> with no extension, in the <span class="inline-code">bin</span> folder of your user folder — for example <span class="inline-code">C:\\Users\\YourName\\bin\\composio</span>. If you'd rather make it yourself, create the folder and file, paste the lines under "exactly these lines" with Unix line endings, then run <span class="inline-code">chmod +x "$HOME/bin/composio"</span> in Git Bash.</p>
+            <p style="margin-top:12px;">You should see a version number. From now on <span class="inline-code">composio</span> works from Hermes and from Git Bash. Mac and Linux users skip this — Hermes can already see programs in your normal terminal.</p>
           </div></div>
         </div>
 
-        <h3 class="h-sub">Step 3 — Let Hermes connect your apps</h3>
+        <h3 class="h-sub">Step 3 — Sign in to Composio</h3>
+        <p>Hermes can't click around in a browser for you, so the sign-in is a short hand-off: Composio prints a link, you open it and approve, then Composio confirms. Run these in your terminal (Git Bash on Windows), or ask Hermes to run each one and show you the result.</p>
         <div class="block step-list">
-          <div class="step-item"><div class="step-num">1</div><div class="step-body">Open a Hermes session and paste this prompt:
+          <div class="step-item"><div class="step-num">1</div><div class="step-body">Ask Composio for a sign-in link:
             <div class="prompt-block">
-              <div class="prompt-head"><span>PROMPT — PASTE IN HERMES</span><button class="copy-btn">Copy</button></div>
-              <pre><code>The Composio CLI is already installed and I'm signed in to it. Use it to
-connect my apps so you can access them, one at a time: Gmail, Google Calendar,
-Notion, Obsidian, and GitHub.
-
-For each one, open the authorisation page in my browser and wait while I
-approve it. Then run a small read only test and show me the result so I know it
-worked. Do not send, delete or modify anything.
-
-If something fails, tell me what went wrong in plain words and what you
-suggest, instead of trying a different way without asking me.</code></pre>
+              <div class="prompt-head"><span>TERMINAL — GIT BASH ON WINDOWS</span><button class="copy-btn">Copy</button></div>
+              <pre><code>composio login --no-browser --no-wait --no-skill-install</code></pre>
+            </div>
+            <p class="note">It prints a link that starts with <span class="inline-code">https://dashboard.composio.dev/?cliKey=</span> and tells you to run <span class="inline-code">composio login --poll</span> afterwards. <span class="inline-code">--no-skill-install</span> stops it adding extra plugins to your other AI tools.</p>
+          </div></div>
+          <div class="step-item"><div class="step-num">2</div><div class="step-body">Copy that link into your browser and approve the sign-in (create a free Composio account if you don't have one).</div></div>
+          <div class="step-item"><div class="step-num">3</div><div class="step-body">Back in the terminal, finish the sign-in. This waits until the browser step is done:
+            <div class="prompt-block">
+              <div class="prompt-head"><span>TERMINAL — GIT BASH ON WINDOWS</span><button class="copy-btn">Copy</button></div>
+              <pre><code>composio login --poll --no-skill-install</code></pre>
             </div>
           </div></div>
-          <div class="step-item"><div class="step-num">2</div><div class="step-body">Hermes opens each app's sign-in page in your browser. Authorise it — usually by clicking <strong>Approve</strong> on a Google or GitHub page — then go back to Hermes.</div></div>
-          <div class="step-item"><div class="step-num">3</div><div class="step-body">After each app, Hermes runs a small <strong>read-only test</strong> and shows you the result — for example, today's calendar or your latest emails. That's how you know it really worked.</div></div>
+          <div class="step-item"><div class="step-num">4</div><div class="step-body">Check it worked — it should show your account email. If it prints nothing, or <span class="inline-code">"email":null</span>, the sign-in hasn't finished yet:
+            <div class="prompt-block">
+              <div class="prompt-head"><span>TERMINAL — GIT BASH ON WINDOWS</span><button class="copy-btn">Copy</button></div>
+              <pre><code>composio whoami</code></pre>
+            </div>
+          </div></div>
+        </div>
+
+        <h3 class="h-sub">Step 4 — Connect your apps</h3>
+        <p>Each app takes the same three moves: <strong>link</strong> it (Composio prints an authorisation link), <strong>approve</strong> it in your browser, then run a <strong>read-only test</strong> to prove it works. <span class="inline-code">--alias primary</span> just gives the connection a nickname, which the test then uses.</p>
+
+        <div class="block step-list">
+          <div class="step-item"><div class="step-num">1</div><div class="step-body"><strong>Gmail.</strong> Link it, then open the <span class="inline-code">https://connect.composio.dev/link/…</span> address it prints and grant access:
+            <div class="prompt-block">
+              <div class="prompt-head"><span>TERMINAL — GIT BASH ON WINDOWS</span><button class="copy-btn">Copy</button></div>
+              <pre><code>composio link gmail --alias primary --no-browser --no-wait</code></pre>
+            </div>
+            <p style="margin-top:10px;">Then the read-only test — it returns your Gmail profile and changes nothing:</p>
+            <div class="prompt-block">
+              <div class="prompt-head"><span>TERMINAL — GIT BASH ON WINDOWS</span><button class="copy-btn">Copy</button></div>
+              <pre><code>composio execute GMAIL_GET_PROFILE --account primary -d '{"user_id":"me"}'</code></pre>
+            </div>
+          </div></div>
+          <div class="step-item"><div class="step-num">2</div><div class="step-body"><strong>Google Calendar.</strong> Link it and approve in your browser:
+            <div class="prompt-block">
+              <div class="prompt-head"><span>TERMINAL — GIT BASH ON WINDOWS</span><button class="copy-btn">Copy</button></div>
+              <pre><code>composio link googlecalendar --alias primary --no-browser --no-wait</code></pre>
+            </div>
+            <p style="margin-top:10px;">Test — lists your calendars:</p>
+            <div class="prompt-block">
+              <div class="prompt-head"><span>TERMINAL — GIT BASH ON WINDOWS</span><button class="copy-btn">Copy</button></div>
+              <pre><code>composio execute GOOGLECALENDAR_LIST_CALENDARS --account primary -d '{}'</code></pre>
+            </div>
+          </div></div>
+          <div class="step-item"><div class="step-num">3</div><div class="step-body"><strong>Notion</strong> (optional). Link it and approve in your browser:
+            <div class="prompt-block">
+              <div class="prompt-head"><span>TERMINAL — GIT BASH ON WINDOWS</span><button class="copy-btn">Copy</button></div>
+              <pre><code>composio link notion --alias primary --no-browser --no-wait</code></pre>
+            </div>
+            <p style="margin-top:10px;">Test — lists the people in your workspace:</p>
+            <div class="prompt-block">
+              <div class="prompt-head"><span>TERMINAL — GIT BASH ON WINDOWS</span><button class="copy-btn">Copy</button></div>
+              <pre><code>composio execute NOTION_LIST_USERS --account primary -d '{}'</code></pre>
+            </div>
+          </div></div>
+        </div>
+        <p class="note">Each test should print real details from your account. An error, or an empty result, means that app isn't connected yet — repeat its link step.</p>
+
+        <h3 class="h-sub">Step 5 — Hand it over to Hermes</h3>
+        <div class="block step-list">
+          <div class="step-item"><div class="step-num">1</div><div class="step-body">Open a Hermes session and paste this prompt. Hermes now uses the connections you just made — and can add more apps the same way:
+            <div class="prompt-block">
+              <div class="prompt-head"><span>PROMPT — PASTE IN HERMES</span><button class="copy-btn">Copy</button></div>
+              <pre><code>I've connected Composio, and I'm signed in. Gmail and Google Calendar are
+linked under the account alias "primary".
+
+Check what's connected, then use Composio whenever I ask about my email or
+calendar. Start with a read only test of each and show me the result.
+
+If I ask you to connect another app, run
+"composio link APP --alias primary --no-browser --no-wait", show me the link,
+and wait while I approve it in my browser. Then test it read only.
+
+Do not send, delete or modify anything unless I ask you to.</code></pre>
+            </div>
+          </div></div>
+          <div class="step-item"><div class="step-num">2</div><div class="step-body">Ask it something real: <span class="inline-code">What's on my calendar today?</span> or <span class="inline-code">Show me my 3 latest emails.</span> You should get answers from your own accounts.</div></div>
         </div>
         <p class="note">Nothing in this build uses an API key, so there is nothing to delete afterwards. If you ever want to cut Hermes off from an app, remove the connection from your Composio dashboard.</p>
 
         <div class="prompt-explain"><strong>Why "read only"?</strong> It's the rule of one in action. Your assistant can look at your calendar and inbox before it's allowed to change anything. The prompt ends with <em>"Do not send, delete or modify anything"</em> on purpose — you widen access later, once you trust the results.</div>
 
-        <div class="tip"><span class="tip-icon">💡</span><p><strong>Start with just Gmail and Calendar.</strong> Notion, Obsidian and GitHub are optional. Connect only the apps you'll actually use this week — you can always add more later.</p></div>
+        <div class="tip"><span class="tip-icon">💡</span><p><strong>Start with just Gmail and Calendar.</strong> Notion is optional. Connect only the apps you'll actually use this week — you can always add more later.</p></div>
 
         <div class="completion">
           <div class="completion-icon">🔌</div>
@@ -844,9 +896,14 @@ hermes config set MULTICA_API_KEY your_key_here
 # set up the messaging channel (Telegram)
 hermes gateway setup
 
-# Composio CLI: sign in and check who you're signed in as
-composio login
+# Composio: sign in (open the link in a browser, then poll)
+composio login --no-browser --no-wait --no-skill-install
+composio login --poll --no-skill-install
 composio whoami
+
+# Composio: connect an app, then run a read-only test
+composio link gmail --alias primary --no-browser --no-wait
+composio execute GMAIL_GET_PROFILE --account primary -d '{"user_id":"me"}'
 
 # see your scheduled jobs
 hermes cron list
