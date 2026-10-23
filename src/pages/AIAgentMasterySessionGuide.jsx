@@ -629,56 +629,13 @@ If a task doesn't clearly fit any member, ask me rather than guessing.</code></p
           <p><strong>The hidden benefit is cost.</strong> Every connected tool's description is sent with <em>every</em> message and eats your context window. Fifty directly connected tools means paying for fifty descriptions every time you say "hello" — slower, costlier, and more likely to pick the wrong tool. Composio sits in front of everything and pulls in only the tool that's actually needed: one door instead of a thousand.</p>
         </div>
 
-        <h3 class="h-sub">Step 1 — Create a temporary Composio API key</h3>
-        <div class="block step-list">
-          <div class="step-item"><div class="step-num">1</div><div class="step-body">Create a free account at <span class="inline-code">composio.dev</span> and sign in to the dashboard.</div></div>
-          <div class="step-item"><div class="step-num">2</div><div class="step-body">Go to <strong>Settings → API Keys</strong> (<span class="inline-code">dashboard.composio.dev/~/project/settings/api-keys</span>) and create a new key. Copy it.</div></div>
-          <div class="step-item"><div class="step-num">3</div><div class="step-body">Treat this key as <strong>short-lived</strong>: it's only for this class build. When you're done, come back to the same page and delete it (or regenerate it) so the copy in your chat history stops working.</div></div>
-        </div>
-
-        <div class="block concept">
-          <div class="concept-eyebrow">The one exception to the key rule</div>
-          <h3>Why it's okay to give this key straight to Hermes</h3>
-          <p>In Build 2 you learned to never paste an API key into the chat, because chat text is saved in your session history. That rule is for keys that stay valid. Here, the key is created for this build and thrown away afterwards, so a copy left in your history is worth nothing once you delete it. Never do this with a key you plan to keep using — keep those in <span class="inline-code">.env</span> with <span class="inline-code">hermes config set</span>.</p>
-        </div>
-
-        <h3 class="h-sub">Step 2 — Give Hermes the key and let it connect your apps</h3>
-        <div class="block step-list">
-          <div class="step-item"><div class="step-num">1</div><div class="step-body">Open a Hermes session and paste this prompt, with your temporary key in place:
-            <div class="prompt-block">
-              <div class="prompt-head"><span>PROMPT — PASTE IN HERMES</span><button class="copy-btn">Copy</button></div>
-              <pre><code>Help me connect Composio so you can access my other apps.
-
-Here is a short-lived Composio API key I created just for this setup:
-<span class="ph">[PASTE KEY]</span>
-
-Use it to install and connect Composio, then walk me through authorising
-these one at a time: Gmail, Google Calendar, Notion, Obsidian, and GitHub.
-
-After each one, run a small read only test and show me the result so I know it
-worked. Do not send, delete or modify anything.</code></pre>
-            </div>
-          </div></div>
-          <div class="step-item"><div class="step-num">2</div><div class="step-body">Authorize each app as Hermes asks — usually by clicking <strong>Approve</strong> on a Google or GitHub sign-in page.</div></div>
-          <div class="step-item"><div class="step-num">3</div><div class="step-body">After each app, Hermes runs a small <strong>read-only test</strong> and shows you the result — for example, today's calendar or your latest emails. That's how you know it really worked.</div></div>
-          <div class="step-item"><div class="step-num">4</div><div class="step-body">Once all your apps pass, go back to the Composio API Keys page and delete the temporary key.</div></div>
-        </div>
-        <p class="note">Prefer to keep the key out of the chat entirely? Store it from the terminal instead — <span class="inline-code">hermes config set COMPOSIO_API_KEY your_key_here</span> — and change the prompt to say the key is saved as <span class="inline-code">COMPOSIO_API_KEY</span>.</p>
+        <h3 class="h-sub">Step 1 — Install the Composio CLI</h3>
+        <p>The CLI is a small program that holds your Composio sign-in and the connections to your apps. You sign in through your browser — there is no API key to create, copy or paste anywhere.</p>
 
         <div class="accordion">
-          <button class="accordion-trigger">How does Hermes actually talk to Composio?<span class="accordion-chev">⌄</span></button>
+          <button class="accordion-trigger">On Windows? Do this first — install Ubuntu (WSL)<span class="accordion-chev">⌄</span></button>
           <div class="accordion-panel"><div class="accordion-panel-inner">
-            <p>Composio offers two ways in, and Hermes can use either:</p>
-            <p style="margin-top:8px;"><strong>1. The Composio CLI</strong> — a small program on your computer that Hermes runs for you. This is what the prompt above sets up: Hermes installs it, signs in, and then walks you through authorising each app the first time you ask for something that needs it. Simplest for one person on one computer.</p>
-            <p style="margin-top:8px;"><strong>2. An MCP connection</strong> — you add Composio as a tool server in Hermes's settings file instead of installing anything. Same apps, same one-door idea. See the "Go further" box below.</p>
-            <p style="margin-top:8px;">Either way, the first time you ask for something that needs an app you haven't connected yet, Hermes stops and asks you to authorise it. That's expected, not an error.</p>
-          </div></div>
-        </div>
-
-        <div class="accordion go-further">
-          <button class="accordion-trigger"><span><span class="gf-label">Go further</span>Install the Composio CLI on Windows<span class="gf-diff">🛠️🛠️</span></span><span class="accordion-chev">⌄</span></button>
-          <div class="accordion-panel"><div class="accordion-panel-inner">
-            <p>Optional — you don't need this for the class build. Composio's CLI doesn't run natively on Windows; it runs inside <strong>WSL</strong> (Windows Subsystem for Linux), which is a Linux terminal built into Windows.</p>
+            <p>Composio's CLI doesn't run natively on Windows; it runs inside <strong>WSL</strong> (Windows Subsystem for Linux), which is a Linux terminal built into Windows. From here on, every <span class="inline-code">composio</span> command is typed in <strong>Ubuntu</strong>, not PowerShell.</p>
             <p style="margin-top:12px;"><strong>1. Install WSL.</strong> Open PowerShell as Administrator (right-click PowerShell → Run as administrator), run this, and restart your computer if it asks:</p>
             <div class="prompt-block">
               <div class="prompt-head"><span>POWERSHELL (ADMINISTRATOR)</span><button class="copy-btn">Copy</button></div>
@@ -686,34 +643,52 @@ worked. Do not send, delete or modify anything.</code></pre>
             </div>
             <p class="note">If it says virtualization isn't enabled, switch it on in your computer's BIOS settings (search your laptop model + "enable virtualization"), then run the command again.</p>
             <p style="margin-top:12px;"><strong>2. Open the Ubuntu app</strong> from the Start menu. The first launch asks you to pick a username and password. The password stays invisible while you type — that's normal. Remember it: Ubuntu asks for it whenever a command starts with <span class="inline-code">sudo</span>.</p>
-            <p style="margin-top:12px;"><strong>3. Install unzip.</strong> The Composio installer needs it and a fresh Ubuntu doesn't have it — skip this and the install stops with "unzip is required". Enter your Ubuntu password when asked:</p>
+            <p style="margin-top:12px;"><strong>3. Install unzip</strong> (inside Ubuntu). The Composio installer needs it and a fresh Ubuntu doesn't have it — skip this and the install stops with "unzip is required". Enter your Ubuntu password when asked:</p>
             <div class="prompt-block">
               <div class="prompt-head"><span>UBUNTU (WSL)</span><button class="copy-btn">Copy</button></div>
               <pre><code>sudo apt update &amp;&amp; sudo apt install -y unzip</code></pre>
             </div>
-            <p style="margin-top:12px;"><strong>4. Install Composio.</strong> It downloads about 120 MB, so on a slow connection this can take 10–20 minutes. Leave the window open until it says it's done:</p>
+            <p style="margin-top:12px;">Now continue with the install command below, typed in Ubuntu.</p>
+          </div></div>
+        </div>
+
+        <div class="block step-list">
+          <div class="step-item"><div class="step-num">1</div><div class="step-body">In your terminal (Ubuntu on Windows), run the installer. It downloads about 120 MB, so on a slow connection this can take 10–20 minutes. Leave the window open until it says it's done:
             <div class="prompt-block">
-              <div class="prompt-head"><span>UBUNTU (WSL)</span><button class="copy-btn">Copy</button></div>
+              <div class="prompt-head"><span>TERMINAL · UBUNTU ON WINDOWS</span><button class="copy-btn">Copy</button></div>
               <pre><code>curl -fsSL https://composio.dev/install | sh</code></pre>
             </div>
             <p class="note">Heads-up: the installer also adds a Composio plugin to any AI agent tools it finds on your computer, such as Claude Code. To install only the CLI, use <span class="inline-code">curl -fsSL https://composio.dev/install | sh -s -- --no-plugins</span> instead.</p>
-            <p style="margin-top:12px;"><strong>5. Close Ubuntu and open it again</strong> so the install takes effect, then check it worked. Always run <span class="inline-code">composio</span> in Ubuntu, not PowerShell — that's where it's installed.</p>
+          </div></div>
+          <div class="step-item"><div class="step-num">2</div><div class="step-body">Close the terminal and open it again so the install takes effect, then check it worked:
             <div class="prompt-block">
-              <div class="prompt-head"><span>UBUNTU (WSL)</span><button class="copy-btn">Copy</button></div>
+              <div class="prompt-head"><span>TERMINAL · UBUNTU ON WINDOWS</span><button class="copy-btn">Copy</button></div>
               <pre><code>composio --version</code></pre>
             </div>
-            <p class="note">If it says <span class="inline-code">command not found</span> even after reopening Ubuntu, try <span class="inline-code">~/.local/bin/composio --version</span>. If that works, the install is fine and only your terminal's search path is missing it — ask Hermes to add <span class="inline-code">~/.local/bin</span> to your PATH.</p>
-            <p style="margin-top:12px;"><strong>6. Log in.</strong> Run this, then open the link it shows you in your browser and sign in to Composio:</p>
+            <p class="note">If it says <span class="inline-code">command not found</span> even after reopening, try <span class="inline-code">~/.local/bin/composio --version</span>. If that works, the install is fine and only your terminal's search path is missing it — ask Hermes to add <span class="inline-code">~/.local/bin</span> to your PATH.</p>
+          </div></div>
+        </div>
+
+        <h3 class="h-sub">Step 2 — Sign in through your browser</h3>
+        <div class="block step-list">
+          <div class="step-item"><div class="step-num">1</div><div class="step-body">Run this, then open the link it shows you in your browser and sign in to Composio (create a free account if you don't have one):
             <div class="prompt-block">
-              <div class="prompt-head"><span>UBUNTU (WSL)</span><button class="copy-btn">Copy</button></div>
+              <div class="prompt-head"><span>TERMINAL · UBUNTU ON WINDOWS</span><button class="copy-btn">Copy</button></div>
               <pre><code>composio login</code></pre>
             </div>
-            <p style="margin-top:12px;">If it tells you to run <span class="inline-code">composio login --poll</span>, run that to finish. Then check you're signed in — if this prints nothing, or shows <span class="inline-code">"email":null</span>, the login hasn't finished yet:</p>
+          </div></div>
+          <div class="step-item"><div class="step-num">2</div><div class="step-body">If it tells you to run <span class="inline-code">composio login --poll</span>, run that to finish. Then check you're signed in — if this prints nothing, or shows <span class="inline-code">"email":null</span>, the login hasn't finished yet:
             <div class="prompt-block">
-              <div class="prompt-head"><span>UBUNTU (WSL)</span><button class="copy-btn">Copy</button></div>
+              <div class="prompt-head"><span>TERMINAL · UBUNTU ON WINDOWS</span><button class="copy-btn">Copy</button></div>
               <pre><code>composio whoami</code></pre>
             </div>
-            <p style="margin-top:12px;"><strong>7. Let Hermes use it.</strong> Hermes on Windows runs its commands in Git Bash, which can't see programs inside Ubuntu — ask it to use Composio now and it reports "no composio". Paste this into Hermes to give it a shortcut. It uses the same login as step 6:</p>
+          </div></div>
+        </div>
+
+        <div class="accordion">
+          <button class="accordion-trigger">On Windows? Let Hermes use Composio<span class="accordion-chev">⌄</span></button>
+          <div class="accordion-panel"><div class="accordion-panel-inner">
+            <p>Hermes on Windows runs its commands in Git Bash, which can't see programs inside Ubuntu — ask it to use Composio now and it reports "no composio". Paste this into Hermes to give it a shortcut. It uses the same sign-in as Step 2:</p>
             <div class="prompt-block">
               <div class="prompt-head"><span>PROMPT — PASTE IN HERMES</span><button class="copy-btn">Copy</button></div>
               <pre><code>The Composio CLI is installed inside WSL (Ubuntu), so your terminal can't
@@ -725,31 +700,31 @@ export MSYS_NO_PATHCONV=1
 export MSYS2_ARG_CONV_EXCL='*'
 exec /c/Windows/System32/wsl.exe -d Ubuntu -e bash -lc 'exec composio "$@"' composio "$@"</code></pre>
             </div>
-            <p style="margin-top:12px;">Mac and Linux users can skip steps 1, 2 and 7 and run the rest in their normal terminal. On a Mac, skip step 3 too — unzip is built in. On Linux other than Ubuntu or Debian, install unzip with your own package manager.</p>
+            <p style="margin-top:12px;">Mac and Linux users skip this — Hermes can already see programs in your normal terminal.</p>
           </div></div>
         </div>
 
-        <div class="accordion go-further">
-          <button class="accordion-trigger"><span><span class="gf-label">Go further</span>Connect Composio as an MCP server instead<span class="gf-diff">🛠️🛠️</span></span><span class="accordion-chev">⌄</span></button>
-          <div class="accordion-panel"><div class="accordion-panel-inner">
-            <p>Optional — you don't need this for the class build. It skips the CLI entirely (so no WSL on Windows) by adding Composio to Hermes's settings file.</p>
-            <p style="margin-top:12px;"><strong>1. Copy two things from the Composio dashboard:</strong> your <strong>Connect MCP URL</strong> and an <strong>API key</strong> (the same API Keys page as above).</p>
-            <p style="margin-top:12px;"><strong>2. Open Hermes's settings file</strong> in a text editor. It's <span class="inline-code">config.yaml</span> inside your <span class="inline-code">.hermes</span> folder (on Mac and Linux, <span class="inline-code">~/.hermes/config.yaml</span>). Add a <span class="inline-code">composio</span> entry under <span class="inline-code">mcp_servers</span>, swapping the two <span class="inline-code">PASTE_</span> words for what you copied:</p>
+        <h3 class="h-sub">Step 3 — Let Hermes connect your apps</h3>
+        <div class="block step-list">
+          <div class="step-item"><div class="step-num">1</div><div class="step-body">Open a Hermes session and paste this prompt:
             <div class="prompt-block">
-              <div class="prompt-head"><span>CONFIG.YAML</span><button class="copy-btn">Copy</button></div>
-              <pre><code>mcp_servers:
-  composio:
-    url: PASTE_YOUR_CONNECT_MCP_URL
-    headers:
-      x-consumer-api-key: PASTE_YOUR_API_KEY
-    connect_timeout: 60
-    timeout: 180</code></pre>
+              <div class="prompt-head"><span>PROMPT — PASTE IN HERMES</span><button class="copy-btn">Copy</button></div>
+              <pre><code>The Composio CLI is already installed and I'm signed in to it. Use it to
+connect my apps so you can access them, one at a time: Gmail, Google Calendar,
+Notion, Obsidian, and GitHub.
+
+For each one, open the authorisation page in my browser and wait while I
+approve it. Then run a small read only test and show me the result so I know it
+worked. Do not send, delete or modify anything.
+
+If something fails, tell me what went wrong in plain words and what you
+suggest, instead of trying a different way without asking me.</code></pre>
             </div>
-            <p class="note">If you already have an <span class="inline-code">mcp_servers</span> section, add <span class="inline-code">composio:</span> inside it rather than creating a second one. Composio's dashboard shows a ready-made block for Hermes — if it differs from this one, use theirs.</p>
-            <p style="margin-top:12px;"><strong>3. Restart Hermes</strong> (quit and reopen the app), then ask for something that needs an app, like "what's on my calendar today?". Hermes asks you to authorise the app the first time.</p>
-            <p style="margin-top:12px;"><strong>A different key rule applies here.</strong> This route needs the key to <em>keep working</em> — it's read from the file every time Hermes starts — so don't delete it afterwards. It's a long-lived key in a plain file, so treat <span class="inline-code">config.yaml</span> like your <span class="inline-code">.env</span>: never paste it into a chat, a screenshot or the community room.</p>
           </div></div>
+          <div class="step-item"><div class="step-num">2</div><div class="step-body">Hermes opens each app's sign-in page in your browser. Authorise it — usually by clicking <strong>Approve</strong> on a Google or GitHub page — then go back to Hermes.</div></div>
+          <div class="step-item"><div class="step-num">3</div><div class="step-body">After each app, Hermes runs a small <strong>read-only test</strong> and shows you the result — for example, today's calendar or your latest emails. That's how you know it really worked.</div></div>
         </div>
+        <p class="note">Nothing in this build uses an API key, so there is nothing to delete afterwards. If you ever want to cut Hermes off from an app, remove the connection from your Composio dashboard.</p>
 
         <div class="prompt-explain"><strong>Why "read only"?</strong> It's the rule of one in action. Your assistant can look at your calendar and inbox before it's allowed to change anything. The prompt ends with <em>"Do not send, delete or modify anything"</em> on purpose — you widen access later, once you trust the results.</div>
 
@@ -865,7 +840,6 @@ hermes model
 # store a key safely (never paste keys in chat)
 hermes config set SOME_API_KEY your_key_here
 hermes config set MULTICA_API_KEY your_key_here
-hermes config set COMPOSIO_API_KEY your_key_here
 
 # set up the messaging channel (Telegram)
 hermes gateway setup
