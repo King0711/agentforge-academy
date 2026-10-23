@@ -665,6 +665,16 @@ worked. Do not send, delete or modify anything.</code></pre>
         </div>
         <p class="note">Prefer to keep the key out of the chat entirely? Store it from the terminal instead — <span class="inline-code">hermes config set COMPOSIO_API_KEY your_key_here</span> — and change the prompt to say the key is saved as <span class="inline-code">COMPOSIO_API_KEY</span>.</p>
 
+        <div class="accordion">
+          <button class="accordion-trigger">How does Hermes actually talk to Composio?<span class="accordion-chev">⌄</span></button>
+          <div class="accordion-panel"><div class="accordion-panel-inner">
+            <p>Composio offers two ways in, and Hermes can use either:</p>
+            <p style="margin-top:8px;"><strong>1. The Composio CLI</strong> — a small program on your computer that Hermes runs for you. This is what the prompt above sets up: Hermes installs it, signs in, and then walks you through authorising each app the first time you ask for something that needs it. Simplest for one person on one computer.</p>
+            <p style="margin-top:8px;"><strong>2. An MCP connection</strong> — you add Composio as a tool server in Hermes's settings file instead of installing anything. Same apps, same one-door idea. See the "Go further" box below.</p>
+            <p style="margin-top:8px;">Either way, the first time you ask for something that needs an app you haven't connected yet, Hermes stops and asks you to authorise it. That's expected, not an error.</p>
+          </div></div>
+        </div>
+
         <div class="accordion go-further">
           <button class="accordion-trigger"><span><span class="gf-label">Go further</span>Install the Composio CLI on Windows<span class="gf-diff">🛠️🛠️</span></span><span class="accordion-chev">⌄</span></button>
           <div class="accordion-panel"><div class="accordion-panel-inner">
@@ -692,6 +702,7 @@ worked. Do not send, delete or modify anything.</code></pre>
               <div class="prompt-head"><span>UBUNTU (WSL)</span><button class="copy-btn">Copy</button></div>
               <pre><code>composio --version</code></pre>
             </div>
+            <p class="note">If it says <span class="inline-code">command not found</span> even after reopening Ubuntu, try <span class="inline-code">~/.local/bin/composio --version</span>. If that works, the install is fine and only your terminal's search path is missing it — ask Hermes to add <span class="inline-code">~/.local/bin</span> to your PATH.</p>
             <p style="margin-top:12px;"><strong>6. Log in.</strong> Run this, then open the link it shows you in your browser and sign in to Composio:</p>
             <div class="prompt-block">
               <div class="prompt-head"><span>UBUNTU (WSL)</span><button class="copy-btn">Copy</button></div>
@@ -715,6 +726,28 @@ export MSYS2_ARG_CONV_EXCL='*'
 exec /c/Windows/System32/wsl.exe -d Ubuntu -e bash -lc 'exec composio "$@"' composio "$@"</code></pre>
             </div>
             <p style="margin-top:12px;">Mac and Linux users can skip steps 1, 2 and 7 and run the rest in their normal terminal. On a Mac, skip step 3 too — unzip is built in. On Linux other than Ubuntu or Debian, install unzip with your own package manager.</p>
+          </div></div>
+        </div>
+
+        <div class="accordion go-further">
+          <button class="accordion-trigger"><span><span class="gf-label">Go further</span>Connect Composio as an MCP server instead<span class="gf-diff">🛠️🛠️</span></span><span class="accordion-chev">⌄</span></button>
+          <div class="accordion-panel"><div class="accordion-panel-inner">
+            <p>Optional — you don't need this for the class build. It skips the CLI entirely (so no WSL on Windows) by adding Composio to Hermes's settings file.</p>
+            <p style="margin-top:12px;"><strong>1. Copy two things from the Composio dashboard:</strong> your <strong>Connect MCP URL</strong> and an <strong>API key</strong> (the same API Keys page as above).</p>
+            <p style="margin-top:12px;"><strong>2. Open Hermes's settings file</strong> in a text editor. It's <span class="inline-code">config.yaml</span> inside your <span class="inline-code">.hermes</span> folder (on Mac and Linux, <span class="inline-code">~/.hermes/config.yaml</span>). Add a <span class="inline-code">composio</span> entry under <span class="inline-code">mcp_servers</span>, swapping the two <span class="inline-code">PASTE_</span> words for what you copied:</p>
+            <div class="prompt-block">
+              <div class="prompt-head"><span>CONFIG.YAML</span><button class="copy-btn">Copy</button></div>
+              <pre><code>mcp_servers:
+  composio:
+    url: PASTE_YOUR_CONNECT_MCP_URL
+    headers:
+      x-consumer-api-key: PASTE_YOUR_API_KEY
+    connect_timeout: 60
+    timeout: 180</code></pre>
+            </div>
+            <p class="note">If you already have an <span class="inline-code">mcp_servers</span> section, add <span class="inline-code">composio:</span> inside it rather than creating a second one. Composio's dashboard shows a ready-made block for Hermes — if it differs from this one, use theirs.</p>
+            <p style="margin-top:12px;"><strong>3. Restart Hermes</strong> (quit and reopen the app), then ask for something that needs an app, like "what's on my calendar today?". Hermes asks you to authorise the app the first time.</p>
+            <p style="margin-top:12px;"><strong>A different key rule applies here.</strong> This route needs the key to <em>keep working</em> — it's read from the file every time Hermes starts — so don't delete it afterwards. It's a long-lived key in a plain file, so treat <span class="inline-code">config.yaml</span> like your <span class="inline-code">.env</span>: never paste it into a chat, a screenshot or the community room.</p>
           </div></div>
         </div>
 
@@ -832,9 +865,14 @@ hermes model
 # store a key safely (never paste keys in chat)
 hermes config set SOME_API_KEY your_key_here
 hermes config set MULTICA_API_KEY your_key_here
+hermes config set COMPOSIO_API_KEY your_key_here
 
 # set up the messaging channel (Telegram)
 hermes gateway setup
+
+# Composio CLI: sign in and check who you're signed in as
+composio login
+composio whoami
 
 # see your scheduled jobs
 hermes cron list
