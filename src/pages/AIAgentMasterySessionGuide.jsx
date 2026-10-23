@@ -754,7 +754,7 @@ exec /c/Windows/System32/wsl.exe -d Ubuntu -e bash -lc 'exec composio "$@"' comp
             </div>
           </div></div>
         </div>
-        <p class="note">Each test should print real details from your account. An error, or an empty result, means that app isn't connected yet — repeat its link step.</p>
+        <p class="note">Each test should print real details from your account. If one fails, read the error message first — it can be a temporary problem on the app's side, and an empty list can be a perfectly valid answer. Only repeat that app's link step if the message says the account isn't connected.</p>
 
         <h3 class="h-sub">Step 5 — Hand it over to Hermes</h3>
         <div class="block step-list">
@@ -776,9 +776,9 @@ Do not send, delete or modify anything unless I ask you to.</code></pre>
           </div></div>
           <div class="step-item"><div class="step-num">2</div><div class="step-body">Ask it something real: <span class="inline-code">What's on my calendar today?</span> or <span class="inline-code">Show me my 3 latest emails.</span> You should get answers from your own accounts.</div></div>
         </div>
-        <p class="note">Nothing in this build uses an API key, so there is nothing to delete afterwards. If you ever want to cut Hermes off from an app, remove the connection from your Composio dashboard.</p>
+        <p class="note">This build doesn't ask you to create, copy or paste an API key, but signing in does save a Composio login on your computer. When you're done with it, run <span class="inline-code">composio logout</span> to end that session. To cut Hermes off from an app, remove that app's connection in your Composio dashboard.</p>
 
-        <div class="prompt-explain"><strong>Why "read only"?</strong> It's the rule of one in action. Your assistant can look at your calendar and inbox before it's allowed to change anything. The prompt ends with <em>"Do not send, delete or modify anything"</em> on purpose — you widen access later, once you trust the results.</div>
+        <div class="prompt-explain"><strong>Why "read only"?</strong> It's the rule of one in action. You start by having your assistant look at your calendar and inbox, and only widen what it does once you trust the results. The prompt ends with <em>"Do not send, delete or modify anything"</em> on purpose. Be clear about what that line is: an <em>instruction</em> to Hermes, not a lock. The apps you linked can still allow changes, so read the permission screen each app shows when you approve it, and watch what Hermes does in the first week.</div>
 
         <div class="tip"><span class="tip-icon">💡</span><p><strong>Start with just Gmail and Calendar.</strong> Notion is optional. Connect only the apps you'll actually use this week — you can always add more later.</p></div>
 
@@ -900,6 +900,7 @@ hermes gateway setup
 composio login --no-browser --no-wait --no-skill-install
 composio login --poll --no-skill-install
 composio whoami
+composio logout   # when you're done, ends the saved sign-in
 
 # Composio: connect an app, then run a read-only test
 composio link gmail --alias primary --no-browser --no-wait
