@@ -136,7 +136,10 @@ function OutlineItem({ session, index, isSelected, onSelect }) {
 
 // Zoom's own recording page renders inside this iframe — see
 // VibeCodingCourse.jsx's identical EmbedArea for why nothing here controls
-// Zoom's own download button.
+// Zoom's own download button. There is deliberately no "Open on Zoom" link
+// (founder, 2026-10-23: replays must not be downloadable): it opened Zoom's
+// full page, where the download button lives. "Viewers can download" must
+// also be off on the Zoom side.
 function EmbedArea({ session }) {
   const isPast = new Date(session.session_date) < new Date();
   const hasReplay = Boolean(session.recording_url);
@@ -168,16 +171,6 @@ function EmbedArea({ session }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-2.5 mt-3.5">
-        {hasReplay && (
-          <a
-            href={session.recording_url}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-body-strong bg-[#F6F8FB] dark:bg-white/5 hover:bg-[#E8EDF3] dark:hover:bg-brand/15 px-3 py-2 rounded-lg transition-colors"
-          >
-            <ExternalLink className="w-3.5 h-3.5" /> Open on Zoom
-          </a>
-        )}
         {session.recording_passcode && <PasscodeChip passcode={session.recording_passcode} />}
         {!isPast && session.join_link && (
           <a
