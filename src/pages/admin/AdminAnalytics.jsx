@@ -219,13 +219,6 @@ export default function AdminAnalytics() {
   const funnel = data?.funnel ?? {};
   const periods = summary?.periods ?? [];
   const trackingStarted = funnel.first_visit;
-  const regionName = (code) => {
-    try {
-      return new Intl.DisplayNames(['en'], { type: 'region' }).of(code) || code;
-    } catch {
-      return code;
-    }
-  };
   const days = daysBetween(from, to);
 
   return (
@@ -372,7 +365,6 @@ export default function AdminAnalytics() {
           <RankList title="Top pages" rows={breakdown.page} valueLabel="views" />
           <RankList title="Traffic sources" rows={breakdown.source} valueLabel="visits" />
           <RankList title="Devices" rows={breakdown.device} valueLabel="views" />
-          <RankList title="Countries" rows={breakdown.country} valueLabel="views" labelFor={regionName} />
         </div>
       </Section>
     </div>
