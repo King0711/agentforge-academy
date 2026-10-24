@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { saveCheckoutPrefill } from '../lib/checkoutPrefill';
 import { OPEN_ADVISOR_EVENT as OPEN_EVENT } from '../lib/advisor';
+import { invokeWithRetry } from '../lib/invokeFunction';
+import { COUNTRIES, DEFAULT_COUNTRY, buildE164, findCountry } from '../data/countryCodes';
 import { AI_AGENT_MASTERY_PRICE, VIBECODING_PRICE, BUILDER1_PRICE, BUILDER2_PRICE, PRO_PRICE } from '../data/pricing';
 
 const WA_NUMBER = '2349066006963';
@@ -63,15 +65,21 @@ function WhatsAppGlyph({ className }) {
 // is only shared once someone actually signs up.
 //
 // It opens a short form first so the advisor starts with context: name, an
-// optional email and what the person is interested in. From there they either
-// send that as the WhatsApp message or go and pay — in which case the name and
-// email are handed to the checkout form (src/lib/checkoutPrefill.js).
+// optional email, WhatsApp number and what the person is interested in. From
+// there they either send that as the WhatsApp message — which also registers
+// them as a lead (capture-whatsapp-lead, shown in /admin/leads) — or go and pay,
+// in which case the name and email are handed to the checkout form
+// (src/lib/checkoutPrefill.js), which records the lead itself.
 export default function WhatsAppFloatButton() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [courses, setCourses] = useState([]);
   const [guide, setGuide] = useState('');
+  const [countryIso, setCountryIso] = useState(DEFAULT_COUNTRY);
+  const [phone, setPhone] = useState('');
+  // Honeypot: real visitors never see or fill this.
+  const [website, setWebsite] = useState('');
 
   // Other buttons on the page ("Talk to an advisor") open this same form by
   // dispatching a window event, so there is one form and one set of copy.
@@ -90,6 +98,9 @@ export default function WhatsAppFloatButton() {
 
   const selected = guide ? [...courses, guide] : courses;
   const canSend = name.trim().length > 0 && selected.length > 0;
+  const country = findCountry(countryIso);
+  const e164 = buildE164(country, phone);
+  const canWhatsApp = canSend && !!e164;
 
   const toggleCourse = (id) =>
     setCourses((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -101,7 +112,12 @@ export default function WhatsAppFloatButton() {
   };
 
   const handleWhatsApp = () => {
-    if (!canSend) return;
+    if (!canWhatsApp) return;
+    // Register the lead without holding up the chat: the WhatsApp window opens
+    // either way, and a failed save (offline, rate limit) must not block it.
+    invokeWithRetry('capture-whatsapp-lead', {
+      body: { name: name.trim(), email: email.trim(), phone: e164, country: country.iso, plans: selected, website },
+    }).catch(() => {});
     const text = encodeURIComponent(buildWaMessage(name, email, selected));
     window.open(`https://wa.me/${WA_NUMBER}?text=${text}`, '_blank', 'noreferrer');
     setOpen(false);
@@ -230,13 +246,47 @@ export default function WhatsAppFloatButton() {
                   </div>
                 </div>
               </div>
+              <div>
+                <label htmlFor="wa-phone" className="block text-xs font-semibold text-body-strong mb-1">Your WhatsApp number</label>
+                <div className="flex gap-2">
+                  <select
+                    aria-label="Country code"
+                    value={countryIso}
+                    onChange={(e) => setCountryIso(e.target.value)}
+                    className="w-[42%] flex-shrink-0 px-2 py-3 rounded-xl border border-border text-sm text-ink bg-white dark:bg-[#131E2F] focus:outline-none focus:ring-2 focus:ring-brand/40"
+                  >
+                    {COUNTRIES.map((c) => (
+                      <option key={c.iso} value={c.iso}>+{c.dial} {c.name}</option>
+                    ))}
+                  </select>
+                  <input
+                    id="wa-phone"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel-national"
+                    maxLength={20}
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="801 234 5678"
+                    className={`${inputClass} min-w-0`}
+                  />
+                </div>
+              </div>
+
+              {/* Honeypot — hidden from people and assistive tech. */}
+              <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
+                <label>
+                  Website
+                  <input type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+                </label>
+              </div>
             </div>
 
             <div className="mt-5 flex flex-col gap-2">
               <button
                 type="button"
                 onClick={handleWhatsApp}
-                disabled={!canSend}
+                disabled={!canWhatsApp}
                 className="flex items-center justify-center gap-2 w-full bg-[#128C7E] hover:bg-[#075E54] disabled:opacity-50 disabled:cursor-not-allowed text-white font-extrabold px-5 py-3 rounded-xl transition-colors"
               >
                 <WhatsAppGlyph className="w-4 h-4" /> Send to WhatsApp
@@ -251,6 +301,9 @@ export default function WhatsAppFloatButton() {
               </button>
               {!canSend && (
                 <p className="text-xs text-body text-center">Add your name and pick at least one option to continue.</p>
+              )}
+              {canSend && !canWhatsApp && (
+                <p className="text-xs text-body text-center">Add your WhatsApp number to message us. You can still pay without it.</p>
               )}
             </div>
           </div>
