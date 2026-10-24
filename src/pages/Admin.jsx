@@ -19,6 +19,7 @@ import AdminSurvey from './admin/AdminSurvey';
 import AdminScholarships from './admin/AdminScholarships';
 import AdminDiscountCodes from './admin/AdminDiscountCodes';
 import AdminLeads from './admin/AdminLeads';
+import AdminAnalytics from './admin/AdminAnalytics';
 import AdminCommunityBot from './admin/AdminCommunityBot';
 
 // Passes showToast down to whichever section route is active via Outlet
@@ -81,6 +82,7 @@ export default function Admin() {
                 <Route path="scholarships" element={<AdminScholarships />} />
                 <Route path="discount-codes" element={<AdminDiscountCodes />} />
                 <Route path="leads"element={<AdminLeads />} />
+                <Route path="analytics" element={<AdminAnalytics />} />
                 <Route path="community-bot" element={<AdminCommunityBot />} />
               </Route>
             </Routes>
