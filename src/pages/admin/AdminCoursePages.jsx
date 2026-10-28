@@ -184,7 +184,11 @@ export default function AdminCoursePages() {
   const ctaRows = useMemo(
     () =>
       (d?.ctas ?? [])
-        .map((c) => ({ id: c.label, viewers: Number(c.viewers) || 0, clickers: Number(c.clickers) || 0 }))
+        .map((c) => {
+          const clickers = Number(c.clickers) || 0;
+          // A click always counts as a view too; if a view event was lost, never show a rate above 100%.
+          return { id: c.label, viewers: Math.max(Number(c.viewers) || 0, clickers), clickers };
+        })
         .sort((a, b) => b.clickers - a.clickers || b.viewers - a.viewers),
     [d],
   );
@@ -434,7 +438,7 @@ export default function AdminCoursePages() {
         )}
       </Section>
 
-      <Section title="Where visitors come from" note="One count per person: the way they arrived on this page when they opened it directly.">
+      <Section title="Where visitors come from" note={'One count per person. "Direct" and the named sources are people who opened this page itself; "other pages on this site" clicked through from elsewhere on the site, where their real source was recorded.'}>
         <div className="grid sm:grid-cols-3 gap-6">
           {[
             ['Traffic sources', d?.sources],

@@ -215,7 +215,11 @@ begin
     ), '[]'::jsonb),
     'sources', coalesce((
       select jsonb_agg(jsonb_build_object('label', s.label, 'people', s.n) order by s.n desc, s.label)
-      from (select coalesce(nullif(ev.source, ''), 'direct') as label, count(distinct ev.who) as n
+      from (select case when ev.is_entry then coalesce(nullif(ev.source, ''), 'direct')
+                        -- reached by clicking through from another page of the site: the
+                        -- original source is on that first page, not here
+                        else 'other pages on this site' end as label,
+                   count(distinct ev.who) as n
             from ev where ev.event = 'view' group by 1) s
     ), '[]'::jsonb),
     'campaigns', coalesce((
