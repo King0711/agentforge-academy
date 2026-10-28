@@ -33,8 +33,18 @@ const EVENTS = new Set([
   'form_open', 'form_start', 'field_done', 'form_submit', 'form_error', 'to_paystack', 'paid',
 ]);
 const MAX_EVENTS_PER_BATCH = 40;
+const MAX_BODY_CHARS = 16000; // a real batch is well under 5 KB
 const MAX_ROWS_PER_IP_PER_MINUTE = 400; // many Nigerian users share one carrier NAT
+// Whole-endpoint ceiling, so a spread-out flood (many IPs) cannot fill the table.
+// One page view is roughly 35 rows, so this is ~170 views a minute, far above this site's traffic.
+const MAX_ROWS_GLOBAL_PER_MINUTE = 6000;
 const MINUTE_MS = 60 * 1000;
+// Events that mean nothing without a label, and the largest plausible value for the
+// events that carry one (milliseconds). Anything outside is dropped, not clamped, so a
+// forged request can't drag the dashboard's averages.
+const NEEDS_LABEL = new Set(['perf', 'scroll', 'section', 'section_time', 'cta_view', 'cta_click', 'field_done', 'form_error', 'to_paystack']);
+const VALUE_MAX: Record<string, number> = { perf: 120000, section_time: 1800000, form_submit: 3600000 };
+const NEEDS_VALUE = new Set(['perf', 'section_time']);
 const BOT_RE = /bot|crawl|spider|slurp|headless|lighthouse|pagespeed|preview|monitor|uptime|curl|wget|python|axios|node-fetch|go-http|facebookexternalhit|whatsapp|telegram|discord/i;
 
 // Same channel reduction as track-visit, so both dashboards name sources the same way.
@@ -81,12 +91,16 @@ serve(async (req) => {
   const ua = req.headers.get('user-agent') ?? '';
   if (!ua || BOT_RE.test(ua)) return done();
 
+  if (Number(req.headers.get('content-length') ?? 0) > MAX_BODY_CHARS) return done();
   let body: Record<string, unknown>;
   try {
-    body = JSON.parse(await req.text());
+    const text = await req.text();
+    if (text.length > MAX_BODY_CHARS) return done();
+    body = JSON.parse(text);
   } catch {
     return done();
   }
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return done();
 
   const page = String(body.page ?? '');
   const viewId = String(body.view ?? '');
@@ -98,16 +112,27 @@ serve(async (req) => {
   const device = body.device === 'mobile' || body.device === 'tablet' ? body.device : 'desktop';
 
   const rows = [];
+  let sawView = false;
   for (const raw of (body.events as unknown[]).slice(0, MAX_EVENTS_PER_BATCH)) {
     if (!raw || typeof raw !== 'object') continue;
     const ev = raw as Record<string, unknown>;
     const event = String(ev.e ?? '');
     if (!EVENTS.has(event)) continue;
+    // One view per page view: repeats in a batch are ignored.
+    if (event === 'view') {
+      if (sawView) continue;
+      sawView = true;
+    }
 
     const labelRaw = ev.l == null ? '' : String(ev.l);
     const label = /^[a-z0-9_]{1,40}$/.test(labelRaw) ? labelRaw : null;
+    if (NEEDS_LABEL.has(event) && !label) continue;
+
+    const max = VALUE_MAX[event];
     const num = Number(ev.v);
-    const value = ev.v != null && Number.isFinite(num) && num >= 0 && num <= 86400000 ? Math.round(num * 100) / 100 : null;
+    const hasValue = max !== undefined && ev.v != null && Number.isFinite(num) && num >= 0 && num <= max;
+    if (NEEDS_VALUE.has(event) && !hasValue) continue;
+    const value = hasValue ? Math.round(num * 100) / 100 : null;
 
     // Every row carries every column: a batch with differing keys is padded with NULLs
     // by the client, which would break the NOT NULL is_entry column for the whole insert.
@@ -147,6 +172,11 @@ serve(async (req) => {
     ''
   ).trim();
   const ipHash = await keyedHash(`ip:${clientIp}`);
+  const { count: recentRows } = await sb
+    .from('page_events')
+    .select('id', { count: 'exact', head: true })
+    .gte('created_at', new Date(Date.now() - MINUTE_MS).toISOString());
+  if ((recentRows ?? 0) >= MAX_ROWS_GLOBAL_PER_MINUTE) return done();
   if (ipHash) {
     const { count } = await sb
       .from('page_events')
