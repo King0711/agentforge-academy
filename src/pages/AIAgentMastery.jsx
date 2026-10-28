@@ -5,8 +5,10 @@ import {
   Bot, Mail, Calendar, Search, MessageSquare, ShieldCheck, X, Zap,
   Palette, Image as ImageIcon, Code2,
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import { usePro } from '../hooks/usePro';
 import { usePaystackCheckout } from '../hooks/usePaystackCheckout';
+import { useCoursePageTracking } from '../lib/coursePageTracking';
 import { useScholarshipOffer } from '../hooks/useScholarshipOffer';
 import CheckoutAuthModal from '../components/CheckoutAuthModal';
 import CouponField from '../components/CouponField';
@@ -207,12 +209,13 @@ function jumpToPricing(e) {
 // different line of copy depending on what the visitor just read, and the
 // price in the label so nobody has to scroll to learn it. Hidden for
 // students who already own the cohort.
-function SectionCta({ children, note, hidden }) {
+function SectionCta({ children, note, hidden, track }) {
   if (hidden) return null;
   return (
     <div className="px-4 sm:px-6 lg:px-[5vw] pb-14 -mt-4 text-center">
       <a
         href="#pricing"
+        data-track-cta={track}
         onClick={jumpToPricing}
         className="inline-flex items-center justify-center gap-2 bg-brand text-white font-extrabold text-base px-8 py-4 rounded-2xl shadow-[0_10px_22px_rgba(15,26,42,.4)] hover:bg-brand-deep transition-colors"
       >
@@ -245,6 +248,7 @@ function StickyJoinBar({ price }) {
     <div className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-[#0F1A2A]/95 backdrop-blur border-t border-border px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       <a
         href="#pricing"
+        data-track-cta="sticky_bar"
         onClick={jumpToPricing}
         className="flex items-center justify-center gap-2 w-full bg-brand text-white font-extrabold text-[15px] py-3.5 rounded-xl shadow-[0_8px_18px_rgba(15,26,42,.35)]"
       >
@@ -255,7 +259,11 @@ function StickyJoinBar({ price }) {
 }
 
 export default function AIAgentMastery() {
-  const { hasAiMastery: enrolled, isAdmin } = usePro();
+  const { hasAiMastery: enrolled, isAdmin, proLoading } = usePro();
+  const { loading: authLoading } = useAuth();
+  // Landing-page analytics (/admin/course-pages). Waits until it is known the visitor
+  // is not an admin and not already enrolled, so neither skews the numbers.
+  useCoursePageTracking('aimastery', !authLoading && !proLoading && !enrolled);
   // usePro counts admins as enrolled, which would hide every repeated CTA from
   // the founder previewing the page. Only real students get the sales buttons
   // taken away.
@@ -291,6 +299,7 @@ export default function AIAgentMastery() {
       {/* Hero */}
       <div
         id="aim-hero"
+        data-track-section="hero"
         className="relative overflow-hidden pt-16 pb-14 px-4 sm:px-6 lg:px-[5vw] text-center bg-bg"
       >
         <div className="relative max-w-3xl mx-auto">
@@ -325,12 +334,13 @@ export default function AIAgentMastery() {
           >
             <a
               href="#pricing"
+              data-track-cta="hero_primary"
               onClick={jumpToPricing}
               className="bg-brand text-white font-extrabold text-base px-8 py-4 rounded-2xl shadow-[0_10px_22px_rgba(15,26,42,.4)] hover:bg-brand-deep transition-colors"
             >
               Join the next cohort — ₦{price.toLocaleString()} →
             </a>
-            <a href="#demo" className="text-body-strong font-bold text-[14.5px] hover:text-link transition-colors">
+            <a href="#demo" data-track-cta="hero_demo" className="text-body-strong font-bold text-[14.5px] hover:text-link transition-colors">
               Watch it in action ↓
             </a>
           </div>
@@ -349,7 +359,7 @@ export default function AIAgentMastery() {
       {/* System showcase — an agent connected to real tools plus a
           multi-agent dashboard. (The diagram component keeps its old
           AgentsLive name; renaming it is churn with no user impact.) */}
-      <div className="px-4 sm:px-6 lg:px-[5vw] pt-4 pb-16 max-w-5xl mx-auto">
+      <div data-track-section="system" className="px-4 sm:px-6 lg:px-[5vw] pt-4 pb-16 max-w-5xl mx-auto">
         <SectionHeading eyebrow="Under the hood">One agent, a whole team behind it</SectionHeading>
         <p className="text-center text-body max-w-xl mx-auto -mt-5 mb-8 text-[14px] leading-relaxed">
           A message or task comes in, your agent picks it up, and a team of agents on one shared dashboard splits the
@@ -359,7 +369,7 @@ export default function AIAgentMastery() {
       </div>
 
       {/* Demo videos */}
-      <div id="demo" className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-4xl mx-auto scroll-mt-20">
+      <div id="demo" data-track-section="demo" className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-4xl mx-auto scroll-mt-20">
         <SectionHeading eyebrow="See it working">This is what you'll build</SectionHeading>
         <div className="flex flex-col gap-6">
           <DemoVideo demo={DEMO_VIDEO} />
@@ -367,15 +377,17 @@ export default function AIAgentMastery() {
         </div>
       </div>
 
-      <SectionCta hidden={hasAiMastery} note="Live cohort. Access starts the moment you pay.">
+      <SectionCta track="demo_cta" hidden={hasAiMastery} note="Live cohort. Access starts the moment you pay.">
         I want to build this — ₦{price.toLocaleString()}
       </SectionCta>
 
       {/* About the instructor */}
-      <InstructorSection closingLine="AI Agent Mastery is that exact system, taught live, over the course of the cohort." />
+      <div data-track-section="instructor">
+        <InstructorSection closingLine="AI Agent Mastery is that exact system, taught live, over the course of the cohort." />
+      </div>
 
       {/* Curriculum */}
-      <div className="bg-[#F6F8FB] dark:bg-[#141416] border-y border-border-soft px-4 sm:px-6 lg:px-[5vw] py-16">
+      <div data-track-section="curriculum" className="bg-[#F6F8FB] dark:bg-[#141416] border-y border-border-soft px-4 sm:px-6 lg:px-[5vw] py-16">
         <div className="max-w-3xl mx-auto">
           <SectionHeading eyebrow="The curriculum">Three days, one working AI team</SectionHeading>
           <div className="flex flex-col gap-4 mb-8">
@@ -402,12 +414,12 @@ export default function AIAgentMastery() {
         </div>
       </div>
 
-      <SectionCta hidden={hasAiMastery} note="Three live evenings. Replays included.">
+      <SectionCta track="curriculum_cta" hidden={hasAiMastery} note="Three live evenings. Replays included.">
         Reserve my seat — ₦{price.toLocaleString()}
       </SectionCta>
 
       {/* Honest check */}
-      <div className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto">
+      <div data-track-section="fit" className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto">
         <SectionHeading eyebrow="A quick gut check">How many of these sound like you?</SectionHeading>
         <div className="grid sm:grid-cols-3 gap-3.5 max-w-4xl mx-auto mb-6">
           {HONEST_CHECK.map((group) => (
@@ -427,7 +439,7 @@ export default function AIAgentMastery() {
       </div>
 
       {/* Capabilities */}
-      <div id="capabilities" className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto scroll-mt-20">
+      <div id="capabilities" data-track-section="capabilities" className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto scroll-mt-20">
         <SectionHeading eyebrow="One chief of staff, a whole team">What your agents will handle</SectionHeading>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3.5 max-w-4xl mx-auto">
           {CAPABILITIES.map((c) => (
@@ -442,12 +454,12 @@ export default function AIAgentMastery() {
         </div>
       </div>
 
-      <SectionCta hidden={hasAiMastery} note="You don't need to be a programmer.">
+      <SectionCta track="capabilities_cta" hidden={hasAiMastery} note="You don't need to be a programmer.">
         Yes, this is me. Join the cohort
       </SectionCta>
 
       {/* Using tools vs. owning an assistant */}
-      <div className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto">
+      <div data-track-section="compare" className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto">
         <SectionHeading>Using AI tools vs. owning an AI team</SectionHeading>
         <div className="grid sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
           <div className="bg-white dark:bg-[#131E2F] border-[1.5px] border-border-soft rounded-2xl p-5">
@@ -476,7 +488,7 @@ export default function AIAgentMastery() {
       </div>
 
       {/* What you'll learn */}
-      <div className="bg-[#F6F8FB] dark:bg-[#141416] border-y border-border-soft px-4 sm:px-6 lg:px-[5vw] py-16">
+      <div data-track-section="outcomes" className="bg-[#F6F8FB] dark:bg-[#141416] border-y border-border-soft px-4 sm:px-6 lg:px-[5vw] py-16">
         <div className="max-w-3xl mx-auto">
           <SectionHeading eyebrow="By the end of the cohort">What you'll walk away knowing</SectionHeading>
           <div className="grid sm:grid-cols-2 gap-2.5 text-left">
@@ -490,7 +502,7 @@ export default function AIAgentMastery() {
       </div>
 
       {/* Who is this for */}
-      <div className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto">
+      <div data-track-section="audience" className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto">
         <SectionHeading eyebrow="Who is this for">Built for people who want their time back</SectionHeading>
         <div className="grid sm:grid-cols-2 gap-3 max-w-3xl mx-auto">
           {WHO_FOR.map((w) => (
@@ -514,7 +526,7 @@ export default function AIAgentMastery() {
       </div>
 
       {/* Qualifier */}
-      <div className="px-4 sm:px-6 lg:px-[5vw] pb-16 max-w-5xl mx-auto">
+      <div data-track-section="qualifier" className="px-4 sm:px-6 lg:px-[5vw] pb-16 max-w-5xl mx-auto">
         <SectionHeading>Is AI Agent Mastery for you?</SectionHeading>
         <div className="grid sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
           <div className="bg-white dark:bg-[#131E2F] border-[2px] border-green rounded-2xl p-6">
@@ -536,20 +548,22 @@ export default function AIAgentMastery() {
         </div>
       </div>
 
-      <SectionCta hidden={hasAiMastery} note="Limited seats per cohort.">
+      <SectionCta track="qualifier_cta" hidden={hasAiMastery} note="Limited seats per cohort.">
         Yes, this is me — secure my seat · ₦{price.toLocaleString()}
       </SectionCta>
 
       {/* Testimonials — real screenshots (on file), see
           AgentBuildTestimonials.jsx for the data. */}
-      <AgentBuildTestimonials />
+      <div data-track-section="reviews">
+        <AgentBuildTestimonials />
+      </div>
 
-      <SectionCta hidden={hasAiMastery} note="Join them in the next cohort.">
+      <SectionCta track="reviews_cta" hidden={hasAiMastery} note="Join them in the next cohort.">
         Join them — ₦{price.toLocaleString()}
       </SectionCta>
 
       {/* FAQ */}
-      <div className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto">
+      <div data-track-section="faq" className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-5xl mx-auto">
         <SectionHeading eyebrow="Still deciding?">Your questions, answered</SectionHeading>
         <div className="grid sm:grid-cols-2 gap-3.5 max-w-3xl mx-auto">
           {FAQS.map((item) => (
@@ -565,7 +579,7 @@ export default function AIAgentMastery() {
       </div>
 
       {/* Pricing / offer — the ONLY plan sold on this page */}
-      <div id="pricing" className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-3xl mx-auto scroll-mt-20">
+      <div id="pricing" data-track-section="pricing" className="px-4 sm:px-6 lg:px-[5vw] py-16 max-w-3xl mx-auto scroll-mt-20">
         <SectionHeading eyebrow="Your investment">Secure your seat before the price goes back up</SectionHeading>
         <div className="mb-8"><CohortCountdown /></div>
 
@@ -617,6 +631,7 @@ export default function AIAgentMastery() {
             <>
               <CouponField plan="aimastery" applied={coupon} onApplied={setCoupon} />
               <button
+                data-track-cta="pay"
                 onClick={() => checkout('aimastery', coupon ? { coupon: coupon.code } : {})}
                 disabled={checkoutLoading === 'aimastery'}
                 className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-deep disabled:opacity-60 text-white font-extrabold px-5 py-3.5 rounded-xl shadow-[0_10px_22px_rgba(15,26,42,.35)] transition-colors"
@@ -641,7 +656,7 @@ export default function AIAgentMastery() {
       </div>
 
       {/* Final CTA */}
-      <div className="px-4 sm:px-6 lg:px-[5vw] pb-16 max-w-6xl mx-auto">
+      <div data-track-section="final" className="px-4 sm:px-6 lg:px-[5vw] pb-16 max-w-6xl mx-auto">
         <div
           className="rounded-[24px] px-8 sm:px-10 py-9 flex items-center justify-between flex-wrap gap-5 shadow-[0_20px_44px_-16px_rgba(15,26,42,.6)]"
           style={{ background: '#264D73' }}
@@ -654,6 +669,7 @@ export default function AIAgentMastery() {
           </div>
           <a
             href="#pricing"
+            data-track-cta="final_cta"
             onClick={jumpToPricing}
             className="bg-yellow text-ink font-extrabold text-base px-7 py-[15px] rounded-2xl shadow-[0_10px_20px_rgba(0,0,0,.18)] hover:brightness-95 transition-all flex-shrink-0 flex items-center gap-2"
           >

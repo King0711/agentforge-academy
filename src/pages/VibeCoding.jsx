@@ -4,9 +4,11 @@ import {
   CheckCircle2, CalendarDays, Info, Loader2, AlertCircle, Timer,
   Code2, Database, Rocket, Wrench,
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import { usePro } from '../hooks/usePro';
 import { useCohortSchedule } from '../hooks/useCohortSchedule';
 import { usePaystackCheckout } from '../hooks/usePaystackCheckout';
+import { useCoursePageTracking } from '../lib/coursePageTracking';
 import CheckoutAuthModal from '../components/CheckoutAuthModal';
 import { usePageSeo } from '../hooks/usePageSeo';
 import { VIBECODING_PRICE } from '../data/pricing';
@@ -124,7 +126,11 @@ function CohortCountdown({ dateStr }) {
 }
 
 export default function VibeCoding() {
-  const { hasVibeCoding } = usePro();
+  const { hasVibeCoding, proLoading } = usePro();
+  const { loading: authLoading } = useAuth();
+  // Landing-page analytics (/admin/course-pages). Waits until it is known the visitor
+  // is not an admin and not already enrolled, so neither skews the numbers.
+  useCoursePageTracking('vibecoding', !authLoading && !proLoading && !hasVibeCoding);
   const { vibecoding: vibecodingCohortDate } = useCohortSchedule();
   const cohortDate = formatCohortDate(vibecodingCohortDate);
 
@@ -144,14 +150,15 @@ export default function VibeCoding() {
   return (
     <div>
       <PageHero
+        track="hero"
         title={<>Stop just using AI. <span className="text-yellow">Start building with it.</span></>}
         lead="Turn your ideas into real websites, web applications, and AI-powered products, even if you've never been a professional programmer. Learn to use AI as your development partner."
         actions={
           <>
-            <a href="#pricing" className="btn btn-primary btn-lg w-full sm:w-auto">
+            <a href="#pricing" data-track-cta="hero_primary" className="btn btn-primary btn-lg w-full sm:w-auto">
               Join the launch cohort — ₦{VIBECODING_PRICE.toLocaleString()} →
             </a>
-            <a href="#what-youll-build" className="btn btn-secondary btn-lg w-full sm:w-auto">
+            <a href="#what-youll-build" data-track-cta="hero_projects" className="btn btn-secondary btn-lg w-full sm:w-auto">
               See what you'll build ↓
             </a>
           </>
@@ -160,7 +167,7 @@ export default function VibeCoding() {
       />
 
       {/* You have ideas */}
-      <Band tone="white">
+      <Band track="intro" tone="white">
         <div className="grid lg:grid-cols-[1.1fr_1fr] gap-10 lg:gap-20 items-start">
           <div>
             <h2 className="t-section text-ink">You have ideas. Now learn how to build them.</h2>
@@ -180,7 +187,7 @@ export default function VibeCoding() {
       </Band>
 
       {/* VIBE Method */}
-      <Band>
+      <Band track="method">
         <SectionHeading lead="The Social Dev VIBE Method: four steps you repeat on every project.">The framework behind every project</SectionHeading>
         <ol className="list-none m-0 p-0 grid sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-10">
           {VIBE_STEPS.map((step) => (
@@ -194,7 +201,7 @@ export default function VibeCoding() {
       </Band>
 
       {/* What you'll build */}
-      <Band id="what-youll-build" tone="white">
+      <Band id="what-youll-build" track="projects" tone="white">
         <SectionHeading lead="Six real projects, from a first website to a product of your own.">What you'll build</SectionHeading>
         <ol className="list-none m-0 p-0 grid md:grid-cols-2 gap-x-14 border-b border-border md:border-b-0">
           {PROJECTS.map((p, i) => (
@@ -210,7 +217,7 @@ export default function VibeCoding() {
       </Band>
 
       {/* 4-week timeline */}
-      <Band id="curriculum" tone="dark" size="lg">
+      <Band id="curriculum" track="curriculum" tone="dark" size="lg">
         <SectionHeading lead="4 weeks, 8 live classes.">Your bootcamp, week by week</SectionHeading>
         <ol className="list-none m-0 p-0 border-b border-border">
           {WEEKS.map((w) => (
@@ -227,7 +234,7 @@ export default function VibeCoding() {
       </Band>
 
       {/* What you'll learn */}
-      <Band>
+      <Band track="outcomes">
         <SectionHeading>What you'll learn</SectionHeading>
         <ul className="list-none m-0 p-0 grid sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-3.5">
           {LEARN.map((item) => (
@@ -239,7 +246,7 @@ export default function VibeCoding() {
       </Band>
 
       {/* Who is this for */}
-      <Band tone="white">
+      <Band track="audience" tone="white">
         <SectionHeading>You don't need to be a programmer</SectionHeading>
         <ul className="list-none m-0 p-0 grid sm:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-9">
           {WHO_FOR.map((w) => (
@@ -252,7 +259,7 @@ export default function VibeCoding() {
       </Band>
 
       {/* Toolkit */}
-      <Band size="sm">
+      <Band track="toolkit" size="sm">
         <SectionHeading className="!mb-8">The tools you'll use</SectionHeading>
         <ul className="list-none m-0 p-0 grid sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-8">
           {TOOLKIT.map((t) => (
@@ -265,7 +272,7 @@ export default function VibeCoding() {
       </Band>
 
       {/* FAQ */}
-      <Band tone="white">
+      <Band track="faq" tone="white">
         <SectionHeading>Your questions, answered</SectionHeading>
         <dl className="m-0 grid md:grid-cols-2 gap-x-14">
           {FAQS.map((item) => (
@@ -278,7 +285,7 @@ export default function VibeCoding() {
       </Band>
 
       {/* Pricing / offer — the ONLY plan sold on this page */}
-      <Band id="pricing" narrow>
+      <Band id="pricing" track="pricing" narrow>
         <SectionHeading>Join the launch cohort</SectionHeading>
 
         {cohortDate && (
@@ -330,6 +337,7 @@ export default function VibeCoding() {
             </Link>
           ) : (
             <button
+              data-track-cta="pay"
               onClick={handleCheckout}
               disabled={checkoutLoading === 'vibecoding'}
               className="btn btn-primary btn-lg w-full disabled:opacity-60"
@@ -351,6 +359,8 @@ export default function VibeCoding() {
         text="4 weeks. 8 live classes. Your own product, shipped."
         href="#pricing"
         label="Join the cohort"
+        track="final"
+        trackCta="final_cta"
       />
 
       <CheckoutAuthModal open={authModalOpen} onClose={closeAuthModal} onSubmit={submitLead} loading={leadLoading} error={leadError} />

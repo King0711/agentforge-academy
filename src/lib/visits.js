@@ -11,7 +11,13 @@ const LIVE_HOSTS = new Set(['socialdevtechnologies.com', 'www.socialdevtechnolog
 
 let lastPath = null;
 
-function visitorId() {
+// Shared with src/lib/coursePageTracking.js so both trackers agree on who a
+// visitor is and which environments count.
+export function isCountedEnvironment() {
+  return LIVE_HOSTS.has(window.location.hostname) && !navigator.webdriver;
+}
+
+export function visitorId() {
   try {
     let id = localStorage.getItem(VID_KEY);
     if (!id) {
@@ -36,7 +42,7 @@ function isEntryView() {
   }
 }
 
-function deviceClass() {
+export function deviceClass() {
   const ua = navigator.userAgent || '';
   if (/iPad|Tablet/i.test(ua)) return 'tablet';
   if (/Mobi|Android|iPhone/i.test(ua)) return 'mobile';
@@ -44,7 +50,7 @@ function deviceClass() {
 }
 
 // utm_source wins; then Facebook's click id; then the referring site's host.
-function trafficSource() {
+export function trafficSource() {
   const params = new URLSearchParams(window.location.search);
   const utm = params.get('utm_source');
   if (utm) return utm;

@@ -1,8 +1,23 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { X, Loader2, AlertCircle, Lock } from 'lucide-react';
 import { COUNTRIES, DEFAULT_COUNTRY, buildE164, findCountry } from '../data/countryCodes';
 import { readCheckoutPrefill } from '../lib/checkoutPrefill';
+import { trackCourseEvent } from '../lib/coursePageTracking';
+
+// Course-page analytics (src/lib/coursePageTracking.js) learns how far people get
+// in this form and which check stops them - never what they typed. These are
+// no-ops anywhere that isn't a tracked course page.
+const EMAIL_LOOKS_OK = /^\S+@\S+\.\S+$/;
+
+// A server refusal comes back as a sentence written for the buyer; reduce it to one
+// of a few fixed labels.
+function serverErrorLabel(message) {
+  if (/e-?mail/i.test(message)) return 'email_invalid';
+  if (/phone|number/i.test(message)) return 'phone_invalid';
+  if (/too many|attempt|try again later/i.test(message)) return 'rate_limited';
+  return 'server';
+}
 
 const inputClass =
   'w-full px-4 py-3 rounded-xl border border-border text-sm text-ink bg-transparent focus:outline-none focus:ring-2 focus:ring-brand/40';
@@ -29,6 +44,25 @@ function CheckoutForm({ onClose, onSubmit, loading = false, error = '', planLabe
   // Honeypot: real visitors never see or fill this.
   const [website, setWebsite] = useState('');
   const [localError, setLocalError] = useState('');
+  const openedAt = useRef(null);
+  const startedAt = useRef(null);
+
+  useEffect(() => {
+    openedAt.current = Date.now();
+    trackCourseEvent('form_open', null, null, { once: true });
+  }, []);
+  useEffect(() => {
+    if (error) trackCourseEvent('form_error', serverErrorLabel(error));
+  }, [error]);
+
+  // First keystroke or selection anywhere in the form.
+  const handleInput = () => {
+    if (startedAt.current == null) startedAt.current = Date.now();
+    trackCourseEvent('form_start', null, null, { once: true });
+  };
+  const fieldDone = (label, ok) => {
+    if (ok) trackCourseEvent('field_done', label, null, { once: true });
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -36,13 +70,17 @@ function CheckoutForm({ onClose, onSubmit, loading = false, error = '', planLabe
     const country = findCountry(countryIso);
     const e164 = buildE164(country, phone);
     if (name.trim().length < 2) {
+      trackCourseEvent('form_error', 'name_short');
       setLocalError('Enter your full name.');
       return;
     }
     if (!e164) {
+      trackCourseEvent('form_error', 'phone_invalid');
       setLocalError(`Enter a valid phone number for ${country.name} (+${country.dial}).`);
       return;
     }
+    // Milliseconds from the first keystroke (or from opening the form) to submitting.
+    trackCourseEvent('form_submit', null, Date.now() - (startedAt.current ?? openedAt.current ?? Date.now()));
     onSubmit({ name: name.trim(), email: email.trim(), phone: e164, country: country.iso, website });
   };
 
@@ -83,7 +121,7 @@ function CheckoutForm({ onClose, onSubmit, loading = false, error = '', planLabe
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-3" noValidate>
+        <form onSubmit={handleSubmit} onInput={handleInput} className="space-y-3" noValidate>
           <div>
             <label htmlFor="co-name" className="block text-xs font-semibold text-body-strong mb-1">Full name</label>
             <input
@@ -95,6 +133,7 @@ function CheckoutForm({ onClose, onSubmit, loading = false, error = '', planLabe
               maxLength={80}
               value={name}
               onChange={(e) => setName(e.target.value)}
+              onBlur={() => fieldDone('name', name.trim().length >= 2)}
               placeholder="Your full name"
               className={inputClass}
             />
@@ -109,6 +148,7 @@ function CheckoutForm({ onClose, onSubmit, loading = false, error = '', planLabe
               maxLength={254}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onBlur={() => fieldDone('email', EMAIL_LOOKS_OK.test(email.trim()))}
               placeholder="you@example.com"
               className={inputClass}
             />
@@ -135,6 +175,7 @@ function CheckoutForm({ onClose, onSubmit, loading = false, error = '', planLabe
                 maxLength={20}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                onBlur={() => fieldDone('phone', Boolean(buildE164(findCountry(countryIso), phone)))}
                 placeholder="801 234 5678"
                 className={`${inputClass} min-w-0`}
               />
