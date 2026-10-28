@@ -21,9 +21,9 @@ const SIZES = {
 };
 
 // One page-wide band. `narrow` keeps a reading-width column for forms and offers.
-export function Band({ tone = 'light', size = 'md', narrow = false, id, className = '', children }) {
+export function Band({ tone = 'light', size = 'md', narrow = false, id, track, className = '', children }) {
   return (
-    <section id={id} className={`${TONES[tone]} ${SIZES[size]} scroll-mt-20 ${className}`}>
+    <section id={id} data-track-section={track} className={`${TONES[tone]} ${SIZES[size]} scroll-mt-20 ${className}`}>
       <div className={`${INNER} ${narrow ? 'max-w-4xl' : ''}`}>{children}</div>
     </section>
   );
@@ -40,9 +40,9 @@ export function SectionHeading({ children, lead, className = '' }) {
 
 // The page's opening: the one place besides the footer that uses the gradient.
 // `facts` is a short row of plain statements under the buttons.
-export function PageHero({ title, lead, actions, facts = [] }) {
+export function PageHero({ title, lead, actions, facts = [], track }) {
   return (
-    <section className="section-dark section-grad pt-14 pb-14 md:pt-24 md:pb-20">
+    <section data-track-section={track} className="section-dark section-grad pt-14 pb-14 md:pt-24 md:pb-20">
       <div className={INNER}>
         <h1 className="t-title text-white max-w-[16em]">{title}</h1>
         {lead && <p className="text-lg md:text-xl leading-relaxed text-body mt-6 max-w-[34em]">{lead}</p>}
@@ -59,19 +59,19 @@ export function PageHero({ title, lead, actions, facts = [] }) {
 
 // The closing call to action: a solid accent band that sits directly above the
 // footer's dark gradient.
-export function ClosingBand({ title, text, to, href, label }) {
+export function ClosingBand({ title, text, to, href, label, track, trackCta }) {
   const cls = 'btn btn-lg w-full lg:w-auto flex-shrink-0 bg-[#0F1A2A] text-white hover:bg-[#1F2C3D]';
   return (
-    <section className="bg-yellow">
+    <section data-track-section={track} className="bg-yellow">
       <div className={`${INNER} py-14 md:py-20 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8 lg:gap-14`}>
         <div className="min-w-0 lg:flex-1">
           <h2 className="t-section text-[#0F1A2A]">{title}</h2>
           {text && <p className="t-lead mt-4 max-w-[30em] text-[#0F1A2A]/80">{text}</p>}
         </div>
         {to ? (
-          <Link to={to} className={cls}>{label} <ArrowRight className="w-5 h-5" /></Link>
+          <Link to={to} data-track-cta={trackCta} className={cls}>{label} <ArrowRight className="w-5 h-5" /></Link>
         ) : (
-          <a href={href} className={cls}>{label} <ArrowRight className="w-5 h-5" /></a>
+          <a href={href} data-track-cta={trackCta} className={cls}>{label} <ArrowRight className="w-5 h-5" /></a>
         )}
       </div>
     </section>

@@ -9,6 +9,7 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from './supabaseClient';
+import { trackCoursePaid } from './coursePageTracking';
 import {
   BUILDER1_PRICE, BUILDER2_PRICE, PRO_PRICE, VIBECODING_PRICE, AI_AGENT_MASTERY_PRICE,
 } from '../data/pricing';
@@ -259,6 +260,8 @@ export function trackPurchase(reference, payment) {
     content_type: 'product',
   }, reference);
   rememberSent(reference);
+  // The same verified payment closes the funnel on /admin/course-pages.
+  trackCoursePaid(reference, payment.plan);
 }
 
 function usePixelPurchase(user) {

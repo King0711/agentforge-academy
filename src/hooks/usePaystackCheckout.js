@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient';
 import { invokeWithRetry } from '../lib/invokeFunction';
 import { getStoredReferralCode } from '../lib/referral';
 import { getMetaBrowserIds, pixelTrack, trackInitiateCheckout } from '../lib/pixel';
+import { trackCourseEvent } from '../lib/coursePageTracking';
 
 // Where CheckoutComplete.jsx finds the email to send the first-login code to.
 // sessionStorage, so it lives only in this tab and goes when the tab closes.
@@ -90,6 +91,7 @@ export function usePaystackCheckout() {
         throw fnError;
       }
       if (!data?.authorization_url) throw new Error(data?.error || 'Could not start checkout.');
+      trackCourseEvent('to_paystack', 'signed_in');
       window.location.href = data.authorization_url;
     } catch (err) {
       setError(err.message || 'Something went wrong starting checkout. Please try again.');
@@ -137,6 +139,7 @@ export function usePaystackCheckout() {
       }
       pixelTrack('Lead', { content_name: pending.plan });
       trackInitiateCheckout(pending.plan);
+      trackCourseEvent('to_paystack', 'guest');
       window.location.href = data.authorization_url;
     } catch (err) {
       setLeadError(err.message || 'Something went wrong starting checkout. Please try again.');
