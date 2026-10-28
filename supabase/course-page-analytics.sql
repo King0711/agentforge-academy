@@ -74,6 +74,8 @@ create table if not exists public.page_events (
 
 create index if not exists page_events_page_created_idx on public.page_events (page, created_at);
 create index if not exists page_events_ip_idx on public.page_events (ip_hash, created_at) where ip_hash is not null;
+-- The function's whole-endpoint rate cap counts rows of the last minute.
+create index if not exists page_events_created_idx on public.page_events (created_at);
 
 alter table public.page_events enable row level security;
 revoke all on public.page_events from anon, authenticated;
