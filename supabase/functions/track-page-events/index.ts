@@ -109,6 +109,8 @@ serve(async (req) => {
     const num = Number(ev.v);
     const value = ev.v != null && Number.isFinite(num) && num >= 0 && num <= 86400000 ? Math.round(num * 100) / 100 : null;
 
+    // Every row carries every column: a batch with differing keys is padded with NULLs
+    // by the client, which would break the NOT NULL is_entry column for the whole insert.
     const row: Record<string, unknown> = {
       page,
       view_id: viewId,
@@ -117,6 +119,10 @@ serve(async (req) => {
       label,
       value,
       device,
+      is_entry: false,
+      source: null,
+      campaign: null,
+      ref_hash: null,
     };
     if (event === 'view') {
       row.is_entry = ev.entry === true;
@@ -148,8 +154,8 @@ serve(async (req) => {
       .eq('ip_hash', ipHash)
       .gte('created_at', new Date(Date.now() - MINUTE_MS).toISOString());
     if ((count ?? 0) >= MAX_ROWS_PER_IP_PER_MINUTE) return done();
-    for (const r of rows) r.ip_hash = ipHash;
   }
+  for (const r of rows) r.ip_hash = ipHash;
 
   const { error } = await sb.from('page_events').insert(rows);
   if (error) console.error('page_events insert failed:', error.code);
