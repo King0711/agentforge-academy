@@ -29,6 +29,10 @@ Supabase project ref: `qkrfpuckvymjpewcszgs`. Two other webhook functions exist 
 
 Admin panel (`/admin`, `src/pages/Admin.jsx`) uses SECURITY DEFINER RPCs in `supabase/admin-setup.sql` (`admin_get_all_profiles`, `admin_set_user_pro`, `admin_set_user_admin`) — self-check inside each function, only callable by an existing admin.
 
+## AI Agent Mastery class guide is members-only (2026-10-30)
+
+`/session/ai-chief-of-staff` (the Hermes / "AI chief of staff" walkthrough) was a public page with its text in the JS bundle. Now the text lives in `public.aimastery_guide` (RLS on, no grants) and the page fetches it through `get_aimastery_guide()`; `aimastery_guide_unlocked()` drives the "Class guide" card on `/ai-agent-mastery/course`. Unlocked = admin, or a student with live access for whom a Day 2 class (`live_sessions`, tier `aimastery`, title `Day 2%`) dated **after they first paid** has `recording_url` set — the cohort is rolling, so "after they paid" ties it to the Day 2 they're about to attend (someone who pays after Day 1 has begun gets it a week early; accepted). SQL: `supabase/aimastery-guide-gate.sql` first, then `supabase/aimastery-guide-content.sql` (the only copy of the guide text — edit it and re-run to publish a change; loading it needs the CLI recipe, it's ~74KB), then the frontend. Merging before the content is loaded leaves everyone on the lock screen. Day 2 recordings are attached in `/admin` live sessions; if a Day 2 title ever stops starting with "Day 2" the gate never opens.
+
 ## Checkout recovery, Pro upgrade, email capture (added 2026-10-04)
 
 Three revenue features, each with its own SQL file under `supabase/` (apply in this order — `checkout-recovery.sql` first, it widens the `email_log` type constraint the others rely on), then deploy the functions, then merge the frontend:

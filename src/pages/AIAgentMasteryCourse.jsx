@@ -82,6 +82,58 @@ function JoinRoomCards() {
   );
 }
 
+// The class walkthrough (/session/ai-chief-of-staff). Its text is only served
+// to students once the Day 2 recording is posted (supabase/aimastery-guide-gate.sql),
+// so the card asks the same function the page does rather than guessing here.
+function ClassGuideCard() {
+  const [unlocked, setUnlocked] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    supabase.rpc('aimastery_guide_unlocked').then(({ data, error }) => {
+      if (!cancelled) setUnlocked(!error && data === true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (unlocked === null) return null;
+
+  return (
+    <div className="mb-8">
+      <div className="flex items-center gap-2 mb-3">
+        <BookOpen className="w-4 h-4 text-link" />
+        <h2 className="font-display font-bold text-lg text-ink">Class guide</h2>
+      </div>
+      <div className="rounded-2xl border-[1.5px] border-border-soft bg-white dark:bg-[#131E2F] p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="min-w-0">
+          <p className="font-display font-bold text-[15px] text-ink leading-snug">Build your AI chief of staff — step by step</p>
+          <p className="text-[13px] text-body mt-1">
+            {unlocked ? 'The full walkthrough from class, with every prompt ready to copy.' : 'Opens once the Day 2 class recording is posted.'}
+          </p>
+        </div>
+        {unlocked ? (
+          <Link
+            to="/session/ai-chief-of-staff"
+            className="sm:ml-auto inline-flex items-center justify-center gap-2 text-sm font-bold text-white bg-brand hover:bg-brand-deep px-4 py-2.5 rounded-xl transition-colors flex-shrink-0"
+          >
+            <BookOpen className="w-4 h-4" /> Open the guide
+          </Link>
+        ) : (
+          <button
+            type="button"
+            disabled
+            className="sm:ml-auto inline-flex items-center justify-center gap-2 text-sm font-bold text-gray-400 bg-[#F2F4F7] dark:bg-white/5 px-4 py-2.5 rounded-xl cursor-not-allowed flex-shrink-0"
+          >
+            <Lock className="w-4 h-4" /> Open the guide
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
 }
@@ -272,6 +324,7 @@ export default function AIAgentMasteryCourse() {
       ) : (
         <>
           <JoinRoomCards />
+          <ClassGuideCard />
           <AIAgentMasteryCourseBody liveSessions={liveSessions} selectedId={selectedId} setSelectedId={setSelectedId} />
         </>
       )}
