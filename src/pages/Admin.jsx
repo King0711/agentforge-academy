@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, Routes, Route, Outlet } from 'react-router-dom';
 import { m } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { usePro } from '../hooks/usePro';
+import { useIdleSignOut } from '../hooks/useIdleSignOut';
+import { supabase } from '../lib/supabaseClient';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import AdminMfaGate from '../components/admin/AdminMfaGate';
 import AdminUsers from './admin/AdminUsers';
@@ -36,10 +38,19 @@ function ToastOutlet({ showToast }) {
 // left. showToast is shared via Outlet context since every section triggers
 // the same bottom-center toast on save/send/delete actions.
 export default function Admin() {
-  const { user } = useAuth();
+  const { user, authPolicy } = useAuth();
   const { isAdmin, proLoading } = usePro();
   const navigate = useNavigate();
   const [toast, setToast] = useState('');
+
+  // An admin who walks away is signed out of this browser after
+  // auth_policy.admin_idle_lock_minutes (default 30). 'local' ends only this session,
+  // not the admin's other devices.
+  const lockAdmin = useCallback(async () => {
+    await supabase.auth.signOut({ scope: 'local' });
+    navigate('/welcome?mode=login', { replace: true });
+  }, [navigate]);
+  useIdleSignOut(user && isAdmin ? authPolicy.adminIdleLockMinutes : 0, lockAdmin);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -49,7 +60,7 @@ export default function Admin() {
   useEffect(() => {
     if (proLoading) return;
     if (!user || !isAdmin) {
-      navigate('/', { replace: true });
+      navigate(user ? '/' : '/welcome?mode=login', { replace: true });
     }
   }, [user, isAdmin, proLoading, navigate]);
 

@@ -69,6 +69,9 @@ const Certificates = lazy(() => import('./pages/Certificates'));
 const CertificateView = lazy(() => import('./pages/CertificateView'));
 const VerifyCertificate = lazy(() => import('./pages/VerifyCertificate'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+// The "enter your authenticator code" screen. Only ever shown to a signed-in account
+// that has an authenticator app, so it stays out of the entry bundle.
+const MfaChallenge = lazy(() => import('./components/MfaChallenge'));
 const ConfirmEmail = lazy(() => import('./pages/ConfirmEmail'));
 // Landing pages for the links in the starter-series emails (confirm / unsubscribe).
 const SubscribeStatus = lazy(() => import('./pages/SubscribeStatus'));
@@ -86,7 +89,7 @@ const AIAgentMasteryCourse = lazy(() => import('./pages/AIAgentMasteryCourse'));
 const Webinar = lazy(() => import('./pages/Webinar'));
 
 function AppShell() {
-  const { user } = useAuth();
+  const { user, mfaStatus } = useAuth();
   const progress = useProgress(user);
   useCertificateClaims(user?.id, progress.completed);
   const [selectedAgent, setSelectedAgent] = useState(null);
@@ -124,6 +127,20 @@ function AppShell() {
   // The AI Agent Mastery classroom is a working area, not a marketing page —
   // keep the Navbar but drop the site footer (founder-confirmed 2026-09-30).
   const hideFooter = hideChrome || location.pathname.replace(/\/+$/, '') === '/ai-agent-mastery/course';
+
+  // An account with an authenticator app sees nothing of the site, on any route, until
+  // this session has entered a recent code (AuthContext, supabase/session-policy.sql).
+  // 'checking' is the moment right after sign-in while we find out whether it has one.
+  if (mfaStatus === 'checking') {
+    return <div className="min-h-screen bg-bg" aria-busy="true" />;
+  }
+  if (mfaStatus === 'required') {
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-bg" aria-busy="true" />}>
+        <MfaChallenge />
+      </Suspense>
+    );
+  }
 
   return (
     // LazyMotion + the `m` components (rather than `motion`) keep framer-

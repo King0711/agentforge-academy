@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { cleanFbc, cleanFbp, requestClient } from '../_shared/metaCapi.ts';
+import { rateLimit } from '../_shared/rateLimit.ts';
 
 // Set PAYSTACK_SECRET_KEY in your Supabase Edge Function secrets.
 // SUPABASE_URL and SUPABASE_ANON_KEY are injected automatically.
@@ -226,11 +227,36 @@ serve(async (req) => {
   const { plan, redirectOrigin } = body;
   const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+  // Rate limits (supabase/rate-limiting.sql). Per IP first: a real buyer makes a
+  // handful of calls (coupon check, checkout), so this only trims scripts. Generous
+  // enough for a shared carrier-grade NAT address.
+  const ipBlocked = await rateLimit(serviceClient, req, { bucket: 'checkout:ip', limit: 40, windowSeconds: 60 }, corsHeaders);
+  if (ipBlocked) return ipBlocked;
+  // A signed-in buyer is also limited by account, so rotating IPs doesn't help.
+  if (user) {
+    const userBlocked = await rateLimit(
+      serviceClient, req,
+      { bucket: 'checkout:user', key: user.id, limit: 12, windowSeconds: 600 },
+      corsHeaders,
+      'Too many checkout attempts. Please wait a few minutes and try again.',
+    );
+    if (userBlocked) return userBlocked;
+  }
+
   // The price card's "Apply" button: says whether a typed code works, without
   // starting a checkout. Answers 200 either way so a wrong code isn't logged as
   // a failed request. Needs no sign-in (guests use codes too); codes are random
   // 50-bit strings, so guessing one is not practical.
   if (body.action === 'validate_coupon') {
+    // Unauthenticated, and the only oracle for "is this code real". The codes are 50-bit
+    // random, so guessing is already impractical; this stops anyone trying anyway.
+    const couponBlocked = await rateLimit(
+      serviceClient, req,
+      { bucket: 'checkout:coupon', limit: 10, windowSeconds: 600, failClosed: true },
+      corsHeaders,
+      'Too many code attempts. Please wait a few minutes and try again.',
+    );
+    if (couponBlocked) return couponBlocked;
     if (plan !== 'aimastery') return jsonResponse({ valid: false, error: 'Discount codes only apply to AI Agent Mastery.' });
     const found = await lookupDiscountCode(serviceClient, body.coupon, plan);
     if (found.error) return jsonResponse({ valid: false, error: found.error });
