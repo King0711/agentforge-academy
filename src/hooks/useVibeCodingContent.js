@@ -42,3 +42,32 @@ export function useVibeCodingPrompts() {
 
   return { prompts, loading, locked };
 }
+
+/**
+ * The student-facing guide for each of the 8 classes, keyed by class number
+ * (1-8). Lives in `vibecoding_class_guides`, behind the same RLS as the prompt
+ * library, and is keyed by class rather than by live_sessions row so every
+ * cohort gets it. Resolves to an empty object if the table is unreadable.
+ */
+export function useVibeCodingClassGuides() {
+  const [guides, setGuides] = useState({});
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+
+    let cancelled = false;
+    supabase
+      .from('vibecoding_class_guides')
+      .select('class_number, guide')
+      .then(({ data, error }) => {
+        if (cancelled || error || !data) return;
+        setGuides(Object.fromEntries(data.map((r) => [r.class_number, r.guide])));
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return guides;
+}

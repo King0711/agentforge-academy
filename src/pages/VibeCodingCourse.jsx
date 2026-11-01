@@ -7,7 +7,9 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { usePro } from '../hooks/usePro';
 import { useLiveSessions } from '../hooks/useLiveSessions';
+import { useVibeCodingClassGuides } from '../hooks/useVibeCodingContent';
 import { usePageSeo } from '../hooks/usePageSeo';
+import ClassGuide from '../components/ClassGuide';
 
 // Fixed at 2 classes/week (4 weeks, 8 classes total — see the bootcamp
 // curriculum). live_sessions has no explicit week column, so this groups
@@ -81,7 +83,7 @@ function OutlineItem({ session, index, isSelected, onSelect }) {
 // the Zoom side (account-wide or per share link) if that matters — no
 // amount of iframe/JS on our end can remove a button Zoom's own page
 // renders inside its own document.
-function EmbedArea({ session }) {
+function EmbedArea({ session, guide }) {
   const isPast = new Date(session.session_date) < new Date();
   const hasReplay = Boolean(session.recording_url);
 
@@ -175,6 +177,8 @@ function EmbedArea({ session }) {
           </div>
         </div>
       )}
+
+      <ClassGuide guide={guide} />
     </div>
   );
 }
@@ -227,6 +231,7 @@ export default function VibeCodingCourse() {
 }
 
 function VibeCodingCourseBody({ liveSessions, selectedId, setSelectedId }) {
+  const guides = useVibeCodingClassGuides();
   const sessions = liveSessions.sessions
     .filter((s) => s.tier === 'vibecoding')
     .slice()
@@ -256,7 +261,7 @@ function VibeCodingCourseBody({ liveSessions, selectedId, setSelectedId }) {
     <div className="grid lg:grid-cols-[320px_1fr] gap-6 items-start">
       {/* Right on desktop, but comes first in DOM so mobile shows video before outline */}
       <div className="order-1 lg:order-2 lg:col-start-2">
-        <EmbedArea session={selected} />
+        <EmbedArea session={selected} guide={guides[sessions.indexOf(selected) + 1]} />
       </div>
 
       <div className="order-2 lg:order-1 lg:col-start-1 rounded-2xl border-[1.5px] border-border-soft bg-white dark:bg-[#131E2F] overflow-hidden lg:sticky lg:top-24">
