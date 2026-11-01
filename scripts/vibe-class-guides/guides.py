@@ -1,0 +1,748 @@
+"""Student-facing guides for the 8 Vibe Coding Bootcamp classes.
+
+Source: AI_Vibe_Coding_Bootcamp_Instructor_Deck.pptx (slides 8-87), reshaped for
+students to follow along with or catch up from a replay. Run build.py to turn
+this into supabase/vibecoding-class-guides.sql.
+
+Deliberate differences from the deck:
+  - Class 7 calls `gemini-flash-latest` and sends the key as an
+    `x-goog-api-key` header; the deck's `gemini-2.0-flash` was shut down on
+    2026-06-01 and a key in the URL ends up in logs and the Network tab.
+  - Class 3 and 4 gain a prompt per feature (the deck lists the features but
+    not the prompts), so the "one feature at a time" habit is shown, not told.
+  - Class 7 gets the index.html the deck's script.js expects, which it omits.
+
+Guide shape (every key optional except focus):
+  focus, agenda[{min,title,detail}], ideas[{term,text}], prompts[{title,text}],
+  steps[{title,note,file,code}], checks[str], ifStuck, stretch[str],
+  assignment[str]
+"""
+
+GUIDES = {}
+
+# --------------------------------------------------------------------------- 1
+GUIDES[1] = {
+    "focus": "Set the mental model for the whole course. You leave today knowing what vibe coding is (and isn't), with your tools installed and a written project brief for an app you want to build.",
+    "agenda": [
+        {"min": 20, "title": "Concept", "detail": "Software, websites, web apps, AI-assisted development, and the VIBE Method."},
+        {"min": 30, "title": "Tool setup", "detail": "AI assistant, VS Code, GitHub, a browser with developer tools."},
+        {"min": 50, "title": "Guided practice", "detail": "Pick an idea and plan it with AI using the Project Planning prompt."},
+        {"min": 15, "title": "Q&A", "detail": "Ask anything. Stuck setups get fixed here."},
+        {"min": 5, "title": "Assignment", "detail": "Write your one-page project brief."},
+    ],
+    "ideas": [
+        {"term": "Vibe coding", "text": "Building software by describing what you want to an AI and directing it, instead of typing every line yourself."},
+        {"term": "The VIBE Method", "text": "Vision (know what you're building and why), Instructions (tell AI clearly), Build (one step at a time), Evaluate (test everything before moving on)."},
+        {"term": "What AI can do", "text": "Write working code fast from a clear description, explain code, spot bugs, suggest improvements, remember context within one conversation."},
+        {"term": "What AI can't do", "text": "Read your mind, know whether the code actually works until you test it, or decide what is worth building."},
+        {"term": "Your job", "text": "Vision, judgment, testing and direction. AI's job is typing. You are the director, not the one being replaced."},
+        {"term": "The workflow", "text": "Idea, Plan, Build, Test, Debug, Improve, Deploy. Every project in this bootcamp follows it."},
+    ],
+    "steps": [
+        {"title": "Set up your tools", "note": "Do these before Class 2. Any capable AI assistant works; the method matters more than the brand.",
+         "file": "Checklist", "code": "1. An AI chat assistant: Claude, ChatGPT or Gemini\n2. Visual Studio Code (free): code.visualstudio.com\n3. A GitHub account (free), for saving your project code\n4. Chrome, Edge or Firefox, with developer tools (press F12)\n5. A free Supabase account: needed from Class 5, no rush to create it yet"},
+    ],
+    "prompts": [
+        {"title": "Project Planning prompt (Prompt Library #1)", "text": "Help me plan a web application for [describe your idea].\n\nBefore writing code, help me define:\n- The problem\n- Target users\n- Core features\n- Pages/screens\n- User flow\n- Data requirements\n- Recommended technology\n\nDo not write the entire application yet. Help me create a practical development plan first."},
+    ],
+    "checks": [
+        "You can explain in one sentence what vibe coding is.",
+        "VS Code opens, and you can open the developer tools in your browser with F12.",
+        "You have a GitHub account and an AI assistant you can sign in to.",
+        "AI gave you a plan for your idea, and you agree with it or have changed it.",
+    ],
+    "ifStuck": "Your idea does not need to be original or ambitious. A to-do list for your own life is a perfectly good starting point. If you cannot decide, pick the problem you complained about most this week.",
+    "assignment": [
+        "Write a simple project brief with: 1. Project name  2. The problem it solves  3. Target users  4. Your proposed solution  5. Five core features.",
+        "Bring it to Class 2. Next class everyone builds the same portfolio site first, then your own idea comes back later in the course.",
+    ],
+}
+
+# --------------------------------------------------------------------------- 2
+GUIDES[2] = {
+    "focus": "Learn the CLEAR framework for talking to AI, then build Project 1, a personal portfolio website, from an empty folder to a working site in your browser.",
+    "agenda": [
+        {"min": 15, "title": "Recap and questions", "detail": "Share your project brief. Today everyone builds the same portfolio first."},
+        {"min": 20, "title": "Concept", "detail": "The CLEAR framework, good prompting habits, and what HTML, CSS and JavaScript each do."},
+        {"min": 20, "title": "Instructor demo", "detail": "The page structure is built live, with the prompts narrated."},
+        {"min": 70, "title": "Guided build", "detail": "You build the portfolio alongside the instructor, step by step."},
+        {"min": 15, "title": "Challenge and Q&A", "detail": "Personalise it early, or get unstuck."},
+    ],
+    "ideas": [
+        {"term": "C: Context", "text": "Tell AI what it needs to know: what you are building and what already exists."},
+        {"term": "L: Limitations", "text": "Tell AI what it should and should not do."},
+        {"term": "E: Expected result", "text": "Describe what the finished thing should look like."},
+        {"term": "A: Actions", "text": "Say exactly what you want it to do right now."},
+        {"term": "R: Requirements", "text": "Specify technical, design or functional requirements."},
+        {"term": "Good habits", "text": "One task at a time. Break big projects into small ones. Ask AI to explain code you do not understand. Review code before running it. Never blindly accept AI output."},
+        {"term": "HTML, CSS, JavaScript", "text": "HTML is the structure of a page, CSS is how it looks, JavaScript is what it does. You are learning to recognise them when AI shows you code, not to memorise them."},
+        {"term": "DevTools", "text": "Right-click a page, choose Inspect, open the Console. A red error there is your best clue. Describing a bug clearly to AI matters more than any single HTML or CSS fact."},
+    ],
+    "prompts": [
+        {"title": "A CLEAR prompt for the hero section", "text": "Context: I'm building a personal portfolio website with plain HTML, CSS and JavaScript, in a folder with index.html and style.css.\nLimitations: No frameworks, no external libraries.\nExpected result: A full-width hero with my name, a short tagline and a \"See my work\" button, on a purple gradient background.\nActions: Write the HTML for the navigation bar and hero section only.\nRequirements: Mobile friendly, semantic HTML, and explain each part in one line."},
+    ],
+    "steps": [
+        {"title": "Step 1A: index.html, head, navigation and hero", "note": "Create a folder, then a file named index.html. Open it in your browser to see it.", "file": "index.html",
+         "code": """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Name — Portfolio</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <span class="logo">Your Name</span>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#skills">Skills</a></li>
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <header class="hero">
+    <h1>Hi, I'm Your Name 👋</h1>
+    <p>I build things with AI. Aspiring web developer.</p>
+    <a class="btn" href="#projects">See my work</a>
+  </header>
+  <!-- Step 1B continues here -->"""},
+        {"title": "Step 1B: index.html, content sections and footer", "note": "Paste this directly after the header, where the comment is.", "file": "index.html (continued)",
+         "code": """  <section id="about">
+    <h2>About</h2>
+    <p>Write 2-3 sentences about yourself.</p>
+  </section>
+
+  <section id="skills">
+    <h2>Skills</h2>
+    <ul><li>HTML &amp; CSS</li><li>JavaScript</li><li>AI-Assisted Development</li></ul>
+  </section>
+
+  <section id="projects">
+    <h2>Projects</h2>
+    <div class="project-card"><h3>Project title</h3><p>One-line description.</p></div>
+  </section>
+
+  <section id="contact">
+    <h2>Contact</h2>
+    <p>Email: you@example.com</p>
+  </section>
+
+  <footer><p>&copy; 2026 Your Name. Built with AI.</p></footer>
+  <script src="script.js"></script>
+</body>
+</html>"""},
+        {"title": "Step 2: style.css, making it look real", "note": "A new file next to index.html. Refresh the browser and the page transforms.", "file": "style.css",
+         "code": """* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', Arial, sans-serif; color: #1a1a2e; line-height: 1.6; }
+
+.navbar { display: flex; justify-content: space-between; align-items: center;
+  padding: 1rem 2rem; background: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.nav-links { display: flex; gap: 1.5rem; list-style: none; }
+.nav-links a { text-decoration: none; color: #1a1a2e; font-weight: 600; }
+
+.hero { text-align: center; padding: 5rem 1.5rem;
+  background: linear-gradient(135deg, #7C3AED, #A78BFA); color: white; }
+.hero h1 { font-size: 2.5rem; margin-bottom: .5rem; }
+.btn { display: inline-block; margin-top: 1.5rem; padding: .8rem 1.8rem;
+  background: white; color: #7C3AED; border-radius: 8px; text-decoration: none; font-weight: 700; }
+
+section { max-width: 800px; margin: 0 auto; padding: 3rem 1.5rem; }
+section h2 { margin-bottom: 1rem; }
+.project-card { border: 1px solid #eee; border-radius: 12px; padding: 1.2rem; }
+footer { text-align: center; padding: 2rem; background: #1a1a2e; color: #ccc; }
+
+/* Responsive: stack the nav on small screens */
+@media (max-width: 640px) {
+  .navbar { flex-direction: column; gap: .75rem; }
+}"""},
+        {"title": "Step 3 (optional): script.js, a touch of interactivity", "note": "Smooth scrolling between sections, and a shadow that deepens as you scroll.", "file": "script.js",
+         "code": """// Smooth-scroll when clicking a nav link
+document.querySelectorAll('.nav-links a').forEach((link) => {
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    const target = document.querySelector(link.getAttribute('href'));
+    target.scrollIntoView({ behavior: 'smooth' });
+  });
+});
+
+// Change navbar shadow after scrolling down a bit
+window.addEventListener('scroll', () => {
+  const nav = document.querySelector('.navbar');
+  if (window.scrollY > 50) {
+    nav.style.boxShadow = '0 2px 16px rgba(0,0,0,.12)';
+  } else {
+    nav.style.boxShadow = '0 2px 8px rgba(0,0,0,.06)';
+  }
+});"""},
+    ],
+    "checks": [
+        "The page loads in the browser with no visible errors.",
+        "The nav bar has 4 working links that jump to each section.",
+        "The hero has the purple gradient background.",
+        "About, Skills, Projects and Contact are all visible and styled.",
+        "The page reflows correctly when you make the browser window narrower.",
+    ],
+    "ifStuck": "Right-click the page, choose Inspect, open the Console. A red error is the number one cause of nothing showing up. Check for a typo in a file name first (style.css against styles.css), then for a missing closing tag.",
+    "stretch": ["Ask AI to change the hero gradient to a palette that matches something you like.", "Add a photo or avatar to the hero."],
+    "assignment": [
+        "Personalise your portfolio: your real name and a short bio, your real skills (or ones you are learning), at least one real or placeholder project, working contact info.",
+        "Pick your own colours. Try asking AI: \"change my hero gradient to a palette that matches [X]\".",
+    ],
+}
+
+# --------------------------------------------------------------------------- 3
+GUIDES[3] = {
+    "focus": "Draw the line between a website (shows information) and a web application (you do something with it), then build Project 2, an interactive To-Do app, one feature at a time.",
+    "agenda": [
+        {"min": 15, "title": "Recap and questions", "detail": "Show your portfolio. Bridge: your site shows information, today we build something that responds to you."},
+        {"min": 20, "title": "Concept", "detail": "Website against web application, and why we build one feature at a time."},
+        {"min": 20, "title": "Instructor demo", "detail": "The app shell and the first feature: adding a task."},
+        {"min": 65, "title": "Guided build", "detail": "Add, display, complete, delete, edit. Test after every feature."},
+        {"min": 15, "title": "Challenge and Q&A", "detail": "Stretch features for early finishers."},
+    ],
+    "ideas": [
+        {"term": "Website", "text": "Shows information. The content is mostly the same for every visitor. Your Class 2 portfolio is one."},
+        {"term": "Web application", "text": "You do something with it: add, edit, delete, calculate. What you see changes based on what you do. Today's to-do app is one."},
+        {"term": "State", "text": "The data your app is holding right now. Here it is an array of tasks. When the state changes, the screen is redrawn from it."},
+        {"term": "One feature at a time", "text": "Do not ask AI for a complete to-do app in one prompt. Ask for adding tasks, test it, ask for displaying them, test it, and so on. Each small step is easy to understand, easy to test and easy to fix. It is slower today and prevents \"AI broke my whole app and I don't know why\" later."},
+    ],
+    "prompts": [
+        {"title": "Feature 1: add tasks", "text": "I have an index.html with a form (id task-form), a text input (id task-input) and an empty list (id task-list), and a script.js. Add JavaScript so that submitting the form adds the task text to an array called tasks and clears the input. Do not display anything yet and do not touch any other feature. Explain what each line does."},
+        {"title": "Feature 2: display tasks", "text": "Now add a renderTasks() function that clears the list and redraws one <li> per task in the tasks array. Call it after a task is added. Change nothing else."},
+        {"title": "Feature 3: mark complete", "text": "Add a ✓ button to each task that toggles it between completed and not completed, and add a CSS rule that strikes through completed tasks. Only this feature."},
+        {"title": "Feature 4: delete", "text": "Add a ✕ button to each task that removes that task and redraws the list. Only this feature."},
+        {"title": "Feature 5: edit", "text": "Add a ✎ button that lets me change a task's text and saves the new text if it isn't empty. Only this feature."},
+    ],
+    "steps": [
+        {"title": "Step 1: index.html, the app shell", "note": "A new folder, separate from your portfolio.", "file": "index.html",
+         "code": """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My To-Do List</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <h1>My Tasks</h1>
+    <form id="task-form">
+      <input id="task-input" type="text" placeholder="What do you need to do?" required>
+      <button type="submit">Add</button>
+    </form>
+    <ul id="task-list"></ul>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>"""},
+        {"title": "Step 2A: script.js, state and render (add tasks)", "note": "The tasks live in memory, so they reset when you refresh. That is fine today; Class 4 fixes it.", "file": "script.js",
+         "code": """// An array holds every task in memory (resets on page refresh — that's OK today)
+let tasks = [];
+
+const form = document.getElementById('task-form');
+const input = document.getElementById('task-input');
+const list = document.getElementById('task-list');
+
+function renderTasks() {
+  list.innerHTML = ''; // clear and redraw the whole list every time something changes
+  tasks.forEach((task, index) => {
+    const li = document.createElement('li');
+    li.className = task.completed ? 'completed' : '';
+    li.innerHTML = `
+      <span class="task-text">${task.text}</span>
+      <div class="task-actions">
+        <button class="complete-btn" data-index="${index}">✓</button>
+        <button class="edit-btn" data-index="${index}">✎</button>
+        <button class="delete-btn" data-index="${index}">✕</button>
+      </div>`;
+    list.appendChild(li);
+  });
+}
+
+form.addEventListener('submit', (e) => {
+  e.preventDefault(); // stop the page from reloading (the default form behavior)
+  if (!input.value.trim()) return;
+  tasks.push({ text: input.value.trim(), completed: false });
+  input.value = '';
+  renderTasks();
+});"""},
+        {"title": "Step 2B: script.js, complete, delete and edit", "note": "Add this below the code from 2A.", "file": "script.js (continued)",
+         "code": """list.addEventListener('click', (e) => {
+  const index = e.target.dataset.index;
+  if (index === undefined) return; // click wasn't on a button
+
+  if (e.target.classList.contains('complete-btn')) {
+    tasks[index].completed = !tasks[index].completed;
+  } else if (e.target.classList.contains('delete-btn')) {
+    tasks.splice(index, 1);
+  } else if (e.target.classList.contains('edit-btn')) {
+    const newText = prompt('Edit task:', tasks[index].text);
+    if (newText !== null && newText.trim()) {
+      tasks[index].text = newText.trim();
+    }
+  }
+  renderTasks(); // always redraw after any change
+});"""},
+        {"title": "Step 3: style.css, completed tasks", "note": "Add the rule that makes a finished task look finished. Everything else is yours to style.", "file": "style.css",
+         "code": """li.completed .task-text { text-decoration: line-through; opacity: .5; }"""},
+    ],
+    "checks": [
+        "Typing a task and pressing Add (or Enter) adds it to the visible list.",
+        "The input box clears itself after adding.",
+        "Clicking ✓ marks a task complete, for example with a strikethrough.",
+        "Clicking ✕ removes that task from the list immediately.",
+        "Clicking ✎ lets you change the task's text.",
+    ],
+    "ifStuck": "If clicking buttons does nothing at all, check that the <ul id=\"task-list\"> exists in your HTML and that <script src=\"script.js\"> is the last thing before </body>, not in the <head>.",
+    "stretch": ["Task priorities (high, medium, low)", "Categories or tags", "Due dates", "A dark mode toggle"],
+    "assignment": [
+        "Extend your to-do app. Pick at least one: add one challenge feature from the stretch list; style the completed-task strikethrough with your own CSS; or use the Code Explanation prompt (#3) on script.js and write one sentence, in your own words, explaining what renderTasks() does.",
+    ],
+}
+
+# --------------------------------------------------------------------------- 4
+GUIDES[4] = {
+    "focus": "Build Project 3, a personal expense tracker. You meet real form inputs, validation and localStorage, so for the first time your data survives a page refresh.",
+    "agenda": [
+        {"min": 15, "title": "Recap and questions", "detail": "Refresh your to-do app: what happened to your tasks? Today nothing disappears."},
+        {"min": 20, "title": "Concept", "detail": "Forms, validation and localStorage."},
+        {"min": 20, "title": "Instructor demo", "detail": "The form, then saving and loading."},
+        {"min": 65, "title": "Guided build", "detail": "Add, list, delete and total expenses, saving every time."},
+        {"min": 15, "title": "Challenge and Q&A", "detail": "Budgets, income and summaries for early finishers."},
+    ],
+    "ideas": [
+        {"term": "Forms", "text": "Structured input: text, number, date and select (dropdown) fields."},
+        {"term": "Validation", "text": "Making sure input is usable before you use it, for example an amount must be a number greater than 0."},
+        {"term": "localStorage", "text": "A small storage space in the browser, tied to your site, that survives page refreshes. It lives in that one browser on that one device only."},
+        {"term": "Text only", "text": "localStorage can only store text. Use JSON.stringify() to turn an array into text before saving, and JSON.parse() to turn it back when loading."},
+    ],
+    "prompts": [
+        {"title": "Feature 1: the form", "text": "Build an HTML form for an expense tracker with: a text field for what I spent on, a number field for the amount in naira (must be at least 1), a dropdown for category (Food, Transport, Bills, Other), a date field, and an Add Expense button. Also add a Total line and an empty list. HTML only, no JavaScript yet."},
+        {"title": "Feature 2: save and load", "text": "Add JavaScript that keeps expenses in an array, saves the array to localStorage every time it changes, and loads it when the page opens. Explain why JSON.stringify and JSON.parse are needed. Do not change the form."},
+        {"title": "Feature 3: delete and total", "text": "Add a Delete button to each expense and show the running total at the top, always as a number with two decimals. Save after every change. Only this feature."},
+    ],
+    "steps": [
+        {"title": "Step 1: index.html, the form", "note": "Put this inside <body>, with <script src=\"script.js\"> after it.", "file": "index.html",
+         "code": """<div class="app">
+  <h1>Expense Tracker</h1>
+
+  <form id="expense-form">
+    <input id="desc" type="text" placeholder="What did you spend on?" required>
+    <input id="amount" type="number" placeholder="Amount (₦)" min="1" step="0.01" required>
+    <select id="category">
+      <option value="Food">Food</option>
+      <option value="Transport">Transport</option>
+      <option value="Bills">Bills</option>
+      <option value="Other">Other</option>
+    </select>
+    <input id="date" type="date" required>
+    <button type="submit">Add Expense</button>
+  </form>
+
+  <p class="total">Total: ₦<span id="total-amount">0</span></p>
+  <ul id="expense-list"></ul>
+</div>"""},
+        {"title": "Step 2A: script.js, load, save and render", "note": "The last line draws whatever was loaded from localStorage the moment the page opens.", "file": "script.js",
+         "code": """const STORAGE_KEY = 'expenses';
+
+// Load saved expenses on page load — JSON.parse turns text back into an array
+let expenses = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+const form = document.getElementById('expense-form');
+const list = document.getElementById('expense-list');
+const totalEl = document.getElementById('total-amount');
+
+function save() {
+  // JSON.stringify turns the array into text — localStorage can only store text
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
+}
+
+function render() {
+  list.innerHTML = '';
+  let total = 0;
+  expenses.forEach((exp, index) => {
+    total += exp.amount;
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <span>${exp.description} — ₦${exp.amount.toFixed(2)} (${exp.category}, ${exp.date})</span>
+      <button data-index="${index}">Delete</button>`;
+    list.appendChild(li);
+  });
+  totalEl.textContent = total.toFixed(2);
+}
+
+render(); // draw whatever was loaded from localStorage on first load"""},
+        {"title": "Step 2B: script.js, add and delete (saving every time)", "note": "Add this below 2A. Every change calls save() then render().", "file": "script.js (continued)",
+         "code": """form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  expenses.push({
+    description: document.getElementById('desc').value,
+    amount: parseFloat(document.getElementById('amount').value),
+    category: document.getElementById('category').value,
+    date: document.getElementById('date').value,
+  });
+  save();
+  render();
+  form.reset();
+});
+
+list.addEventListener('click', (e) => {
+  const index = e.target.dataset.index;
+  if (index === undefined) return;
+  expenses.splice(index, 1);
+  save();
+  render();
+});"""},
+    ],
+    "checks": [
+        "Adding an expense shows it in the list straight away, with the right total.",
+        "Refreshing the browser: your expenses are still there. This is the big one.",
+        "Deleting an expense removes it and updates the total correctly.",
+        "The total is always a properly formatted number, never text like 510 from joining strings.",
+    ],
+    "ifStuck": "Total showing NaN? Check parseFloat() on the amount field. Data gone after a refresh? Open DevTools, go to the Application tab, then Local Storage, and confirm there is a key named expenses with content in it.",
+    "stretch": ["Income tracking, separate from expenses", "A monthly budget that warns you when you go over", "Savings goals with a progress bar", "A spending summary by category"],
+    "assignment": [
+        "Add at least 5 real or realistic expenses and confirm they survive a refresh.",
+        "Style the total so it stands out: bigger font, a colour, or a card background.",
+        "Try one challenge feature if you have time.",
+    ],
+}
+
+# --------------------------------------------------------------------------- 5
+GUIDES[5] = {
+    "focus": "Move from browser-only apps to apps backed by real, shared, stored data. You will meet Supabase, create a real table, connect a webpage to it, and design the schema for next class's Student Management System.",
+    "agenda": [
+        {"min": 15, "title": "Recap and questions", "detail": "Did your expenses survive a refresh? localStorage lives in only one browser on one device."},
+        {"min": 20, "title": "Concept", "detail": "Frontend, backend, database, API, CRUD, tables and rows."},
+        {"min": 30, "title": "Guided setup", "detail": "Create a Supabase project and a table, and connect a page to it."},
+        {"min": 40, "title": "Guided practice", "detail": "Design the Student Management System schema with AI."},
+        {"min": 15, "title": "Q&A", "detail": "Fix any connection problems before Class 6."},
+    ],
+    "ideas": [
+        {"term": "The restaurant", "text": "Frontend is the dining area (what the customer sees). Backend is the kitchen (where the work happens). Database is the pantry (where things are kept). API is the waiter, carrying requests between them."},
+        {"term": "CRUD", "text": "Create, Read, Update, Delete: the four things you do to data."},
+        {"term": "Table, row, column, record", "text": "A table holds one kind of thing (students). Each column is a property (name, email). Each row is one record (one student)."},
+        {"term": "Row Level Security", "text": "Supabase blocks all access to a table until you write a policy. The classroom policy below lets anyone with the anon key read and write, which is fine for a demo with no real data and not for anything real."},
+    ],
+    "prompts": [
+        {"title": "Design your schema", "text": "I'm building a Student Management System with Supabase. Help me design the students table. I need: student information (name, email, phone), the course or programme they're in, a status (active, graduated, on leave), and any contact information. Give me the columns with types and sensible defaults, then the SQL to create it. Explain each column in one line."},
+    ],
+    "steps": [
+        {"title": "Set up Supabase", "note": "Free account, no card needed.", "file": "Checklist",
+         "code": "1. Create a free account at supabase.com\n2. Create a new project (any region) and save the database password somewhere safe\n3. Open the Table Editor and create a new table\n4. Add columns with types (text, number, date, boolean)\n5. Add a few test records directly in the dashboard\n6. Find your Project URL and anon/public API key under Settings > API. You need both to connect an app"},
+        {"title": "SQL: create the students table", "note": "Supabase > SQL Editor. Paste, then Run.", "file": "SQL Editor",
+         "code": """create table students (
+  id uuid primary key default gen_random_uuid(),
+  full_name text not null,
+  email text,
+  course text,
+  status text default 'active',   -- e.g. 'active', 'graduated', 'on leave'
+  enrolled_at date default current_date
+);
+
+-- Allow anyone with the anon key to read/write for now (fine for a
+-- classroom demo app with no real student data — tighten this for
+-- anything real).
+alter table students enable row level security;
+create policy "public access for demo" on students
+  for all using (true) with check (true);"""},
+        {"title": "Connect a webpage to Supabase", "note": "Put the first line in index.html before your own script. Replace the two placeholders with your own values.", "file": "index.html + script.js",
+         "code": """<!-- In index.html, before your own script.js -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+// In script.js
+const SUPABASE_URL = 'https://YOUR-PROJECT-REF.supabase.co';
+const SUPABASE_ANON_KEY = 'YOUR-ANON-PUBLIC-KEY';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Quick test: read every row from the students table
+async function testConnection() {
+  const { data, error } = await supabase.from('students').select('*');
+  if (error) {
+    console.error('Something went wrong:', error.message);
+  } else {
+    console.log('Connected! Students found:', data);
+  }
+}
+testConnection();"""},
+    ],
+    "checks": [
+        "Your Supabase project exists and the students table shows in the Table Editor.",
+        "Opening your page and then the browser console shows \"Connected! Students found:\" and your test rows.",
+        "You have your schema design written down: every field the Student Management System needs.",
+    ],
+    "ifStuck": "A red error in the console after testConnection usually means the Project URL or anon key is wrong (copy them again, with no spaces), or Row Level Security is blocking you because the policy was not created. Run the SQL again.",
+    "assignment": [
+        "Keep your Supabase project. Do not delete it.",
+        "Save your Project URL and anon key somewhere you can paste from quickly.",
+        "Bring your student-management schema design to Class 6.",
+    ],
+}
+
+# --------------------------------------------------------------------------- 6
+GUIDES[6] = {
+    "focus": "Build Project 4, a Student Management System: a full add, view, search, edit and delete app connected to the Supabase table you designed. This is your first genuinely real application.",
+    "agenda": [
+        {"min": 15, "title": "Recap and questions", "detail": "Still have your Supabase project and keys handy? Share one field from your schema."},
+        {"min": 20, "title": "Concept", "detail": "Why you never blindly replace your codebase with AI output."},
+        {"min": 20, "title": "Instructor demo", "detail": "Connect and read: showing the students already in your table."},
+        {"min": 65, "title": "Guided build", "detail": "Create, update, delete and search, each tested before the next."},
+        {"min": 15, "title": "Challenge and Q&A", "detail": "Filters, badges and statistics for early finishers."},
+    ],
+    "ideas": [
+        {"term": "Don't blindly replace your code", "text": "1. Back up first (copy the file, or commit to GitHub). 2. Understand the change before accepting it. 3. Make one change at a time, never a full-file rewrite for a small fix. 4. Test immediately. 5. Look at the actual result, not just whether AI said it worked. 6. Move on only after verifying."},
+        {"term": "CRUD in code", "text": "insert() creates, select() reads, update() changes, delete() removes. Each one talks to the same students table."},
+        {"term": "Edit mode", "text": "A single variable, editingId, decides what the form does on submit: null means create a new student, an id means update that student."},
+    ],
+    "prompts": [
+        {"title": "Feature prompt (Prompt Library #7)", "text": "My Student Management System already has: the form, the table and a loadStudents() function that reads from Supabase. Add ONE feature: [search by name / edit / delete]. Show me only the code I need to add or change and where it goes. Do not rewrite the file. Then tell me exactly how to test it."},
+    ],
+    "steps": [
+        {"title": "Step 1: index.html, form and table", "note": "Load the Supabase script first, then your own, as last week.", "file": "index.html",
+         "code": """<div class="app">
+  <h1>Student Management System</h1>
+
+  <form id="student-form">
+    <input id="full_name" type="text" placeholder="Full name" required>
+    <input id="email" type="email" placeholder="Email">
+    <input id="course" type="text" placeholder="Course">
+    <select id="status">
+      <option value="active">Active</option>
+      <option value="graduated">Graduated</option>
+      <option value="on leave">On leave</option>
+    </select>
+    <button type="submit" id="submit-btn">Add Student</button>
+  </form>
+
+  <input id="search" type="text" placeholder="Search by name...">
+
+  <table id="student-table">
+    <thead><tr><th>Name</th><th>Email</th><th>Course</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody id="student-rows"></tbody>
+  </table>
+</div>"""},
+        {"title": "Step 2A: script.js, connect and Read", "note": "Define SUPABASE_URL and SUPABASE_ANON_KEY above this, as in Class 5.", "file": "script.js",
+         "code": """const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const form = document.getElementById('student-form');
+const rows = document.getElementById('student-rows');
+const searchInput = document.getElementById('search');
+let editingId = null; // null = adding a new student; otherwise, the id being edited
+
+async function loadStudents(searchTerm = '') {
+  let query = supabase.from('students').select('*').order('full_name');
+  if (searchTerm) query = query.ilike('full_name', `%${searchTerm}%`); // Read + filter
+  const { data, error } = await query;
+  if (error) { console.error(error); return; }
+  renderRows(data);
+}
+
+function renderRows(students) {
+  rows.innerHTML = '';
+  students.forEach((s) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${s.full_name}</td><td>${s.email || ''}</td><td>${s.course || ''}</td><td>${s.status}</td>
+      <td>
+        <button class="edit-btn" data-id="${s.id}">Edit</button>
+        <button class="delete-btn" data-id="${s.id}">Delete</button>
+      </td>`;
+    rows.appendChild(tr);
+  });
+}"""},
+        {"title": "Step 2B: script.js, Create and Update", "note": "One form does both jobs, decided by editingId.", "file": "script.js (continued)",
+         "code": """form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const payload = {
+    full_name: document.getElementById('full_name').value,
+    email: document.getElementById('email').value,
+    course: document.getElementById('course').value,
+    status: document.getElementById('status').value,
+  };
+  if (editingId) {
+    await supabase.from('students').update(payload).eq('id', editingId);   // Update
+    editingId = null;
+  } else {
+    await supabase.from('students').insert(payload);                       // Create
+  }
+  form.reset();
+  loadStudents();
+});"""},
+        {"title": "Step 2C: script.js, Edit, Delete and Search", "note": "The last line loads the table when the page opens.", "file": "script.js (continued)",
+         "code": """rows.addEventListener('click', async (e) => {
+  const id = e.target.dataset.id;
+  if (!id) return;
+
+  if (e.target.classList.contains('delete-btn')) {
+    if (confirm('Delete this student?')) {
+      await supabase.from('students').delete().eq('id', id);               // Delete
+      loadStudents();
+    }
+  } else if (e.target.classList.contains('edit-btn')) {
+    const { data } = await supabase.from('students').select('*').eq('id', id).single();
+    document.getElementById('full_name').value = data.full_name;
+    document.getElementById('email').value = data.email || '';
+    document.getElementById('course').value = data.course || '';
+    document.getElementById('status').value = data.status;
+    editingId = id;                    // form.submit now goes to Update, not Create
+  }
+});
+
+searchInput.addEventListener('input', () => loadStudents(searchInput.value));
+
+loadStudents(); // initial load"""},
+    ],
+    "checks": [
+        "Adding a student shows it in the table straight away and in the Supabase dashboard.",
+        "Refreshing the page: students are still there, this time from a real database.",
+        "Search filters the table as you type.",
+        "Edit fills the form, and Save updates the existing row rather than adding a duplicate.",
+        "Delete removes the row from both the page and the Supabase dashboard.",
+    ],
+    "ifStuck": "Nothing loading? Open the browser console first. A Supabase error almost always means the anon key is wrong, or Row Level Security is blocking the request (revisit the Class 5 policy). An insert that silently does nothing is nearly always a required field left empty.",
+    "stretch": ["Filter students by course", "A status badge for active, graduated and on leave", "Advanced search by course and status together", "A student profile view when you click a row", "Dashboard statistics: total students and a count per status"],
+    "assignment": [
+        "Make sure all five core features (add, view, search, edit, delete) work end to end.",
+        "Add at least 5 real or realistic student records.",
+        "Try one challenge feature if you have time.",
+    ],
+}
+
+# --------------------------------------------------------------------------- 7
+GUIDES[7] = {
+    "focus": "See how AI itself becomes a feature inside a product, learn the security rules that go with that, and learn a repeatable way to debug anything. Build Project 5, an AI application prototype.",
+    "agenda": [
+        {"min": 15, "title": "Recap and questions", "detail": "Does your app still connect to Supabase? Share a challenge feature you tried."},
+        {"min": 20, "title": "Concept", "detail": "Where AI shows up inside products, and the parts of an AI feature."},
+        {"min": 15, "title": "Security", "detail": "The rules before anyone touches an API key."},
+        {"min": 55, "title": "Guided build", "detail": "A small AI content assistant: topic in, generated post out."},
+        {"min": 25, "title": "Debugging", "detail": "A 7-step process, practised on a deliberately broken app."},
+        {"min": 10, "title": "Assignment", "detail": "Sketch your capstone idea."},
+    ],
+    "ideas": [
+        {"term": "AI inside a product", "text": "A chatbot, a writing assistant, a customer support assistant, a recommendation system, a content generator."},
+        {"term": "The building blocks", "text": "AI model (the specific AI, for example Gemini, Claude or GPT). Prompt (the instruction you send). Context (extra information, like the user's data or past messages). Response (what comes back). API (how your code talks to the model over the internet)."},
+        {"term": "Security rules", "text": "Never expose API keys in frontend code that ships to users. Never publish passwords or secrets anywhere. Never put private credentials in a GitHub repository, public or private. Frontend code is visible to everyone; server code is not."},
+        {"term": "Today's key is for the classroom only", "text": "Putting a key in script.js is fine for a throwaway demo with a free key you will delete. A real product keeps the key on a server and calls the AI from there. Delete or restrict today's key when you are done."},
+        {"term": "The debugging process", "text": "1. Reproduce: make the problem happen on purpose. 2. Describe it in words. 3. Observe the error message and behaviour. 4. Capture: screenshot, console message, relevant code. 5. Ask AI with enough context (Debugging prompt, #4). 6. Test the suggested fix. 7. Verify it really worked."},
+    ],
+    "prompts": [
+        {"title": "Debugging prompt (Prompt Library #4)", "text": "I'm building [what]. When I [what I did], I expected [expected] but got [actual].\n\nThe error in the console is:\n[paste the exact error]\n\nHere is the relevant code:\n[paste the code]\n\nExplain what is going wrong first, then give me the smallest change that fixes it, and tell me how to check it worked."},
+    ],
+    "steps": [
+        {"title": "Get a free API key", "note": "No credit card. Treat it like a password.", "file": "Checklist",
+         "code": "1. Go to aistudio.google.com/apikey and sign in\n2. Create an API key\n3. Paste it into script.js where it says PASTE_YOUR_FREE_KEY_HERE\n4. When class is over, delete the key from the same page"},
+        {"title": "Step 1: index.html, a topic in and a post out", "note": "The deck's script expects these ids, so keep them as they are.", "file": "index.html",
+         "code": """<div class="app">
+  <h1>AI Caption Maker</h1>
+  <form id="generate-form">
+    <input id="topic" type="text" placeholder="What is the post about?" required>
+    <button type="submit">Generate</button>
+  </form>
+  <p id="output"></p>
+</div>
+<script src="script.js"></script>"""},
+        {"title": "Step 2A: script.js, the askAI() function", "note": "One function that sends a prompt and returns the model's text. The key goes in a header, not the URL.", "file": "script.js",
+         "code": """// Free key from aistudio.google.com/apikey. CLASSROOM DEMO ONLY: see the security rules above.
+const GEMINI_API_KEY = 'PASTE_YOUR_FREE_KEY_HERE';
+const GEMINI_URL =
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
+
+async function askAI(prompt) {
+  const response = await fetch(GEMINI_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': GEMINI_API_KEY,
+    },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+    }),
+  });
+  const data = await response.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.candidates[0].content.parts[0].text;
+}"""},
+        {"title": "Step 2B: script.js, wire it to the form", "note": "Add below askAI(). Notice the try and catch: a failure shows a message, never a silent blank.", "file": "script.js (continued)",
+         "code": """// Wire askAI() to a simple form: a topic in, a generated post out
+document.getElementById('generate-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const topic = document.getElementById('topic').value;
+  const output = document.getElementById('output');
+  output.textContent = 'Thinking...';
+  try {
+    const result = await askAI(`Write a short, friendly social media caption about: ${topic}`);
+    output.textContent = result;
+  } catch (err) {
+    output.textContent = 'Something went wrong: ' + err.message;
+  }
+});"""},
+    ],
+    "checks": [
+        "Submitting the form shows \"Thinking...\" immediately.",
+        "A real, relevant response replaces it within a few seconds.",
+        "A deliberately wrong or missing key shows a clear error message, not a silent failure.",
+        "Typing nonsense into the topic field doesn't crash anything.",
+    ],
+    "ifStuck": "A 400, 401 or 403 in the console almost always means a bad or missing API key. A CORS error means the request is malformed, not a security block: check the structure of the JSON body. If you get a 404 about the model, check aistudio.google.com for the current free model name.",
+    "assignment": [
+        "Sketch your Class 8 capstone: an idea for your own final project (you can extend anything from Weeks 1 to 4).",
+        "Write the problem it solves and who it is for.",
+        "Write a rough list of must-have features. Keep it small: finishing something simple beats leaving something big half done.",
+        "Delete or restrict the API key you used today.",
+    ],
+}
+
+# --------------------------------------------------------------------------- 8
+GUIDES[8] = {
+    "focus": "Today is yours. Build your own capstone product through the full workflow, deploy it live, and present it to the group. The instructor is there to help, not to lecture.",
+    "agenda": [
+        {"min": 15, "title": "Recap and questions", "detail": "Everyone has an idea and a must-have list ready."},
+        {"min": 20, "title": "Plan with AI", "detail": "Problem, users, features, pages, user flow, data."},
+        {"min": 70, "title": "Build, test, debug, improve", "detail": "One feature at a time, using the Class 7 process when something breaks."},
+        {"min": 15, "title": "Deploy", "detail": "Put it online and get a live link."},
+        {"min": 25, "title": "Presentations", "detail": "Each student shows their work."},
+    ],
+    "ideas": [
+        {"term": "The capstone workflow", "text": "1. Define the problem. 2. Define features, must-have against nice-to-have. 3. Plan with AI. 4. Build one feature at a time. 5. Test and debug. 6. Improve. 7. Deploy. 8. Present."},
+        {"term": "Must-have first", "text": "Finish the must-haves before touching a nice-to-have. A small finished app beats a big half-built one."},
+        {"term": "A finished capstone", "text": "A clearly defined problem, a target user, a working interface, your core features working, evidence of testing, at least one debugging experience you can describe, and deployment where possible."},
+    ],
+    "prompts": [
+        {"title": "Plan the capstone (Prompt Library #1)", "text": "Help me plan a web application for [your idea].\n\nMy must-have features are: [list]\nMy nice-to-have features are: [list]\n\nBefore writing code, help me define the problem, target users, pages/screens, user flow, data requirements and a step-by-step build order where each step is one small feature I can test. Do not write the application yet."},
+        {"title": "Review before you deploy (Prompt Library #5 and #6)", "text": "Review my app for design, usability and code quality. List the three most important problems first. For each, explain why it matters and give me the smallest fix. Don't rewrite the whole file."},
+    ],
+    "steps": [
+        {"title": "Deploy option A: Netlify, drag and drop", "note": "The fastest for beginners. No terminal needed.", "file": "Checklist",
+         "code": "1. Go to app.netlify.com and sign up (free)\n2. Click \"Add new site\", then \"Deploy manually\"\n3. Drag your ENTIRE project folder (the one with index.html inside) into the upload box\n4. Netlify gives you a live link in seconds, like https://your-project-name.netlify.app\n5. To update later, drag the folder in again and it replaces the live version"},
+        {"title": "Deploy option B: GitHub and Vercel", "note": "If you set up GitHub in Class 1. Create an empty repository on github.com first and copy its URL.", "file": "Terminal",
+         "code": """# One-time setup, if not already done
+git init
+git add .
+git commit -m "My capstone project"
+
+# Push to GitHub (use the URL of your empty repo)
+git remote add origin https://github.com/YOUR-USERNAME/YOUR-REPO.git
+git push -u origin main
+
+# Then on vercel.com: Add New Project > import the GitHub repo > Deploy.
+# Vercel detects a plain HTML/CSS/JS site and deploys it, no configuration needed."""},
+        {"title": "Before you deploy: keys and secrets", "note": "From Class 7. Check this every time.", "file": "Checklist",
+         "code": "- No API keys or passwords in any file you are about to upload\n- Nothing private in a GitHub repository, public or private\n- If you used a Supabase anon key, you have only demo data in the table"},
+    ],
+    "checks": [
+        "You can state the problem your app solves and who it is for.",
+        "Your must-have features all work.",
+        "You tested it and can show evidence of testing.",
+        "You can describe one bug you hit and how you debugged it.",
+        "It is deployed and you have a live link.",
+    ],
+    "ifStuck": "Use the 7-step debugging process from Class 7. Ask the instructor early. If you are running out of time, cut a nice-to-have, not a must-have, and deploy what works.",
+    "stretch": ["Add one nice-to-have feature", "Ask AI for a design review and apply its top suggestion"],
+    "assignment": [
+        "Present your work. Cover: the problem you set out to solve, who it is for, your solution and the app itself (live if it is deployed), your core features working, how AI helped, one challenge and how you debugged it, and what you learned.",
+        "Keep improving it after the course. You are not expected to be a professional engineer in four weeks. You now have a repeatable AI-assisted workflow and six real projects to build on.",
+    ],
+}
