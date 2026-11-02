@@ -73,6 +73,23 @@ async function sendResendEmail(to, subject, html) {
   return res.ok;
 }
 
+// Bulletproof button: a table cell carries the background (bgcolor attribute plus
+// background-color), because some mail apps drop the background of a styled link and
+// leave white text on white. The link keeps its own background and a border as well.
+function buttonHtml(href, label) {
+  return `
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:28px auto;">
+      <tr>
+        <td align="center" bgcolor="#264D73" style="background-color:#264D73;border-radius:10px;">
+          <a href="${escapeHtml(href)}"
+             style="display:inline-block;padding:13px 30px;background-color:#264D73;border:1px solid #264D73;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;">
+            <span style="color:#ffffff;">${label}</span>
+          </a>
+        </td>
+      </tr>
+    </table>`;
+}
+
 // "Class 3 of 8 — Week 2" -> 3. Falls back to null if the description is free text.
 function classNumberOf(description) {
   const m = /Class\s+(\d+)\s+of\s+\d+/i.exec(description ?? '');
@@ -85,23 +102,13 @@ function classNumberOf(description) {
 function reminderHtml(name, classLabel, title, timeLabel, joinLink) {
   const button = joinLink
     ? `
-    <div style="text-align:center;margin:28px 0;">
-      <a href="${escapeHtml(joinLink)}"
-         style="display:inline-block;background:#264D73;color:#fff;padding:12px 28px;border-radius:10px;text-decoration:none;font-weight:700;">
-        Join the class →
-      </a>
-    </div>
+    ${buttonHtml(joinLink, 'Join the class →')}
     <p style="font-size:13px;color:#4A5B6C;line-height:1.6;word-break:break-all;">
       Button not working? Copy this link into your browser:<br/>
       <a href="${escapeHtml(joinLink)}" style="color:#264D73;">${escapeHtml(joinLink)}</a>
     </p>`
     : `
-    <div style="text-align:center;margin:28px 0;">
-      <a href="https://socialdevtechnologies.com/dashboard/live-sessions"
-         style="display:inline-block;background:#264D73;color:#fff;padding:12px 28px;border-radius:10px;text-decoration:none;font-weight:700;">
-        Open my live sessions →
-      </a>
-    </div>`;
+    ${buttonHtml('https://socialdevtechnologies.com/dashboard/live-sessions', 'Open my live sessions →')}`;
   return `
     <p style="font-size:15px;color:#0F1A2A;">Hey ${escapeHtml(name)},</p>
     <p style="font-size:15px;color:#1F2C3D;line-height:1.6;">
