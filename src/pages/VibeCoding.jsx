@@ -318,7 +318,7 @@ export default function VibeCoding() {
               '6 months access',
               'Class recordings',
               'Practical projects',
-              'AI development prompt library',
+              'Concept guide: how apps really work',
               'Course resources',
               'Community/support',
               'Final capstone project',

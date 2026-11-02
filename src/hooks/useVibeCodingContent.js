@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 
 /**
- * Fetches the whole Vibe Coding prompt library (8 reusable prompts used
- * throughout the live-taught bootcamp — not tied to any one class, since
+ * Fetches the whole Vibe Coding concept guide (9 plain-English cards on how an
+ * app fits together: database, backend, GitHub, security; not copy-paste
+ * prompts, though the table and route keep the old "prompts" name). Not tied to any one class, since
  * class content itself isn't pre-published on the site; students get it
  * live and via replays under /dashboard/live-sessions and /dashboard/replays,
  * gated the same way as the automation tiers' live sessions). RLS on
