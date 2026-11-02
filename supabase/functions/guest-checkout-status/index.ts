@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { rateLimit } from '../_shared/rateLimit.ts';
 
 // Public status check for a guest checkout (supabase/guest-checkout.sql).
 //
@@ -59,6 +60,11 @@ serve(async (req) => {
   if (!REFERENCE_RE.test(reference)) return json({ error: 'Invalid reference' }, 400);
 
   const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  // The page polls this every couple of seconds for up to ~45s, so allow that with room
+  // to spare; the reference is unguessable, this just stops bulk probing.
+  const blocked = await rateLimit(sb, req, { bucket: 'guest-status:ip', limit: 60, windowSeconds: 60 }, corsHeaders);
+  if (blocked) return blocked;
+
   const { data, error } = await sb
     .from('payments')
     .select('status, plan, amount, currency')

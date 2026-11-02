@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { rateLimit } from '../_shared/rateLimit.ts';
 
 // Email capture + the free "start building AI agents" starter series.
 //
@@ -304,7 +305,11 @@ serve(async (req) => {
     return json({ ok: true, due: (due || []).length, sent, converted });
   }
 
-  // Browser actions.
+  // Browser actions. The flood guard below counts confirmation emails sent overall; this
+  // is per caller, so one source can't use up the shared budget for everybody else.
+  const browserBlocked = await rateLimit(sb, req, { bucket: 'email-leads:ip', limit: 30, windowSeconds: 600 }, corsHeaders);
+  if (browserBlocked) return browserBlocked;
+
   let body;
   try {
     const raw = await req.text();
@@ -316,6 +321,13 @@ serve(async (req) => {
   const action = body?.action;
 
   if (action === 'subscribe') {
+    const subscribeBlocked = await rateLimit(
+      sb, req,
+      { bucket: 'email-leads:subscribe', limit: 6, windowSeconds: 3600 },
+      corsHeaders,
+      'Too many sign-ups from this connection. Please try again in a little while.',
+    );
+    if (subscribeBlocked) return subscribeBlocked;
     // Honeypot: a field real visitors never see. Bots that fill it get the same
     // friendly answer and nothing happens.
     if (typeof body.website === 'string' && body.website.trim() !== '') return json({ ok: true });

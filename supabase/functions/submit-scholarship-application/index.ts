@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { validateApplication } from './validate.ts';
+import { rateLimit } from '../_shared/rateLimit.ts';
 
 // AI Agent Mastery scholarship application (supabase/scholarship-applications.sql).
 // Anonymous visitors submit the /scholarship form here; this is the ONLY writer
@@ -100,6 +101,9 @@ serve(async (req) => {
   if (!result.ok) return json({ error: result.error }, 400);
 
   const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  // Burst guard on top of the hourly caps below, which only count rows that were stored.
+  const burstBlocked = await rateLimit(sb, req, { bucket: 'scholarship:ip', limit: 5, windowSeconds: 600 }, corsHeaders);
+  if (burstBlocked) return burstBlocked;
   const since = new Date(Date.now() - HOUR_MS).toISOString();
   const tooMany = () => json({ error: 'Too many applications right now. Please try again in a little while.' }, 429);
 

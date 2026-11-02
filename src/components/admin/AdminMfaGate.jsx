@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Loader2, ShieldCheck, ShieldAlert, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { useAuth } from '../../context/AuthContext';
 
 // Two-step verification for admins (supabase/admin-mfa.sql).
 //
@@ -160,13 +161,17 @@ function MfaPanel({ factorId, onDone, blocking }) {
 }
 
 export default function AdminMfaGate({ children }) {
+  const { refreshMfa } = useAuth();
   const [state, setState] = useState(null); // null while loading
   const [panelOpen, setPanelOpen] = useState(false);
 
   const refresh = useCallback(async () => {
+    // The app-wide gate (AuthContext) also needs to learn about a newly enrolled
+    // authenticator, or it won't ask for a code again once this one's window runs out.
+    await refreshMfa();
     setState(await loadState());
     setPanelOpen(false);
-  }, []);
+  }, [refreshMfa]);
 
   useEffect(() => {
     let cancelled = false;

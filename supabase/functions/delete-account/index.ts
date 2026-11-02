@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { rateLimit } from '../_shared/rateLimit.ts';
 
 // Self-serve account deletion (supabase/account-deletion.sql does the data work).
 // Deploy with verify_jwt = true (the default). The caller is identified ONLY by the
@@ -47,6 +48,16 @@ serve(async (req) => {
   const { data: auth, error: authErr } = await sb.auth.getUser(token);
   const user = auth?.user;
   if (authErr || !user || !user.email) return json({ error: 'Please sign in again.' }, 401);
+
+  // Each wrong email costs an attempt, so a stolen session can't guess its way past the
+  // confirmation. Fails closed: this endpoint is destructive.
+  const blocked = await rateLimit(
+    sb, req,
+    { bucket: 'delete-account', key: user.id, limit: 5, windowSeconds: 3600, failClosed: true },
+    cors,
+    'Too many attempts. Please wait an hour, or message us on WhatsApp.',
+  );
+  if (blocked) return blocked;
 
   let body: { confirmEmail?: unknown };
   try {
