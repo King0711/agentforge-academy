@@ -59,11 +59,46 @@ const TOOLKIT = [
   { icon: Rocket, name: 'Netlify / Vercel', text: 'Learn how to put your applications online.' },
 ];
 
+// Class titles match the live_sessions rows (supabase) and the instructor
+// deck. Deliberately no weekdays or dates here: the cohort start is set by
+// the admin and this page is prerendered, so a computed date would go stale.
 const WEEKS = [
-  { week: 1, title: 'Understand AI Vibe Coding', text: 'Learn the VIBE Method, set up your tools, learn how to communicate with AI, and build your first website.', project: 'Personal Portfolio' },
-  { week: 2, title: 'Build Interactive Applications', text: 'Learn how websites become interactive applications and build apps that work with user input and stored data.', project: 'To-Do App + Expense Tracker' },
-  { week: 3, title: 'Build With Real Data', text: 'Understand databases, backends, APIs, CRUD, and Supabase.', project: 'Student Management System' },
-  { week: 4, title: 'Build With AI + Your Own Product', text: 'Learn AI-powered applications, debugging, security, deployment, and complete your capstone project.', project: 'AI Application + Your Own Product' },
+  {
+    week: 1, title: 'Understand AI Vibe Coding',
+    text: 'Learn the VIBE Method, set up your tools, learn how to communicate with AI, and build your first website.',
+    project: 'Personal Portfolio',
+    classes: [
+      { n: 1, title: 'Introduction to Vibe Coding & AI-Assisted Development', text: 'What software, websites and web apps are, what AI can and cannot do, the VIBE Method, and your tool setup. You leave with a written project brief.' },
+      { n: 2, title: 'Communicating With AI + Building Your First Website', text: 'The CLEAR framework for prompting, how HTML, CSS and JavaScript fit together, then build your portfolio site from an empty folder.' },
+    ],
+  },
+  {
+    week: 2, title: 'Build Interactive Applications',
+    text: 'Learn how websites become interactive applications and build apps that work with user input and stored data.',
+    project: 'To-Do App + Expense Tracker',
+    classes: [
+      { n: 3, title: 'From Websites to Web Applications', text: 'The difference between a site and an app, and why you build one feature at a time. Build a to-do app that adds, completes, edits and deletes tasks.' },
+      { n: 4, title: 'Building an Expense Tracker', text: 'Forms, validation and saving data in the browser so nothing disappears on refresh. Build an expense tracker with categories and a running total.' },
+    ],
+  },
+  {
+    week: 3, title: 'Build With Real Data',
+    text: 'Understand databases, backends, APIs, CRUD, and Supabase.',
+    project: 'Student Management System',
+    classes: [
+      { n: 5, title: 'Databases, Backends & Supabase', text: 'Frontend, backend, database and API explained simply. Set up Supabase, create your first table and design the data for your next app.' },
+      { n: 6, title: 'Building a Student Management System', text: 'Connect a web page to a real database and build add, view, search, edit and delete. You also learn how to change AI-written code safely.' },
+    ],
+  },
+  {
+    week: 4, title: 'Build With AI + Your Own Product',
+    text: 'Learn AI-powered applications, debugging, security, deployment, and complete your capstone project.',
+    project: 'AI Application + Your Own Product',
+    classes: [
+      { n: 7, title: 'Building With AI + Debugging', text: 'Put AI inside a product, protect API keys and secrets, and learn a repeatable seven-step way to debug. Build an AI content assistant.' },
+      { n: 8, title: 'Final Project, Deployment & Presentation', text: 'Build your own product from idea to launch, put it online, and present it to the group.' },
+    ],
+  },
 ];
 
 const FAQS = [
@@ -226,11 +261,25 @@ export default function VibeCoding() {
               <div className="min-w-0">
                 <h3 className="font-display font-extrabold text-xl lg:text-2xl leading-tight tracking-[-0.02em] text-ink mb-2">{w.title}</h3>
                 <p className="t-card text-body max-w-[36em]">{w.text}</p>
+                <ul className="list-none m-0 p-0 mt-5 flex flex-col gap-4 max-w-[36em]">
+                  {w.classes.map((c) => (
+                    <li key={c.n} className="flex items-start gap-3">
+                      <span className="flex-shrink-0 text-xs font-extrabold text-ink border border-border rounded-full px-2.5 py-1 mt-0.5">Class {c.n}</span>
+                      <div className="min-w-0">
+                        <h4 className="font-display font-bold text-base leading-snug text-ink">{c.title}</h4>
+                        <p className="t-card text-body mt-1">{c.text}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
               </div>
               <p className="text-base font-bold text-ink">Project: <span className="font-semibold text-body">{w.project}</span></p>
             </li>
           ))}
         </ol>
+        <p className="t-card text-body mt-6">
+          Every class runs about 2 to 2½ hours: a quick recap, a short idea, a live demo, then you build alongside the instructor.
+        </p>
       </Band>
 
       {/* What you'll learn */}
