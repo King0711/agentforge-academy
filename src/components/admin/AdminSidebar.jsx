@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { AnimatePresence, m } from 'framer-motion';
-import { Users, CalendarDays, Video, MessageSquareText, Mail, Newspaper, BookOpen, LifeBuoy, Gift, ClipboardList, GraduationCap, Ticket, Bot, Contact, BarChart3, MousePointerClick, ChevronDown } from 'lucide-react';
+import { Users, CalendarDays, Video, MessageSquareText, Mail, Newspaper, BookOpen, LifeBuoy, Gift, ClipboardList, GraduationCap, Ticket, Bot, Contact, BarChart3, MousePointerClick, ChevronDown, Receipt } from 'lucide-react';
 
 const NAV_ITEMS = [
   { to: '/admin', end: true, icon: Users, label: 'Users' },
@@ -19,6 +19,7 @@ const NAV_ITEMS = [
   { to: '/admin/scholarships', end: false, icon: GraduationCap, label: 'Scholarships' },
   { to: '/admin/discount-codes', end: false, icon: Ticket, label: 'Discount Codes' },
   { to: '/admin/leads', end: false, icon: Contact, label: 'Checkout Leads' },
+  { to: '/admin/sales', end: false, icon: Receipt, label: 'Sales Report' },
   { to: '/admin/community-bot', end: false, icon: Bot, label: 'Community Assistant' },
 ];
 
