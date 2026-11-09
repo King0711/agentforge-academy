@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Receipt, Loader2, AlertCircle, Download, ShieldCheck } from 'lucide-react';
+import { Receipt, Loader2, AlertCircle, Download, ShieldCheck, FileText } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import {
   enrich, summarize, salesCsv, watDateTime, watToday, watDayStartIso, watDayAfterIso,
 } from '../../lib/salesReport';
+import { downloadSalesPdf } from '../../lib/salesPdf';
 
 // The business started taking payments in 2026; the report defaults to the
 // whole year so far.
@@ -70,6 +71,7 @@ export default function AdminSales() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [pdfBusy, setPdfBusy] = useState(false);
 
   const load = useCallback(async () => {
     if (!from || !to || to < from) {
@@ -100,6 +102,17 @@ export default function AdminSales() {
   const summary = useMemo(() => summarize(rows), [rows]);
   const notSales = useMemo(() => rows.filter((r) => !r.sale), [rows]);
   const range = `${from}_to_${to}`;
+
+  const exportPdf = async () => {
+    setPdfBusy(true);
+    try {
+      await downloadSalesPdf(rows, { from, to });
+    } catch (err) {
+      setError(err?.message || 'Could not make the PDF.');
+    } finally {
+      setPdfBusy(false);
+    }
+  };
 
   return (
     <div>
@@ -139,6 +152,14 @@ export default function AdminSales() {
           </button>
           <button
             type="button"
+            onClick={exportPdf}
+            disabled={loading || pdfBusy || rows.length === 0}
+            className="flex items-center gap-1.5 text-xs font-bold px-3 py-2.5 rounded-lg bg-brand text-white hover:bg-brand-deep disabled:opacity-40 transition-colors"
+          >
+            {pdfBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />} Export PDF
+          </button>
+          <button
+            type="button"
             onClick={() => download(salesCsv(rows, { full: true }), `sales-report-full_${range}.csv`)}
             disabled={loading || rows.length === 0}
             className="flex items-center gap-1.5 text-xs font-bold px-3 py-2.5 rounded-lg bg-[#FAF8FF] dark:bg-white/5 text-body-strong hover:text-brand disabled:opacity-40 transition-colors"
@@ -148,8 +169,8 @@ export default function AdminSales() {
         </div>
       </div>
       <p className="text-xs text-body mb-6">
-        The full export lists buyer names, emails and Paystack references. The other one has the dates, products
-        and amounts only, so it is safe to share outside the team.
+        The full export lists buyer names, emails and Paystack references. The PDF and the &ldquo;without personal
+        details&rdquo; CSV have the dates, products and amounts only, so they are safe to share outside the team.
       </p>
 
       {loading ? (
