@@ -125,7 +125,9 @@ function EmbedArea({ session, guide }) {
           </a>
         )}
         {session.recording_passcode && <PasscodeChip passcode={session.recording_passcode} />}
-        {!isPast && session.join_link && (
+        {/* Always shown when there is a link: hiding it at the start time
+            removed the button just as students needed it (Class 4, 11 Nov). */}
+        {session.join_link && (
           <a
             href={session.join_link}
             target="_blank"
@@ -249,9 +251,15 @@ function VibeCodingCourseBody({ liveSessions, selectedId, setSelectedId }) {
 
   const weeks = groupIntoWeeks(sessions);
   const now = new Date();
-  // Default to the most recent class with a replay, else the next upcoming
-  // one, else just the last scheduled class — always land somewhere useful.
+  // Default to a class that is on right now (so its Join live button is the
+  // first thing students see), else the most recent class with a replay, else
+  // the next upcoming one, else just the last scheduled class.
+  const CLASS_LENGTH_MS = 2.5 * 60 * 60 * 1000; // same window as useLiveSessions
   const defaultSession =
+    sessions.find((s) => {
+      const start = new Date(s.session_date).getTime();
+      return start <= now.getTime() && now.getTime() < start + CLASS_LENGTH_MS;
+    }) ||
     [...sessions].reverse().find((s) => s.recording_url) ||
     sessions.find((s) => new Date(s.session_date) >= now) ||
     sessions[sessions.length - 1];
